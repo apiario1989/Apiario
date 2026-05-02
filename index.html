@@ -178,7 +178,7 @@ textarea{resize:vertical;min-height:60px}
     <div class="fld" style="position:relative">
       <label class="lbl">Colmenar</label>
       <input type="text" id="colmenar-input" placeholder="Escribí para buscar..." autocomplete="off"
-        oninput="filtrarColmenares()" onfocus="filtrarColmenares()" onkeydown="colmenarKeydown(event)">
+        onkeydown="colmenarKeydown(event)">
       <input type="hidden" id="colmenar">
       <div id="colmenar-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1.5px solid var(--am);border-radius:10px;z-index:100;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.12);margin-top:3px"></div>
     </div>
@@ -585,6 +585,22 @@ function updateCondFields(){
   recalcAlim();
 }
 
+// Inicializar input colmenar con eventos
+function initColmenarInput(){
+  const inp=document.getElementById('colmenar-input');
+  inp.addEventListener('focus',function(){
+    this.value='';
+    this.style.fontWeight='';
+    document.getElementById('colmenar').value='';
+    camConAbejasPrev=0;camSinAbejasPrev=0;nucleosPrev=0;alzasPrev=0;
+    const pc=document.getElementById('prev-caja');if(pc)pc.style.display='none';
+    cerrarDropdownColm();
+  });
+  inp.addEventListener('input',function(){
+    filtrarColmenares();
+  });
+}
+
 function filtrarColmenares(){
   const q=(document.getElementById('colmenar-input').value||'').toLowerCase().trim();
   const drop=document.getElementById('colmenar-dropdown');
@@ -845,9 +861,9 @@ function renderColmenares(){
 }
 function editarColmenar(id){
   const el=document.getElementById('cn-'+id),actual=el.textContent;
-  el.innerHTML=`<input type="text" value="${actual}" id="edit-cn-${id}" style="width:100%">`;
-  const inp=document.getElementById('edit-cn-'+id);inp.focus();inp.select();
-  inp.onblur=()=>guardarEdNombre(id);inp.onkeydown=e=>{if(e.key==='Enter')guardarEdNombre(id);if(e.key==='Escape')el.textContent=actual;};
+  el.innerHTML=`<input type="text" value="${actual}" id="edit-cn-${id}" style="width:100%;font-size:14px" onkeydown="if(event.key==='Escape'){renderColmenares();}">`;
+  el.nextElementSibling.outerHTML=`<button class="btn-sm" onclick="guardarEdNombre(${id})" style="background:var(--am);border-color:var(--am);color:var(--neg)">✓ Guardar</button>`;
+  document.getElementById('edit-cn-'+id).focus();
 }
 function guardarEdNombre(id){
   const inp=document.getElementById('edit-cn-'+id);if(!inp)return;
@@ -993,7 +1009,7 @@ function miniToast(msg){
   document.body.appendChild(t);clearTimeout(window._mtt);window._mtt=setTimeout(()=>t.remove(),3000);
 }
 
-buildSelects();buildTareas();recalcAlim();recalcCosecha();updateProxima();actualizarAviso();
+buildSelects();buildTareas();recalcAlim();recalcCosecha();updateProxima();actualizarAviso();initColmenarInput();
 document.getElementById('fecha').value=hoy();
 document.addEventListener('focus',function(e){if(e.target.type==='number'&&parseFloat(e.target.value)===0)e.target.value='';},true);
 document.addEventListener('blur',function(e){if(e.target.type==='number'&&e.target.value==='')e.target.value='0';},true);
