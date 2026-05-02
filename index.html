@@ -177,8 +177,12 @@ textarea{resize:vertical;min-height:60px}
     </div>
     <div class="fld" style="position:relative">
       <label class="lbl">Colmenar</label>
+      <div id="colmenar-seleccionado" style="display:none;margin-bottom:6px;background:var(--am);border-radius:8px;padding:7px 12px;display:none;align-items:center;justify-content:space-between">
+        <span id="colmenar-sel-txt" style="font-weight:700;font-size:14px;color:var(--neg)"></span>
+        <button onclick="limpiarColmenar()" style="background:transparent;border:none;font-size:18px;cursor:pointer;color:var(--neg);padding:0 4px;line-height:1">✕</button>
+      </div>
       <input type="text" id="colmenar-input" placeholder="Escribí para buscar..." autocomplete="off"
-        onkeydown="colmenarKeydown(event)">
+        oninput="filtrarColmenares()" onkeydown="colmenarKeydown(event)">
       <input type="hidden" id="colmenar">
       <div id="colmenar-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1.5px solid var(--am);border-radius:10px;z-index:100;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.12);margin-top:3px"></div>
     </div>
@@ -585,21 +589,6 @@ function updateCondFields(){
   recalcAlim();
 }
 
-// Inicializar input colmenar con eventos
-function initColmenarInput(){
-  const inp=document.getElementById('colmenar-input');
-  inp.addEventListener('focus',function(){
-    this.value='';
-    this.style.fontWeight='';
-    document.getElementById('colmenar').value='';
-    camConAbejasPrev=0;camSinAbejasPrev=0;nucleosPrev=0;alzasPrev=0;
-    const pc=document.getElementById('prev-caja');if(pc)pc.style.display='none';
-    cerrarDropdownColm();
-  });
-  inp.addEventListener('input',function(){
-    filtrarColmenares();
-  });
-}
 
 function filtrarColmenares(){
   const q=(document.getElementById('colmenar-input').value||'').toLowerCase().trim();
@@ -620,8 +609,21 @@ function colmenarKeydown(e){
 }
 function selColmenar(id,nombre){
   document.getElementById('colmenar').value=id;
-  const inp=document.getElementById('colmenar-input');inp.value=nombre;inp.style.fontWeight='700';
-  cerrarDropdownColm();onColmenarChange();
+  document.getElementById('colmenar-input').value='';
+  document.getElementById('colmenar-input').placeholder='Buscar otro...';
+  const sel=document.getElementById('colmenar-seleccionado');
+  document.getElementById('colmenar-sel-txt').textContent=nombre;
+  sel.style.display='flex';
+  cerrarDropdownColm();
+  onColmenarChange();
+}
+function limpiarColmenar(){
+  document.getElementById('colmenar').value='';
+  document.getElementById('colmenar-input').value='';
+  document.getElementById('colmenar-input').placeholder='Escribí para buscar...';
+  document.getElementById('colmenar-seleccionado').style.display='none';
+  camConAbejasPrev=0;camSinAbejasPrev=0;nucleosPrev=0;alzasPrev=0;
+  const pc=document.getElementById('prev-caja');if(pc)pc.style.display='none';
 }
 function cerrarDropdownColm(){document.getElementById('colmenar-dropdown').style.display='none';}
 document.addEventListener('click',function(e){if(!e.target.closest('#colmenar-input')&&!e.target.closest('#colmenar-dropdown'))cerrarDropdownColm();});
@@ -861,9 +863,12 @@ function renderColmenares(){
 }
 function editarColmenar(id){
   const el=document.getElementById('cn-'+id),actual=el.textContent;
-  el.innerHTML=`<input type="text" value="${actual}" id="edit-cn-${id}" style="width:100%;font-size:14px" onkeydown="if(event.key==='Escape'){renderColmenares();}">`;
+  el.innerHTML=`<input type="text" id="edit-cn-${id}" style="width:100%;font-size:14px" onkeydown="if(event.key==='Escape'){renderColmenares();}">`;
+  const inp=document.getElementById('edit-cn-'+id);
+  inp.value=actual;
+  inp.focus();
+  inp.select();
   el.nextElementSibling.outerHTML=`<button class="btn-sm" onclick="guardarEdNombre(${id})" style="background:var(--am);border-color:var(--am);color:var(--neg)">✓ Guardar</button>`;
-  document.getElementById('edit-cn-'+id).focus();
 }
 function guardarEdNombre(id){
   const inp=document.getElementById('edit-cn-'+id);if(!inp)return;
@@ -1009,7 +1014,7 @@ function miniToast(msg){
   document.body.appendChild(t);clearTimeout(window._mtt);window._mtt=setTimeout(()=>t.remove(),3000);
 }
 
-buildSelects();buildTareas();recalcAlim();recalcCosecha();updateProxima();actualizarAviso();initColmenarInput();
+buildSelects();buildTareas();recalcAlim();recalcCosecha();updateProxima();actualizarAviso();
 document.getElementById('fecha').value=hoy();
 document.addEventListener('focus',function(e){if(e.target.type==='number'&&parseFloat(e.target.value)===0)e.target.value='';},true);
 document.addEventListener('blur',function(e){if(e.target.type==='number'&&e.target.value==='')e.target.value='0';},true);
