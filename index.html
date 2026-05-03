@@ -808,31 +808,37 @@ function guardar(){
 
   // MOVER CAMARAS VACIAS
   if(tareasSel.has('mover-vacias')){
-    const origen=parseInt(document.getElementById('vacias-origen').value)||0;
-    const destino=parseInt(document.getElementById('vacias-destino').value)||0;
-    const cant=nv('vaciasCant');
-    if(!origen||!destino){miniToast('Seleccioná origen y destino para mover vacías');return;}
-    if(!cant){miniToast('Indicá la cantidad de cámaras vacías a mover');return;}
-    if(origen===destino){miniToast('Origen y destino no pueden ser el mismo');return;}
-    const coNom=colmenares.find(c=>c.id===origen)?.nombre||'?';
-    const cdNom=colmenares.find(c=>c.id===destino)?.nombre||'?';
-    const ultO=registros.find(r=>r.colId===origen),ultD=registros.find(r=>r.colId===destino);
-    const vacO=ultO?ultO.camSinAbejas||0:0,camO=ultO?ultO.camConAbejas||0:0;
-    const vacD=ultD?ultD.camSinAbejas||0:0,camD=ultD?ultD.camConAbejas||0:0;
-    const nucO=ultO?ultO.nucleosConteo||0:0,nucD=ultD?ultD.nucleosConteo||0:0;
-    const alzO=ultO?ultO.alzas||0:0,alzD=ultD?ultD.alzas||0:0;
-    const base={operario:op,fecha,retornoDias:dias,proximaVisita:proxima,tareas:['mover-vacias'],
+    const origenV=parseInt(document.getElementById('vacias-origen').value)||0;
+    const destinoV=parseInt(document.getElementById('vacias-destino').value)||0;
+    const cantV=nv('vaciasCant');
+    if(!origenV||!destinoV){miniToast('Seleccioná origen y destino para mover vacías');return;}
+    if(!cantV){miniToast('Indicá la cantidad de cámaras vacías a mover');return;}
+    if(origenV===destinoV){miniToast('Origen y destino no pueden ser el mismo');return;}
+    const coNomV=colmenares.find(c=>c.id===origenV)?.nombre||'?';
+    const cdNomV=colmenares.find(c=>c.id===destinoV)?.nombre||'?';
+    const ultOV=registros.find(r=>r.colId===origenV);
+    const ultDV=registros.find(r=>r.colId===destinoV);
+    const vacOV=ultOV?ultOV.camSinAbejas||0:0;
+    const camOV=ultOV?ultOV.camConAbejas||0:0;
+    const vacDV=ultDV?ultDV.camSinAbejas||0:0;
+    const camDV=ultDV?ultDV.camConAbejas||0:0;
+    const nucOV=ultOV?ultOV.nucleosConteo||0:0;
+    const nucDV=ultDV?ultDV.nucleosConteo||0:0;
+    const alzOV=ultOV?ultOV.alzas||0:0;
+    const alzDV=ultDV?ultDV.alzas||0:0;
+    const baseV={operario:op,fecha,retornoDias:dias,proximaVisita:proxima,tareas:['mover-vacias'],
       mLA:0,mZ:0,mH:0,mPi:0,mNS:0,mNucleos:0,aLc:0,aLt:0,
       curas:{primavera:false,verano:false,otono:false},coAlzas:0,coPeso:0,coKgAlza:0,
       nucCant:0,nucCria:0,nucMiel:0,nuDestino:'mismo',nucPasaCam:0,enjambresCant:0};
-    await fbSet('registros',String(Date.now()+10),{...base,id:String(Date.now()+10),colId:origen,colNombre:coNom,
-      tarea:`Cám. vacías → ${cdNom}`,camConAbejas:camO,camSinAbejas:Math.max(0,vacO-cant),
-      nucleosConteo:nucO,alzas:alzO,obs:`Salen ${cant} cám. vacías hacia ${cdNom}`});
-    await fbSet('registros',String(Date.now()+11),{...base,id:String(Date.now()+11),colId:destino,colNombre:cdNom,
-      tarea:`Cám. vacías desde ${coNom}`,camConAbejas:camD,camSinAbejas:vacD+cant,
-      nucleosConteo:nucD,alzas:alzD,obs:`Llegan ${cant} cám. vacías desde ${coNom}`});
-    await syncAll();
-    editandoId=null;resetForm();mostrarOverlay(`${cant} cám. vacías: ${coNom} → ${cdNom}`);return;
+    fbSet('registros',String(Date.now()+10),{...baseV,id:String(Date.now()+10),colId:origenV,colNombre:coNomV,
+      tarea:'Cám. vacías → '+cdNomV,camConAbejas:camOV,camSinAbejas:Math.max(0,vacOV-cantV),
+      nucleosConteo:nucOV,alzas:alzOV,obs:'Salen '+cantV+' cám. vacías hacia '+cdNomV});
+    fbSet('registros',String(Date.now()+11),{...baseV,id:String(Date.now()+11),colId:destinoV,colNombre:cdNomV,
+      tarea:'Cám. vacías desde '+coNomV,camConAbejas:camDV,camSinAbejas:vacDV+cantV,
+      nucleosConteo:nucDV,alzas:alzDV,obs:'Llegan '+cantV+' cám. vacías desde '+coNomV});
+    syncAll();
+    editandoId=null;resetForm();mostrarOverlay(cantV+' cám. vacías: '+coNomV+' → '+cdNomV);
+    return;
   }
     const origen=parseInt(document.getElementById('traslado-origen').value)||0,destino=parseInt(document.getElementById('traslado-destino').value)||0,cant=nv('trasCant');
     if(!origen||!destino){miniToast('Seleccioná origen y destino');return;}
