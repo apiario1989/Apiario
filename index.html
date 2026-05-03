@@ -330,10 +330,12 @@ textarea{resize:vertical;min-height:60px}
     </div>
     <div class="campo-cond" id="cond-enjambre">
       <div class="stitle">Enjambre capturado</div>
+      <p style="font-size:13px;color:#888;margin-bottom:10px">Las cámaras vacías que se llenaron con un enjambre pasan a cámaras con abejas.</p>
       <div style="display:flex;align-items:center;gap:8px">
-        <button class="nbtn" onclick="adjN('enjambresCant',-1)">−</button><input class="ninput" type="number" id="enjambresCant" value="0" min="0"><button class="nbtn" onclick="adjN('enjambresCant',1)">+</button>
+        <button class="nbtn" onclick="adjN('enjambresCant',-1)">−</button><input class="ninput" type="number" id="enjambresCant" value="0" min="0" oninput="updateEnjambrePreview()"><button class="nbtn" onclick="adjN('enjambresCant',1)">+</button>
         <span style="font-size:13px;color:#888">enjambre(s) capturado(s)</span>
       </div>
+      <div id="enjambre-preview" style="margin-top:8px;font-size:13px;color:#555;background:#f5f5f3;border-radius:8px;padding:8px 12px;display:none"></div>
     </div>
     <div class="campo-cond" id="cond-alzas">
       <div class="stitle">Alzas a agregar</div>
@@ -342,7 +344,25 @@ textarea{resize:vertical;min-height:60px}
         <div id="alzas-preview" style="font-size:13px;color:#555;background:#f5f5f3;border-radius:8px;padding:8px 12px;flex:1"></div>
       </div>
     </div>
-    <div class="campo-cond" id="cond-traslado">
+    <!-- MOVER CAMARAS VACIAS -->
+    <div class="campo-cond" id="cond-mover-vacias">
+      <div class="stitle">Mover cámaras vacías</div>
+      <p style="font-size:13px;color:#888;margin-bottom:10px">Mover cámaras vacías entre colmenares (ej: llevar al depósito Pueblo o traer de él).</p>
+      <div class="g2">
+        <div class="fld"><label class="lbl">Origen (salen vacías)</label>
+          <select id="vacias-origen" onchange="updateVaciasPreview()"><option value="">Seleccionar...</option></select></div>
+        <div class="fld"><label class="lbl">Destino (llegan vacías)</label>
+          <select id="vacias-destino" onchange="updateVaciasPreview()"><option value="">Seleccionar...</option></select></div>
+      </div>
+      <div class="fld"><label class="lbl">Cámaras vacías a mover</label>
+        <div style="display:flex;align-items:center;gap:8px">
+          <button class="nbtn" onclick="adjN('vaciasCant',-1)">−</button>
+          <input class="ninput" type="number" id="vaciasCant" value="0" min="0" oninput="updateVaciasPreview()" style="width:70px">
+          <button class="nbtn" onclick="adjN('vaciasCant',1)">+</button>
+        </div>
+      </div>
+      <div id="vacias-preview" style="font-size:13px;color:#555;background:#f5f5f3;border-radius:8px;padding:8px 12px;display:none;line-height:1.6"></div>
+    </div>
       <div class="stitle">Traslado</div>
       <div class="g2">
         <div class="fld"><label class="lbl">Origen (sale)</label><select id="traslado-origen" onchange="updateTrasladoPreview()"><option value="">Seleccionar...</option></select></div>
@@ -584,8 +604,9 @@ function toggleTarea(id){
 function updateCondFields(){
   const activas=new Set();
   tareasSel.forEach(id=>{const t=TAREAS.find(x=>x.id===id);if(t&&t.cond)activas.add(t.cond);});
-  ['alimentacion','cosecha','nucleos','nucleo-camara','enjambre','alzas','traslado','cura'].forEach(c=>{const el=document.getElementById('cond-'+c);if(el)el.classList.toggle('visible',activas.has(c));});
+  ['alimentacion','cosecha','nucleos','nucleo-camara','enjambre','alzas','traslado','cura','mover-vacias'].forEach(c=>{const el=document.getElementById('cond-'+c);if(el)el.classList.toggle('visible',activas.has(c));});
   if(activas.has('traslado'))fillTrasladoSelects();
+  if(activas.has('mover-vacias'))fillVaciasSelects();
   if(activas.has('alzas'))updateAlzasPreview();
   if(activas.has('nucleos'))fillNuDestinoSel();
   recalcAlim();
@@ -650,7 +671,33 @@ function updateTrasladoPreview(){
   prev.innerHTML=`<strong>${co?co.nombre:'?'}</strong>: ${ultO?ultO.camConAbejas||0:0} → <strong>${(ultO?ultO.camConAbejas||0:0)-cant}</strong><br><strong>${cd?cd.nombre:'?'}</strong>: ${ultD?ultD.camConAbejas||0:0} → <strong>${(ultD?ultD.camConAbejas||0:0)+cant}</strong>`;
   prev.style.display='block';
 }
-function updateAlzasPreview(){const cant=nv('alzAdd'),prev=document.getElementById('alzas-preview');if(prev)prev.textContent=cant>0?`Alzas: ${alzasPrev} → ${alzasPrev+cant}`:alzasPrev>0?`Alzas actuales: ${alzasPrev}`:''; }
+function updateEnjambrePreview(){
+  const cant=nv('enjambresCant');
+  const prev=document.getElementById('enjambre-preview');
+  if(!prev)return;
+  if(cant>0){
+    const vac=nv('camSinAbejas'),cam=nv('camConAbejas');
+    prev.textContent=`${cant} cámara${cant>1?'s':''} vacía${cant>1?'s':''} → con abejas. Vacías: ${vac} → ${Math.max(0,vac-cant)} · Con abejas: ${cam} → ${cam+cant}`;
+    prev.style.display='block';
+  } else prev.style.display='none';
+}
+function fillVaciasSelects(){
+  const opts='<option value="">Seleccionar...</option>'+colmenares.map(c=>`<option value="${c.id}">${c.id} — ${c.nombre}</option>`).join('');
+  document.getElementById('vacias-origen').innerHTML=opts;
+  document.getElementById('vacias-destino').innerHTML=opts;
+}
+function updateVaciasPreview(){
+  const origen=parseInt(document.getElementById('vacias-origen').value)||0;
+  const destino=parseInt(document.getElementById('vacias-destino').value)||0;
+  const cant=nv('vaciasCant');
+  const prev=document.getElementById('vacias-preview');
+  if(!origen||!destino||!cant){prev.style.display='none';return;}
+  const co=colmenares.find(c=>c.id===origen),cd=colmenares.find(c=>c.id===destino);
+  const ultO=registros.find(r=>r.colId===origen),ultD=registros.find(r=>r.colId===destino);
+  const vacO=ultO?ultO.camSinAbejas||0:0,vacD=ultD?ultD.camSinAbejas||0:0;
+  prev.innerHTML=`<strong>${co?co.nombre:'?'}</strong>: ${vacO} → <strong>${Math.max(0,vacO-cant)}</strong> cám. vacías<br><strong>${cd?cd.nombre:'?'}</strong>: ${vacD} → <strong>${vacD+cant}</strong> cám. vacías`;
+  prev.style.display='block';
+}const cant=nv('alzAdd'),prev=document.getElementById('alzas-preview');if(prev)prev.textContent=cant>0?`Alzas: ${alzasPrev} → ${alzasPrev+cant}`:alzasPrev>0?`Alzas actuales: ${alzasPrev}`:''; }
 function onColmenarChange(){
   updateProxima();
   const colId=parseInt(document.getElementById('colmenar').value);
@@ -693,6 +740,8 @@ function adjN(id,d){
   if(['nuC','nuCria','nuMiel'].includes(id))updateNucleoRes();
   if(id==='trasCant')updateTrasladoPreview();
   if(id==='alzAdd')updateAlzasPreview();
+  if(id==='enjambresCant')updateEnjambrePreview();
+  if(id==='vaciasCant')updateVaciasPreview();
 }
 function recalcAlim(){
   const lc=nfv('aLc'),cam=nv('camConAbejas'),nuc=nv('nucleosConteo'),total=Math.round(lc*(cam+nuc)*10)/10;
@@ -755,7 +804,34 @@ function guardar(){
   const alzActual=tareasSel.has('agregar-alzas')?(alzasPrev+nv('alzAdd')):nv('alz');
   const coAlzas=tareasSel.has('cosecha')?nv('coA'):0,coKgAlza=tareasSel.has('cosecha')?nfv('coKgAlza'):0,coPeso=Math.round(coAlzas*coKgAlza*10)/10;
 
-  if(tareasSel.has('traslado')){
+  // MOVER CAMARAS VACIAS
+  if(tareasSel.has('mover-vacias')){
+    const origen=parseInt(document.getElementById('vacias-origen').value)||0;
+    const destino=parseInt(document.getElementById('vacias-destino').value)||0;
+    const cant=nv('vaciasCant');
+    if(!origen||!destino){miniToast('Seleccioná origen y destino para mover vacías');return;}
+    if(!cant){miniToast('Indicá la cantidad de cámaras vacías a mover');return;}
+    if(origen===destino){miniToast('Origen y destino no pueden ser el mismo');return;}
+    const coNom=colmenares.find(c=>c.id===origen)?.nombre||'?';
+    const cdNom=colmenares.find(c=>c.id===destino)?.nombre||'?';
+    const ultO=registros.find(r=>r.colId===origen),ultD=registros.find(r=>r.colId===destino);
+    const vacO=ultO?ultO.camSinAbejas||0:0,camO=ultO?ultO.camConAbejas||0:0;
+    const vacD=ultD?ultD.camSinAbejas||0:0,camD=ultD?ultD.camConAbejas||0:0;
+    const nucO=ultO?ultO.nucleosConteo||0:0,nucD=ultD?ultD.nucleosConteo||0:0;
+    const alzO=ultO?ultO.alzas||0:0,alzD=ultD?ultD.alzas||0:0;
+    const base={operario:op,fecha,retornoDias:dias,proximaVisita:proxima,tareas:['mover-vacias'],
+      mLA:0,mZ:0,mH:0,mPi:0,mNS:0,mNucleos:0,aLc:0,aLt:0,
+      curas:{primavera:false,verano:false,otono:false},coAlzas:0,coPeso:0,coKgAlza:0,
+      nucCant:0,nucCria:0,nucMiel:0,nuDestino:'mismo',nucPasaCam:0,enjambresCant:0};
+    await fbSet('registros',String(Date.now()+10),{...base,id:String(Date.now()+10),colId:origen,colNombre:coNom,
+      tarea:`Cám. vacías → ${cdNom}`,camConAbejas:camO,camSinAbejas:Math.max(0,vacO-cant),
+      nucleosConteo:nucO,alzas:alzO,obs:`Salen ${cant} cám. vacías hacia ${cdNom}`});
+    await fbSet('registros',String(Date.now()+11),{...base,id:String(Date.now()+11),colId:destino,colNombre:cdNom,
+      tarea:`Cám. vacías desde ${coNom}`,camConAbejas:camD,camSinAbejas:vacD+cant,
+      nucleosConteo:nucD,alzas:alzD,obs:`Llegan ${cant} cám. vacías desde ${coNom}`});
+    await syncAll();
+    editandoId=null;resetForm();mostrarOverlay(`${cant} cám. vacías: ${coNom} → ${cdNom}`);return;
+  }
     const origen=parseInt(document.getElementById('traslado-origen').value)||0,destino=parseInt(document.getElementById('traslado-destino').value)||0,cant=nv('trasCant');
     if(!origen||!destino){miniToast('Seleccioná origen y destino');return;}
     if(!cant){miniToast('Indicá la cantidad de cámaras');return;}
@@ -783,7 +859,7 @@ function guardar(){
 
 function resetForm(){
   editandoId=null;
-  ['camConAbejas','camSinAbejas','nucleosConteo','alz','mLA','mZ','mH','mPi','mNS','mNucleos','coA','coKgAlza','nuC','alzAdd','trasCant','nucPasaCam','enjambresCant'].forEach(id=>setV(id,0));
+  ['camConAbejas','camSinAbejas','nucleosConteo','alz','mLA','mZ','mH','mPi','mNS','mNucleos','coA','coKgAlza','nuC','alzAdd','trasCant','nucPasaCam','enjambresCant','vaciasCant'].forEach(id=>setV(id,0));
   setV('aLc',0);setV('nuCria',4);setV('nuMiel',1);
   document.getElementById('op').value='';document.getElementById('colmenar').value='';
   const cinp=document.getElementById('colmenar-input');cinp.value='';cinp.style.fontWeight='';
@@ -793,7 +869,7 @@ function resetForm(){
   ['primavera','verano','otono'].forEach(t=>{const b=document.getElementById('cura-btn-'+t);if(b)b.className='cura-opcion';const c=document.getElementById('cura-check-'+t);if(c)c.textContent='○';});
   tareasSel=new Set();
   TAREAS.forEach(t=>{const b=document.getElementById('tarea-btn-'+t.id);if(b)b.classList.remove('sel');});
-  ['alimentacion','cosecha','nucleos','nucleo-camara','enjambre','alzas','traslado','cura'].forEach(c=>{const el=document.getElementById('cond-'+c);if(el)el.classList.remove('visible');});
+  ['alimentacion','cosecha','nucleos','nucleo-camara','enjambre','alzas','traslado','cura','mover-vacias'].forEach(c=>{const el=document.getElementById('cond-'+c);if(el)el.classList.remove('visible');});
   camConAbejasPrev=0;camSinAbejasPrev=0;nucleosPrev=0;alzasPrev=0;
   const pc=document.getElementById('prev-caja');if(pc)pc.style.display='none';
   const ma=document.getElementById('muertas-aviso');if(ma)ma.style.display='none';
@@ -874,11 +950,19 @@ function editarColmenar(id){
   el.nextElementSibling.outerHTML=`<button class="btn-sm" onclick="guardarEdNombre(${id})" style="background:var(--am);border-color:var(--am);color:var(--neg)">✓ Guardar</button>`;
 }
 function guardarEdNombre(id){
-  const inp=document.getElementById('edit-cn-'+id);if(!inp)return;
-  const nuevo=inp.value.trim();if(!nuevo){renderColmenares();return;}
+  const inp=document.getElementById('edit-cn-'+id);
+  if(!inp)return;
+  const nuevo=inp.value.trim();
+  if(!nuevo){renderColmenares();return;}
   const c=colmenares.find(x=>x.id===id);
-  if(c){c.nombre=nuevo;fbSet('colmenares',String(id),c);buildSelects();}
-  renderColmenares();miniToast('Colmenar actualizado');
+  if(c){
+    c.nombre=nuevo;
+    registros.forEach(r=>{if(r.colId===id)r.colNombre=nuevo;});
+    fbSet('colmenares',String(id),c);
+    buildSelects();
+    miniToast('Colmenar actualizado: '+nuevo);
+  }
+  renderColmenares();
 }
 function eliminarColmenar(id){
   if(registros.some(r=>r.colId===id)){miniToast('No se puede eliminar: tiene registros');return;}
