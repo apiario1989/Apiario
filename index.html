@@ -679,7 +679,9 @@ function updateEnjambrePreview(){
     const vac=nv('camSinAbejas'),cam=nv('camConAbejas');
     prev.textContent=`${cant} cámara${cant>1?'s':''} vacía${cant>1?'s':''} → con abejas. Vacías: ${vac} → ${Math.max(0,vac-cant)} · Con abejas: ${cam} → ${cam+cant}`;
     prev.style.display='block';
-  } else prev.style.display='none';
+  } else {
+    prev.style.display='none';
+  }
 }
 function fillVaciasSelects(){
   const opts='<option value="">Seleccionar...</option>'+colmenares.map(c=>`<option value="${c.id}">${c.id} — ${c.nombre}</option>`).join('');
