@@ -166,7 +166,7 @@ textarea{resize:vertical;min-height:60px}
   <button onclick="go('historial')">Registros</button>
   <button onclick="go('colmenares')">Colmenares</button>
   <span id="sync-indicator" class="sync-wait" style="margin-left:auto">⏳ Conectando...</span>
-  <button onclick="syncAll()" style="background:transparent;border:1.5px solid #554400;color:#aaa;border-radius:8px;padding:4px 10px;font-size:12px;cursor:pointer;font-family:inherit">🔄</button>
+  <button onclick="if(typeof syncAll==='function')syncAll()" style="background:transparent;border:1.5px solid #554400;color:#aaa;border-radius:8px;padding:4px 10px;font-size:12px;cursor:pointer;font-family:inherit">🔄</button>
 </div>
 
 <div id="sec-carga" class="sec on">
