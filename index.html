@@ -525,7 +525,8 @@ function syncAll(){
     .then(function(results){
       var regs=results[0],cols=results[1],ops=results[2];
       if(regs)registros=regs.sort(function(a,b){return(b.fecha||'').localeCompare(a.fecha||'');});
-      if(cols&&cols.length>0)colmenares=cols.sort(function(a,b){return a.id-b.id;});
+      // Solo actualizar colmenares si no hubo edición reciente (últimos 5 segundos)
+      if(cols&&cols.length>0&&Date.now()-ultimoEditColm>5000)colmenares=cols.sort(function(a,b){return a.id-b.id;});
       if(ops&&ops.length>0)operarios=ops.map(function(o){return o.nombre;});
       setSyncBadge('ok');
       buildSelects();
@@ -581,6 +582,7 @@ var colmenares=DC.slice(),operarios=DO.slice(),registros=[];
 var curasSel={primavera:false,verano:false,otono:false};
 var camConAbejasPrev=0,camSinAbejasPrev=0,nucleosPrev=0,alzasPrev=0;
 var tareasSel=new Set(),editandoId=null,colmenarDDIdx=-1;
+var ultimoEditColm=0;
 
 function setSyncBadge(e){
   var el=document.getElementById('sync-indicator');
@@ -1174,6 +1176,7 @@ function guardarEdNombre(id){
   if(c){
     c.nombre=nuevo;
     registros.forEach(function(r){if(r.colId===id)r.colNombre=nuevo;});
+    ultimoEditColm=Date.now();
     fbSet('colmenares',String(id),c);
     buildSelects();
     miniToast('Colmenar actualizado: '+nuevo);
