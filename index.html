@@ -534,7 +534,7 @@ function syncAll(){
       if(secActiva){
         if(secActiva.id==='sec-historial')renderHist();
         if(secActiva.id==='sec-resumen')renderResumen();
-        if(secActiva.id==='sec-colmenares'&&!document.querySelector('.colm-item input[type="text"]'))renderColmenares();
+        if(secActiva.id==='sec-colmenares'&&editandoColmId===null)renderColmenares();
       }
     })
     .catch(function(){setSyncBadge('off');});
@@ -582,7 +582,7 @@ var colmenares=DC.slice(),operarios=DO.slice(),registros=[];
 var curasSel={primavera:false,verano:false,otono:false};
 var camConAbejasPrev=0,camSinAbejasPrev=0,nucleosPrev=0,alzasPrev=0;
 var tareasSel=new Set(),editandoId=null,colmenarDDIdx=-1;
-var ultimoEditColm=0;
+var ultimoEditColm=0,editandoColmId=null;
 
 function setSyncBadge(e){
   var el=document.getElementById('sync-indicator');
@@ -1150,7 +1150,20 @@ function exportarExcel(){
 
 function renderColmenares(){
   document.getElementById('lista-colmenares').innerHTML=colmenares.map(function(c){
-    return '<div class="colm-item"><div class="colm-cod">'+c.id+'</div><div class="colm-name" id="cn-'+c.id+'">'+c.nombre+'</div><button class="btn-sm" onclick="editarColmenar('+c.id+')">Editar</button><button class="btn-sm btn-danger" onclick="eliminarColmenar('+c.id+')">Eliminar</button></div>';
+    if(c.id===editandoColmId){
+      return '<div class="colm-item">'+
+        '<div class="colm-cod">'+c.id+'</div>'+
+        '<div class="colm-name"><input type="text" id="edit-cn-'+c.id+'" value="'+c.nombre.replace(/"/g,'&quot;')+'" style="width:100%;font-size:14px" onkeydown="if(event.key===\'Enter\')guardarEdNombre('+c.id+');if(event.key===\'Escape\')cancelarEdColm();"></div>'+
+        '<button class="btn-sm" onclick="guardarEdNombre('+c.id+')" style="background:var(--am);border-color:var(--am);color:var(--neg);white-space:nowrap">✓ Guardar</button>'+
+        '<button class="btn-sm" onclick="cancelarEdColm()">Cancelar</button>'+
+        '</div>';
+    }
+    return '<div class="colm-item">'+
+      '<div class="colm-cod">'+c.id+'</div>'+
+      '<div class="colm-name" id="cn-'+c.id+'">'+c.nombre+'</div>'+
+      '<button class="btn-sm" onclick="editarColmenar('+c.id+')">Editar</button>'+
+      '<button class="btn-sm btn-danger" onclick="eliminarColmenar('+c.id+')">Eliminar</button>'+
+      '</div>';
   }).join('');
   document.getElementById('lista-operarios').innerHTML=operarios.map(function(o,i){
     return '<div class="colm-item"><div class="colm-cod" style="font-size:11px">'+(i+1)+'</div><div class="colm-name">'+o+'</div><button class="btn-sm btn-danger" onclick="eliminarOperario('+i+')">Eliminar</button></div>';
@@ -1158,20 +1171,24 @@ function renderColmenares(){
 }
 
 function editarColmenar(id){
-  var el=document.getElementById('cn-'+id),actual=el.textContent;
-  el.innerHTML='<input type="text" id="edit-cn-'+id+'" style="width:100%;font-size:14px" onkeydown="if(event.key===\'Escape\'){renderColmenares();}">';
-  var inp=document.getElementById('edit-cn-'+id);
-  inp.value=actual;
-  inp.focus();
-  inp.select();
-  el.nextElementSibling.outerHTML='<button class="btn-sm" onclick="guardarEdNombre('+id+')" style="background:var(--am);border-color:var(--am);color:var(--neg)">✓ Guardar</button>';
+  editandoColmId=id;
+  renderColmenares();
+  setTimeout(function(){
+    var inp=document.getElementById('edit-cn-'+id);
+    if(inp){inp.focus();inp.select();}
+  },50);
+}
+
+function cancelarEdColm(){
+  editandoColmId=null;
+  renderColmenares();
 }
 
 function guardarEdNombre(id){
   var inp=document.getElementById('edit-cn-'+id);
   if(!inp)return;
   var nuevo=inp.value.trim();
-  if(!nuevo){renderColmenares();return;}
+  if(!nuevo){cancelarEdColm();return;}
   var c=colmenares.find(function(x){return x.id===id;});
   if(c){
     c.nombre=nuevo;
@@ -1179,8 +1196,9 @@ function guardarEdNombre(id){
     ultimoEditColm=Date.now();
     fbSet('colmenares',String(id),c);
     buildSelects();
-    miniToast('Colmenar actualizado: '+nuevo);
+    miniToast('✓ '+nuevo+' guardado');
   }
+  editandoColmId=null;
   renderColmenares();
 }
 
