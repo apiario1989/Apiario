@@ -168,7 +168,17 @@ textarea{resize:vertical;min-height:60px}
   <button onclick="syncAll()" style="background:transparent;border:1.5px solid #554400;color:#aaa;border-radius:8px;padding:4px 10px;font-size:12px;cursor:pointer;font-family:inherit">🔄</button>
 </div>
 
-<!-- NUEVA VISITA -->
+<!-- MODAL EDITAR COLMENAR -->
+<div id="modal-colm" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:16px;padding:1.5rem;width:90%;max-width:380px;border:3px solid var(--am)">
+    <div style="font-size:15px;font-weight:700;margin-bottom:12px">Editar colmenar</div>
+    <input type="text" id="modal-colm-input" style="width:100%;font-size:16px;padding:10px;border:1.5px solid var(--bor);border-radius:8px;margin-bottom:14px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <button onclick="cerrarModalColm()" style="padding:12px;border:1.5px solid #ccc;border-radius:8px;background:#f5f5f5;font-size:14px;font-weight:600;cursor:pointer">Cancelar</button>
+      <button onclick="guardarModalColm()" style="padding:12px;border:none;border-radius:8px;background:var(--am);font-size:14px;font-weight:700;cursor:pointer">✓ Guardar</button>
+    </div>
+  </div>
+</div>
 <div id="sec-carga" class="sec on">
   <div class="card">
     <div class="g2">
@@ -178,7 +188,7 @@ textarea{resize:vertical;min-height:60px}
     <div class="fld" style="position:relative">
       <label class="lbl">Colmenar</label>
       <input type="text" id="colmenar-input" placeholder="Escribí para buscar..." autocomplete="off"
-        oninput="filtrarColmenares()" onkeydown="colmenarKeydown(event)">
+        oninput="filtrarColmenares()" onfocus="filtrarColmenares()" onkeydown="colmenarKeydown(event)">
       <input type="hidden" id="colmenar">
       <div id="colmenar-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1.5px solid var(--am);border-radius:10px;z-index:100;max-height:200px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.12);margin-top:3px"></div>
     </div>
@@ -1148,19 +1158,36 @@ function renderColmenares(){
   }).join('');
 }
 
+var editandoColmIdModal=null;
 function editarColmenar(id){
   var c=colmenares.find(function(x){return x.id===id;});
   if(!c)return;
-  var nuevo=window.prompt('Nuevo nombre para "'+c.nombre+'":', c.nombre);
-  if(nuevo===null||!nuevo.trim())return;
-  nuevo=nuevo.trim();
-  c.nombre=nuevo;
-  registros.forEach(function(r){if(r.colId===id)r.colNombre=nuevo;});
-  ultimoEditColm=Date.now();
-  fbSet('colmenares',String(id),c);
-  buildSelects();
-  renderColmenares();
-  miniToast('Colmenar actualizado: '+nuevo);
+  editandoColmIdModal=id;
+  var inp=document.getElementById('modal-colm-input');
+  inp.value=c.nombre;
+  var modal=document.getElementById('modal-colm');
+  modal.style.display='flex';
+  setTimeout(function(){inp.focus();inp.select();},100);
+}
+function cerrarModalColm(){
+  document.getElementById('modal-colm').style.display='none';
+  editandoColmIdModal=null;
+}
+function guardarModalColm(){
+  var inp=document.getElementById('modal-colm-input');
+  var nuevo=inp.value.trim();
+  if(!nuevo){cerrarModalColm();return;}
+  var c=colmenares.find(function(x){return x.id===editandoColmIdModal;});
+  if(c){
+    c.nombre=nuevo;
+    registros.forEach(function(r){if(r.colId===editandoColmIdModal)r.colNombre=nuevo;});
+    ultimoEditColm=Date.now();
+    fbSet('colmenares',String(editandoColmIdModal),c);
+    buildSelects();
+    renderColmenares();
+    miniToast('Colmenar actualizado: '+nuevo);
+  }
+  cerrarModalColm();
 }
 
 function eliminarColmenar(id){
