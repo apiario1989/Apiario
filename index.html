@@ -1159,20 +1159,40 @@ function renderColmenares(){
 }
 
 var editandoColmIdModal=null;
+
 function editarColmenar(id){
   var c=colmenares.find(function(x){return x.id===id;});
   if(!c)return;
   editandoColmIdModal=id;
+
+  // Crear modal si no existe
+  var modal=document.getElementById('modal-colm');
+  if(!modal){
+    modal=document.createElement('div');
+    modal.id='modal-colm';
+    modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center';
+    modal.innerHTML='<div style="background:#fff;border-radius:16px;padding:1.5rem;width:90%;max-width:380px;border:3px solid #F5C518">'+
+      '<div style="font-size:15px;font-weight:700;margin-bottom:12px">Editar colmenar</div>'+
+      '<input type="text" id="modal-colm-input" style="width:100%;font-size:16px;padding:10px;border:1.5px solid #E8E0C8;border-radius:8px;margin-bottom:14px;font-family:inherit">'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+
+      '<button onclick="cerrarModalColm()" style="padding:12px;border:1.5px solid #ccc;border-radius:8px;background:#f5f5f5;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Cancelar</button>'+
+      '<button onclick="guardarModalColm()" style="padding:12px;border:none;border-radius:8px;background:#F5C518;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">✓ Guardar</button>'+
+      '</div></div>';
+    document.body.appendChild(modal);
+  }
+
   var inp=document.getElementById('modal-colm-input');
   inp.value=c.nombre;
-  var modal=document.getElementById('modal-colm');
   modal.style.display='flex';
   setTimeout(function(){inp.focus();inp.select();},100);
 }
+
 function cerrarModalColm(){
-  document.getElementById('modal-colm').style.display='none';
+  var modal=document.getElementById('modal-colm');
+  if(modal)modal.style.display='none';
   editandoColmIdModal=null;
 }
+
 function guardarModalColm(){
   var inp=document.getElementById('modal-colm-input');
   var nuevo=inp.value.trim();
