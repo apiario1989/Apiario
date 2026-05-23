@@ -1161,7 +1161,8 @@ function renderColmenares(){
 var editandoColmIdModal=null;
 
 function editarColmenar(id){
-  var c=colmenares.find(function(x){return x.id===id;});
+  id=parseInt(id);
+  var c=colmenares.find(function(x){return parseInt(x.id)===id;});
   if(!c)return;
   editandoColmIdModal=id;
 
@@ -1197,7 +1198,7 @@ function guardarModalColm(){
   var inp=document.getElementById('modal-colm-input');
   var nuevo=inp.value.trim();
   if(!nuevo){cerrarModalColm();return;}
-  var c=colmenares.find(function(x){return x.id===editandoColmIdModal;});
+  var c=colmenares.find(function(x){return parseInt(x.id)===parseInt(editandoColmIdModal);});
   if(c){
     c.nombre=nuevo;
     registros.forEach(function(r){if(r.colId===editandoColmIdModal)r.colNombre=nuevo;});
@@ -1211,7 +1212,8 @@ function guardarModalColm(){
 }
 
 function eliminarColmenar(id){
-  if(registros.some(function(r){return r.colId===id;})){miniToast('No se puede eliminar: tiene registros');return;}
+  id=parseInt(id);
+  if(registros.some(function(r){return parseInt(r.colId)===id;})){miniToast('No se puede eliminar: tiene registros');return;}
   fbDel('colmenares',String(id));miniToast('Eliminado');
 }
 
