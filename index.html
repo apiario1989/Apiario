@@ -166,6 +166,7 @@ textarea{resize:vertical;min-height:60px}
   <button onclick="go('colmenares')">Colmenares</button>
   <span id="sync-indicator" class="sync-wait" style="margin-left:auto">⏳ Conectando...</span>
   <button onclick="syncAll()" style="background:transparent;border:1.5px solid #554400;color:#aaa;border-radius:8px;padding:4px 10px;font-size:12px;cursor:pointer;font-family:inherit">🔄</button>
+  <button onclick="cerrarSesion()" style="background:transparent;border:1.5px solid #554400;color:#aaa;border-radius:8px;padding:4px 10px;font-size:12px;cursor:pointer;font-family:inherit">🚪</button>
 </div>
 
 <!-- LOGIN -->
@@ -468,11 +469,14 @@ textarea{resize:vertical;min-height:60px}
     </div>
   </div>
   <div class="card">
-    <div class="stitle">Operarios</div>
-    <div id="lista-operarios"></div>
-    <div class="add-colm" style="margin-top:1rem;padding-top:1rem;border-top:1px solid #eee">
-      <input type="text" id="nuevo-op" placeholder="Nombre del operario...">
-      <button class="btn-sm" onclick="agregarOperario()" style="white-space:nowrap;padding:8px 16px">+ Agregar</button>
+    <div class="stitle">Usuarios y contraseñas</div>
+    <div id="lista-usuarios-app"></div>
+    <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid #eee">
+      <div class="g2" style="margin-bottom:8px">
+        <input type="text" id="nuevo-usuario-nombre" placeholder="Nombre de usuario...">
+        <input type="password" id="nuevo-usuario-pass" placeholder="Contraseña...">
+      </div>
+      <button class="btn-sm" onclick="agregarUsuarioApp()" style="width:100%;padding:8px">+ Agregar usuario</button>
     </div>
   </div>
 </div>
@@ -566,7 +570,32 @@ function syncAll(){
 
 function initData(){
   setSyncBadge('wait');
-  fbList('colmenares').then(function(cols){
+  // Cargar usuarios
+  fbList('usuariosApp').then(function(users){
+    if(users.length===0){
+      usuariosApp=USUARIOS_DEFAULT.slice();
+      usuariosApp.forEach(function(u){fbSet('usuariosApp',u.nombre,u);});
+    } else {
+      usuariosApp=users;
+    }
+    cargarLoginSelect();
+    renderUsuariosApp();
+    // Verificar sesión guardada
+    var sesion=localStorage.getItem('arl_sesion');
+    if(sesion){
+      try{
+        var u=JSON.parse(sesion);
+        var uValido=usuariosApp.find(function(x){return x.nombre===u.nombre&&x.pass===u.pass;});
+        if(uValido){
+          usuarioActual=uValido;
+          document.getElementById('pantalla-login').style.display='none';
+          miniToast('Bienvenido, '+uValido.nombre+'!');
+        }
+      }catch(e){}
+    }
+  }).then(function(){
+    return fbList('colmenares');
+  }).then(function(cols){
     if(cols.length===0){
       var p=Promise.resolve();
       DC.forEach(function(c){p=p.then(function(){return fbSet('colmenares',String(c.id),c);});});
@@ -1177,7 +1206,105 @@ function renderColmenares(){
   }).join('');
 }
 
-var editandoColmIdModal=null;
+var usuariosApp=[];
+var usuarioActual=null;
+
+// Usuarios por defecto
+var USUARIOS_DEFAULT=[
+  {nombre:'Marcos',pass:'marcos123',admin:true},
+  {nombre:'Juan',pass:'juan123',admin:false},
+  {nombre:'Carlos',pass:'carlos123',admin:false}
+];
+
+function cargarLoginSelect(){
+  var sel=document.getElementById('login-usuario');
+  sel.innerHTML='<option value="">Seleccionar...</option>'+
+    usuariosApp.map(function(u){return'<option value="'+u.nombre+'">'+u.nombre+'</option>';}).join('');
+}
+
+function loginIngresar(){
+  var nombre=document.getElementById('login-usuario').value;
+  var pass=document.getElementById('login-pass').value;
+  var u=usuariosApp.find(function(x){return x.nombre===nombre&&x.pass===pass;});
+  var err=document.getElementById('login-error');
+  if(!u){err.style.display='block';return;}
+  err.style.display='none';
+  usuarioActual=u;
+  localStorage.setItem('arl_sesion',JSON.stringify(u));
+  document.getElementById('pantalla-login').style.display='none';
+  // Auto-seleccionar operario
+  var opSel=document.getElementById('op');
+  for(var i=0;i<opSel.options.length;i++){
+    if(opSel.options[i].value===u.nombre||opSel.options[i].text===u.nombre){
+      opSel.value=opSel.options[i].value;break;
+    }
+  }
+  miniToast('Bienvenido, '+u.nombre+'!');
+}
+
+function cerrarSesion(){
+  localStorage.removeItem('arl_sesion');
+  usuarioActual=null;
+  document.getElementById('login-pass').value='';
+  document.getElementById('login-usuario').value='';
+  document.getElementById('pantalla-login').style.display='flex';
+}
+
+function renderUsuariosApp(){
+  var el=document.getElementById('lista-usuarios-app');
+  if(!el)return;
+  el.innerHTML=usuariosApp.map(function(u,i){
+    return '<div class="colm-item">'+
+      '<div class="colm-cod" style="font-size:11px">'+(u.admin?'👑':'👤')+'</div>'+
+      '<div class="colm-name">'+u.nombre+'<span style="font-size:11px;color:#aaa;margin-left:8px">••••••</span></div>'+
+      '<button class="btn-sm" onclick="cambiarPassUsuario('+i+')">Cambiar pass</button>'+
+      (!u.admin?'<button class="btn-sm btn-danger" onclick="eliminarUsuarioApp('+i+')">Eliminar</button>':'')+'</div>';
+  }).join('');
+}
+
+function agregarUsuarioApp(){
+  var nombre=document.getElementById('nuevo-usuario-nombre').value.trim();
+  var pass=document.getElementById('nuevo-usuario-pass').value.trim();
+  if(!nombre||!pass){miniToast('Completá nombre y contraseña');return;}
+  if(usuariosApp.find(function(u){return u.nombre===nombre;})){miniToast('Ya existe ese usuario');return;}
+  var nuevo={nombre:nombre,pass:pass,admin:false};
+  usuariosApp.push(nuevo);
+  fbSet('usuariosApp',nombre,nuevo);
+  document.getElementById('nuevo-usuario-nombre').value='';
+  document.getElementById('nuevo-usuario-pass').value='';
+  renderUsuariosApp();
+  miniToast('Usuario agregado: '+nombre);
+}
+
+function eliminarUsuarioApp(i){
+  var u=usuariosApp[i];
+  if(u.admin){miniToast('No se puede eliminar al administrador');return;}
+  fbDel('usuariosApp',u.nombre);
+  usuariosApp.splice(i,1);
+  renderUsuariosApp();
+}
+
+function cambiarPassUsuario(i){
+  var u=usuariosApp[i];
+  var nueva=window.prompt?window.prompt('Nueva contraseña para '+u.nombre+':',''):'';
+  if(!nueva){
+    // Si prompt no funciona, usar modal
+    var nv=window.prompt||function(){return null;};
+    var pass=nv('Nueva contraseña:','');
+    if(!pass)return;
+    u.pass=pass;
+  } else {
+    u.pass=nueva;
+  }
+  fbSet('usuariosApp',u.nombre,u);
+  miniToast('Contraseña actualizada');
+}
+
+window.loginIngresar=loginIngresar;
+window.cerrarSesion=cerrarSesion;
+window.agregarUsuarioApp=agregarUsuarioApp;
+window.eliminarUsuarioApp=eliminarUsuarioApp;
+window.cambiarPassUsuario=cambiarPassUsuario;
 
 function editarColmenar(id){
   id=parseInt(id);
