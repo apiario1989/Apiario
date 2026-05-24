@@ -1063,10 +1063,24 @@ function abrirEdicion(idStr){
 function cancelarEdicion(){resetForm();}
 
 function eliminarRegistro(idStr){
-  if(!confirm('¿Eliminar este registro?'))return;
-  fbDel('registros',idStr);
-  registros=registros.filter(function(r){return r.id!==idStr;});
-  renderHist();miniToast('Registro eliminado');
+  var modal=document.createElement('div');
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center';
+  modal.innerHTML='<div style="background:#fff;border-radius:16px;padding:1.5rem;width:90%;max-width:360px;border:3px solid #f5c2c7;text-align:center">'+
+    '<div style="font-size:32px;margin-bottom:10px">🗑️</div>'+
+    '<div style="font-size:16px;font-weight:700;margin-bottom:8px">¿Eliminar registro?</div>'+
+    '<div style="font-size:13px;color:#888;margin-bottom:1.5rem">Esta acción no se puede deshacer.</div>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+
+    '<button id="btn-cancel-del" style="padding:12px;border:1.5px solid #ccc;border-radius:8px;background:#f5f5f5;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Cancelar</button>'+
+    '<button id="btn-confirm-del" style="padding:12px;border:none;border-radius:8px;background:#c0392b;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">Sí, eliminar</button>'+
+    '</div></div>';
+  document.body.appendChild(modal);
+  document.getElementById('btn-cancel-del').onclick=function(){modal.remove();};
+  document.getElementById('btn-confirm-del').onclick=function(){
+    fbDel('registros',idStr);
+    registros=registros.filter(function(r){return r.id!==idStr;});
+    renderHist();miniToast('Registro eliminado');
+    modal.remove();
+  };
 }
 
 function renderHist(){
