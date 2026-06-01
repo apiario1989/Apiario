@@ -1093,11 +1093,13 @@ function guardarTurnoExt(){
   miniToast(alzas+' alzas registradas'+(kg?' · '+kg+' kg':''));
 }
 function eliminarTurnoExt(id){
+  var e=extracciones.find(function(x){return x.id===id;});
+  var desc=e?fmtF(e.fecha)+' — '+(e.operario||'')+' · '+e.alzasExtraidas+' alzas':'este turno';
   var m=document.createElement('div');m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center';
-  m.innerHTML='<div style="background:#fff;border-radius:16px;padding:1.5rem;width:90%;max-width:340px;border:3px solid #f5c2c7;text-align:center"><div style="font-size:28px;margin-bottom:8px">🗑️</div><div style="font-size:15px;font-weight:700;margin-bottom:8px">¿Eliminar turno?</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:1rem"><button id="del-turno-cancel" style="padding:11px;border:1.5px solid #ccc;border-radius:8px;background:#f5f5f5;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Cancelar</button><button id="del-turno-ok" style="padding:11px;border:none;border-radius:8px;background:#c0392b;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">Eliminar</button></div></div>';
+  m.innerHTML='<div style="background:#fff;border-radius:16px;padding:1.5rem;width:90%;max-width:340px;border:3px solid #f5c2c7;text-align:center"><div style="font-size:28px;margin-bottom:8px">🗑️</div><div style="font-size:15px;font-weight:700;margin-bottom:6px">¿Eliminar turno?</div><div style="font-size:13px;color:#888;margin-bottom:1.25rem">'+desc+'</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button id="del-turno-cancel" style="padding:11px;border:1.5px solid #ccc;border-radius:8px;background:#f5f5f5;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Cancelar</button><button id="del-turno-ok" style="padding:11px;border:none;border-radius:8px;background:#c0392b;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">Sí, eliminar</button></div></div>';
   document.body.appendChild(m);
   document.getElementById('del-turno-cancel').onclick=function(){m.remove();};
-  document.getElementById('del-turno-ok').onclick=function(){fbDel('extraccion',id);extracciones=extracciones.filter(function(e){return e.id!==id;});lsSave('extracciones',extracciones);renderExtraccion();miniToast('Turno eliminado');m.remove();};
+  document.getElementById('del-turno-ok').onclick=function(){fbDel('extraccion',id);extracciones=extracciones.filter(function(x){return x.id!==id;});lsSave('extracciones',extracciones);renderExtraccion();miniToast('Turno eliminado');m.remove();};
 }
 
 function exportarCosecha(){
@@ -1140,16 +1142,40 @@ function usarCodigoManual(){
   if(!codigo){miniToast('Ingresá el código del tambor');return;}
   cerrarScanner();onCodigoDetectado(codigo);
 }
+function proximoNumeroTambor(){
+  var ts=getTemporadaActual();
+  var enTemporada=tambores.filter(function(t){return t.fecha>=ts.start&&t.fecha<=ts.end;});
+  return enTemporada.length+1;
+}
+
 function onCodigoDetectado(codigo){
-  // Verificar duplicado hoy
   var hoyStr=hoy();
   var yaExiste=tambores.some(function(t){return t.codigo===codigo&&t.fecha===hoyStr;});
   if(yaExiste){miniToast('⚠ El tambor '+codigo+' ya fue escaneado hoy');return;}
+  var numero=proximoNumeroTambor();
   var m=document.getElementById('modal-tambor');
-  if(!m){m=document.createElement('div');m.id='modal-tambor';m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center';m.innerHTML='<div style="background:#fff;border-radius:16px;padding:1.5rem;width:90%;max-width:400px;border:3px solid var(--am)"><div style="font-size:11px;font-weight:700;color:var(--txt);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Tambor detectado</div><div style="font-size:24px;font-weight:700;color:var(--neg);margin-bottom:1rem;word-break:break-all" id="tambor-codigo-txt"></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1rem"><div><label style="font-size:11px;font-weight:700;color:var(--txt);text-transform:uppercase;display:block;margin-bottom:4px">Fecha</label><input type="date" id="tambor-fecha" style="width:100%;font-size:15px;padding:8px;border:1.5px solid var(--bor);border-radius:8px;font-family:inherit;box-sizing:border-box"></div><div><label style="font-size:11px;font-weight:700;color:var(--txt);text-transform:uppercase;display:block;margin-bottom:4px">Operario</label><select id="tambor-op" style="width:100%;font-size:15px;padding:8px;border:1.5px solid var(--bor);border-radius:8px;font-family:inherit;cursor:pointer"><option value="">Seleccionar...</option></select></div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button onclick="cerrarModalTambor()" style="padding:12px;border:1.5px solid #ccc;border-radius:8px;background:#f5f5f5;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Cancelar</button><button onclick="guardarTambor()" style="padding:12px;border:none;border-radius:8px;background:var(--am);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">✓ Guardar</button></div></div>';document.body.appendChild(m);}
+  if(!m){m=document.createElement('div');m.id='modal-tambor';m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center';m.innerHTML='<div style="background:#fff;border-radius:16px;padding:1.5rem;width:90%;max-width:400px;border:3px solid var(--am)">'+
+    '<div style="text-align:center;margin-bottom:1rem;padding:.75rem;background:var(--aml);border-radius:10px;border:1.5px solid var(--am)">'+
+    '<div style="font-size:11px;font-weight:700;color:var(--txt);text-transform:uppercase;letter-spacing:.05em">Tambor de la temporada</div>'+
+    '<div style="font-size:42px;font-weight:700;color:var(--neg);line-height:1" id="tambor-numero-txt"></div>'+
+    '<div style="font-size:12px;color:#888;margin-top:2px" id="tambor-codigo-txt"></div>'+
+    '</div>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">'+
+    '<div><label style="font-size:11px;font-weight:700;color:var(--txt);text-transform:uppercase;display:block;margin-bottom:4px">Fecha</label><input type="date" id="tambor-fecha" style="width:100%;font-size:15px;padding:8px;border:1.5px solid var(--bor);border-radius:8px;font-family:inherit;box-sizing:border-box"></div>'+
+    '<div><label style="font-size:11px;font-weight:700;color:var(--txt);text-transform:uppercase;display:block;margin-bottom:4px">Operario</label><select id="tambor-op" style="width:100%;font-size:15px;padding:8px;border:1.5px solid var(--bor);border-radius:8px;font-family:inherit;cursor:pointer"><option value="">Seleccionar...</option></select></div>'+
+    '</div>'+
+    '<div style="margin-bottom:16px"><label style="font-size:11px;font-weight:700;color:var(--txt);text-transform:uppercase;display:block;margin-bottom:4px">Peso del tambor (kg) — opcional</label>'+
+    '<input type="number" id="tambor-peso" min="0" step="0.5" placeholder="Ej: 285" style="width:100%;font-size:16px;padding:8px;border:1.5px solid var(--bor);border-radius:8px;font-family:inherit;box-sizing:border-box"></div>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+
+    '<button onclick="cerrarModalTambor()" style="padding:12px;border:1.5px solid #ccc;border-radius:8px;background:#f5f5f5;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Cancelar</button>'+
+    '<button onclick="guardarTambor()" style="padding:12px;border:none;border-radius:8px;background:var(--am);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">✓ Guardar</button>'+
+    '</div></div>';document.body.appendChild(m);}
   m.dataset.codigo=codigo;
-  document.getElementById('tambor-codigo-txt').textContent=codigo;
+  m.dataset.numero=numero;
+  document.getElementById('tambor-numero-txt').textContent='#'+numero;
+  document.getElementById('tambor-codigo-txt').textContent='Código: '+codigo;
   document.getElementById('tambor-fecha').value=hoy();
+  document.getElementById('tambor-peso').value='';
   var opSel=document.getElementById('tambor-op');
   opSel.innerHTML='<option value="">Seleccionar...</option>'+operarios.map(function(o){return'<option'+(usuarioActual&&usuarioActual.nombre===o?' selected':'')+'>'+o+'</option>';}).join('');
   m.style.display='flex';
@@ -1158,26 +1184,39 @@ function cerrarModalTambor(){var m=document.getElementById('modal-tambor');if(m)
 function guardarTambor(){
   var m=document.getElementById('modal-tambor');
   var codigo=m.dataset.codigo;
+  var numero=parseInt(m.dataset.numero)||proximoNumeroTambor();
   var fecha=document.getElementById('tambor-fecha').value;
   var op=document.getElementById('tambor-op').value;
+  var peso=parseFloat(document.getElementById('tambor-peso').value)||0;
   if(!op){miniToast('Seleccioná el operario');return;}
-  var t={id:'tamb_'+String(Date.now()),codigo:codigo,fecha:fecha,operario:op};
+  var t={id:'tamb_'+String(Date.now()),codigo:codigo,numero:numero,fecha:fecha,operario:op,peso:peso};
   tambores.unshift(t);
   tambores.sort(function(a,b){var fc=(b.fecha||'').localeCompare(a.fecha||'');return fc!==0?fc:(b.id||'').localeCompare(a.id||'');});
   lsSave('tambores',tambores);fbSet('tambores',t.id,t);
   cerrarModalTambor();renderTambores();
-  miniToast('Tambor '+codigo+' registrado');
+  miniToast('Tambor #'+numero+' · '+codigo+(peso?' · '+peso+' kg':''));
 }
 function eliminarTambor(id){
-  fbDel('tambores',id);tambores=tambores.filter(function(t){return t.id!==id;});lsSave('tambores',tambores);renderTambores();miniToast('Tambor eliminado');
+  var t=tambores.find(function(x){return x.id===id;});
+  var desc=t?'Tambor #'+(t.numero||'?')+' — '+t.codigo:'este tambor';
+  var m=document.createElement('div');m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center';
+  m.innerHTML='<div style="background:#fff;border-radius:16px;padding:1.5rem;width:90%;max-width:340px;border:3px solid #f5c2c7;text-align:center"><div style="font-size:28px;margin-bottom:8px">🗑️</div><div style="font-size:15px;font-weight:700;margin-bottom:6px">¿Eliminar tambor?</div><div style="font-size:13px;color:#888;margin-bottom:1.25rem">'+desc+'</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button id="del-t-cancel" style="padding:11px;border:1.5px solid #ccc;border-radius:8px;background:#f5f5f5;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Cancelar</button><button id="del-t-ok" style="padding:11px;border:none;border-radius:8px;background:#c0392b;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">Sí, eliminar</button></div></div>';
+  document.body.appendChild(m);
+  document.getElementById('del-t-cancel').onclick=function(){m.remove();};
+  document.getElementById('del-t-ok').onclick=function(){fbDel('tambores',id);tambores=tambores.filter(function(x){return x.id!==id;});lsSave('tambores',tambores);renderTambores();miniToast('Tambor eliminado');m.remove();};
 }
 function renderTambores(){
   var el=document.getElementById('ext-tambores');if(!el)return;
+  var ts=getTemporadaActual();
+  var enTemporada=tambores.filter(function(t){return t.fecha>=ts.start&&t.fecha<=ts.end;});
+  var totalKgTambores=enTemporada.reduce(function(s,t){return s+(t.peso||0);},0);
   if(tambores.length===0){el.innerHTML='<div class="card"><div class="empty">Sin tambores escaneados</div></div>';return;}
-  // Agrupar por fecha
+  // Resumen temporada
+  var resumen='<div class="card" style="margin-bottom:.75rem;background:linear-gradient(135deg,var(--neg),var(--neg2));border:none"><div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase">Esta temporada</div><div style="font-size:28px;font-weight:700;color:var(--am)">'+enTemporada.length+' tambores</div></div>'+(totalKgTambores>0?'<div style="text-align:right"><div style="font-size:11px;color:#888;text-transform:uppercase">Peso total</div><div style="font-size:22px;font-weight:700;color:#4ade80">'+Math.round(totalKgTambores*10)/10+' kg</div></div>':'')+'</div></div>';
+  // Lista agrupada por fecha
   var porFecha={};tambores.forEach(function(t){var f=t.fecha||'?';if(!porFecha[f])porFecha[f]=[];porFecha[f].push(t);});
   var fechas=Object.keys(porFecha).sort(function(a,b){return b.localeCompare(a);});
-  el.innerHTML=fechas.map(function(f){var list=porFecha[f];return'<div class="card" style="margin-bottom:.75rem"><div style="font-size:12px;font-weight:700;color:var(--na);text-transform:uppercase;margin-bottom:8px;padding-bottom:6px;border-bottom:2px solid var(--aml)">'+fmtF(f)+' — '+list.length+' tambor'+(list.length!==1?'es':'')+'</div>'+list.map(function(t){return'<div class="colm-item"><div class="colm-cod" style="font-size:11px;width:auto;min-width:34px;padding:0 6px;border-radius:8px">🛢</div><div class="colm-name"><div style="font-size:14px;font-weight:700">'+(t.codigo||'')+'</div><div style="font-size:11px;color:#888">'+(t.operario||'')+'</div></div><button class="btn-sm btn-danger" onclick="eliminarTambor(\''+t.id+'\')">✕</button></div>';}).join('')+'</div>';}).join('');
+  el.innerHTML=resumen+fechas.map(function(f){var list=porFecha[f];var kgDia=list.reduce(function(s,t){return s+(t.peso||0);},0);return'<div class="card" style="margin-bottom:.75rem"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding-bottom:6px;border-bottom:2px solid var(--aml)"><div style="font-size:12px;font-weight:700;color:var(--na);text-transform:uppercase">'+fmtF(f)+'</div><div style="font-size:12px;color:#888">'+list.length+' tambor'+(list.length!==1?'es':'')+(kgDia?' · '+Math.round(kgDia*10)/10+' kg':'')+'</div></div>'+list.map(function(t){return'<div class="colm-item" style="padding:8px 0"><div style="width:42px;height:42px;border-radius:10px;background:var(--am);display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0"><div style="font-size:9px;font-weight:700;color:var(--neg);text-transform:uppercase;line-height:1">Tamb.</div><div style="font-size:16px;font-weight:700;color:var(--neg);line-height:1">'+(t.numero||'?')+'</div></div><div class="colm-name"><div style="font-size:14px;font-weight:700">#'+(t.numero||'?')+' — <span style="font-weight:400;color:#888">'+t.codigo+'</span></div><div style="font-size:11px;color:#aaa">'+(t.operario||'')+(t.peso?' · '+t.peso+' kg':'')+'</div></div><button class="btn-sm btn-danger" onclick="eliminarTambor(\''+t.id+'\')">✕</button></div>';}).join('')+'</div>';}).join('');
 }
 
 function miniToast(msg){var ex=document.getElementById('_mt');if(ex)ex.remove();var t=document.createElement('div');t.id='_mt';t.textContent=msg;t.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:500;z-index:9999;white-space:nowrap;max-width:90vw;text-align:center';document.body.appendChild(t);clearTimeout(window._mtt);window._mtt=setTimeout(function(){t.remove();},3000);}
