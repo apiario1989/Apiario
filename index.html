@@ -269,35 +269,28 @@ textarea{resize:vertical;min-height:60px}
     <div id="conteo-resumen" style="font-size:13px;color:#555;background:#f5f5f3;border-radius:8px;padding:8px 12px;text-align:center;display:none"></div>
   </div>
 
-  <div class="card">
+  <div class="card" id="muertas-card" style="display:none">
     <div class="stitle">Muertas</div>
-    <div style="font-size:11px;font-weight:700;color:var(--txt);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">🐝 Cámaras</div>
-    <div class="muertas-grid">
-      <div class="muerta-col"><div class="lbl-top">Loque Am.</div><button class="nbtn" onclick="adjM('mLA',1)">+</button><input class="ninput" type="number" id="mLA" value="0" min="0" oninput="validarMuertas()"><button class="nbtn" onclick="adjM('mLA',-1)">−</button></div>
-      <div class="muerta-col"><div class="lbl-top">Zanganera</div><button class="nbtn" onclick="adjM('mZ',1)">+</button><input class="ninput" type="number" id="mZ" value="0" min="0" oninput="validarMuertas()"><button class="nbtn" onclick="adjM('mZ',-1)">−</button></div>
-      <div class="muerta-col"><div class="lbl-top">Hambre</div><button class="nbtn" onclick="adjM('mH',1)">+</button><input class="ninput" type="number" id="mH" value="0" min="0" oninput="validarMuertas()"><button class="nbtn" onclick="adjM('mH',-1)">−</button></div>
-      <div class="muerta-col"><div class="lbl-top">Pillaje</div><button class="nbtn" onclick="adjM('mPi',1)">+</button><input class="ninput" type="number" id="mPi" value="0" min="0" oninput="validarMuertas()"><button class="nbtn" onclick="adjM('mPi',-1)">−</button></div>
-      <div class="muerta-col"><div class="lbl-top">No se sabe</div><button class="nbtn" onclick="adjM('mNS',1)">+</button><input class="ninput" type="number" id="mNS" value="0" min="0" oninput="validarMuertas()"><button class="nbtn" onclick="adjM('mNS',-1)">−</button></div>
-    </div>
-    <div id="muertas-aviso" class="muertas-aviso" style="display:none"></div>
-    <div id="muertas-vacias-section" style="display:none;margin-top:12px;padding-top:12px;border-top:2px dashed var(--aml)">
-      <div style="font-size:12px;font-weight:700;color:var(--na);text-transform:uppercase;margin-bottom:8px">¿Qué hacemos con las cámaras muertas?</div>
-      <div style="display:flex;flex-direction:column;gap:8px">
-        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
-          <input type="radio" name="destino-muertas" id="dm-mismo" value="mismo" checked onchange="updateDestinoMuertas()" style="width:auto">
-          Quedan como vacías en este colmenar
-        </label>
-        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
-          <input type="radio" name="destino-muertas" id="dm-otro" value="otro" onchange="updateDestinoMuertas()" style="width:auto">
-          Trasladar al depósito (otro colmenar)
-        </label>
-        <div id="dm-destino-sel" style="display:none;margin-top:4px">
-          <label class="lbl">Colmenar destino</label>
-          <select id="dm-colmenar-dest"><option value="">Seleccionar...</option></select>
+    <div id="muertas-camaras-section" style="display:none">
+      <div style="font-size:11px;font-weight:700;color:var(--txt);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">🐝 Cámaras</div>
+      <div class="muertas-grid">
+        <div class="muerta-col"><div class="lbl-top">Loque Am.</div><button class="nbtn" onclick="adjM('mLA',1)">+</button><input class="ninput" type="number" id="mLA" value="0" min="0" oninput="validarMuertas()"><button class="nbtn" onclick="adjM('mLA',-1)">−</button></div>
+        <div class="muerta-col"><div class="lbl-top">Zanganera</div><button class="nbtn" onclick="adjM('mZ',1)">+</button><input class="ninput" type="number" id="mZ" value="0" min="0" oninput="validarMuertas()"><button class="nbtn" onclick="adjM('mZ',-1)">−</button></div>
+        <div class="muerta-col"><div class="lbl-top">Hambre</div><button class="nbtn" onclick="adjM('mH',1)">+</button><input class="ninput" type="number" id="mH" value="0" min="0" oninput="validarMuertas()"><button class="nbtn" onclick="adjM('mH',-1)">−</button></div>
+        <div class="muerta-col"><div class="lbl-top">Pillaje</div><button class="nbtn" onclick="adjM('mPi',1)">+</button><input class="ninput" type="number" id="mPi" value="0" min="0" oninput="validarMuertas()"><button class="nbtn" onclick="adjM('mPi',-1)">−</button></div>
+        <div class="muerta-col"><div class="lbl-top">No se sabe</div><button class="nbtn" onclick="adjM('mNS',1)">+</button><input class="ninput" type="number" id="mNS" value="0" min="0" oninput="validarMuertas()"><button class="nbtn" onclick="adjM('mNS',-1)">−</button></div>
+      </div>
+      <div id="muertas-aviso" class="muertas-aviso" style="display:none"></div>
+      <div id="muertas-vacias-section" style="display:none;margin-top:12px;padding-top:12px;border-top:2px dashed var(--aml)">
+        <div style="font-size:12px;font-weight:700;color:var(--na);text-transform:uppercase;margin-bottom:8px">¿Qué hacemos con las cámaras muertas?</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="radio" name="destino-muertas" id="dm-mismo" value="mismo" checked onchange="updateDestinoMuertas()" style="width:auto">Quedan como vacías en este colmenar</label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="radio" name="destino-muertas" id="dm-otro" value="otro" onchange="updateDestinoMuertas()" style="width:auto">Trasladar al depósito (otro colmenar)</label>
+          <div id="dm-destino-sel" style="display:none;margin-top:4px"><label class="lbl">Colmenar destino</label><select id="dm-colmenar-dest"><option value="">Seleccionar...</option></select></div>
         </div>
       </div>
     </div>
-    <div style="margin-top:14px;padding-top:14px;border-top:2px solid var(--sua)">
+    <div id="muertas-nucleos-section" style="display:none">
       <div style="font-size:11px;font-weight:700;color:var(--txt);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">🔵 Núcleos</div>
       <div class="muertas-grid">
         <div class="muerta-col"><div class="lbl-top">Loque Am.</div><button class="nbtn" onclick="adjMN('mNucLA',1)">+</button><input class="ninput" type="number" id="mNucLA" value="0" min="0" oninput="validarNucleosMuertos()"><button class="nbtn" onclick="adjMN('mNucLA',-1)">−</button></div>
@@ -765,8 +758,36 @@ function updateAlzasPreview(){var cant=nv('alzAdd'),prev=document.getElementById
 function updateEnjambrePreview(){var cant=nv('enjambresCant'),prev=document.getElementById('enjambre-preview');if(!prev)return;if(cant>0){var vac=nv('camSinAbejas'),cam=nv('camConAbejas');prev.textContent=cant+' cámara'+(cant>1?'s':'')+' vacía'+(cant>1?'s':'')+' → con abejas. Vacías: '+vac+' → '+Math.max(0,vac-cant)+' · Con abejas: '+cam+' → '+(cam+cant);prev.style.display='block';}else prev.style.display='none';}
 
 function onColmenarChange(){updateProxima();var colId=parseInt(document.getElementById('colmenar').value);var prev=document.getElementById('prev-caja');camConAbejasPrev=0;camSinAbejasPrev=0;nucleosPrev=0;alzasPrev=0;if(!colId){if(prev)prev.style.display='none';document.getElementById('conteo-resumen').style.display='none';return;}var ult=registros.find(function(r){return parseInt(r.colId)===colId;});if(!ult){prev.textContent='Sin registros anteriores para este colmenar.';prev.style.display='block';return;}camConAbejasPrev=ult.camConAbejas||0;camSinAbejasPrev=ult.camSinAbejas||0;nucleosPrev=ult.nucleosConteo||0;alzasPrev=ult.alzas||0;var alzasVaciasPrev=ult.alzasSinAbejas||0;prev.innerHTML='Última visita <strong>'+fmtF(ult.fecha)+'</strong>: <strong>'+camConAbejasPrev+' cám.🐝</strong> · '+camSinAbejasPrev+' cám.□ · '+nucleosPrev+' núcleos · '+alzasPrev+' alzas🍯'+(alzasVaciasPrev?' · '+alzasVaciasPrev+' alzas□':'');prev.style.display='block';setV('camConAbejas',camConAbejasPrev);setV('camSinAbejas',camSinAbejasPrev);setV('nucleosConteo',nucleosPrev);setV('alz',alzasPrev);setV('alzV',alzasVaciasPrev);recalcAlim();validarMuertas();updateConteoResumen();if(tareasSel.has('traslado'))fillTrasladoSelects();if(tareasSel.has('agregar-alzas'))updateAlzasPreview();if(tareasSel.has('nucleos'))fillNuDestinoSel();if(tareasSel.has('mover-vacias'))fillVaciasSelects();if(tareasSel.has('cura'))actualizarEstadoCuras(colId);if(tareasSel.has('antibioticos'))actualizarEstadoAntibioticos(colId,true);}
-function onCamChange(){recalcAlim();validarMuertas();updateConteoResumen();updateAlertasMuertasTop();}
-function onNucleoChange(){validarNucleosMuertos();updateConteoResumen();updateAlertasMuertasTop();}
+function updateMuertasCardVisibility(){
+  var camSec=document.getElementById('muertas-camaras-section');
+  var nucSec=document.getElementById('muertas-nucleos-section');
+  var card=document.getElementById('muertas-card');
+  if(!card)return;
+  var camVis=camSec&&camSec.style.display!=='none';
+  var nucVis=nucSec&&nucSec.style.display!=='none';
+  card.style.display=(camVis||nucVis)?'block':'none';
+}
+function onCamChange(){
+  recalcAlim();
+  var diffCam=camConAbejasPrev-nv('camConAbejas');
+  var camSec=document.getElementById('muertas-camaras-section');
+  if(camSec){
+    var mostrar=diffCam>0;
+    camSec.style.display=mostrar?'block':'none';
+    if(!mostrar){['mLA','mZ','mH','mPi','mNS'].forEach(function(id){setV(id,0);});var av=document.getElementById('muertas-aviso');if(av)av.style.display='none';}
+  }
+  updateMuertasCardVisibility();validarMuertas();updateConteoResumen();updateAlertasMuertasTop();
+}
+function onNucleoChange(){
+  var diffNuc=nucleosPrev-nv('nucleosConteo');
+  var nucSec=document.getElementById('muertas-nucleos-section');
+  if(nucSec){
+    var mostrar=diffNuc>0;
+    nucSec.style.display=mostrar?'block':'none';
+    if(!mostrar){['mNucLA','mNucZ','mNucH','mNucPi','mNucNS'].forEach(function(id){setV(id,0);});var av=document.getElementById('nucleos-muertos-aviso');if(av)av.style.display='none';}
+  }
+  updateMuertasCardVisibility();validarNucleosMuertos();updateConteoResumen();updateAlertasMuertasTop();
+}
 function updateConteoResumen(){var cc=nv('camConAbejas'),cs=nv('camSinAbejas'),nu=nv('nucleosConteo'),az=nv('alz'),azv=nv('alzV'),r=document.getElementById('conteo-resumen');if(cc>0||cs>0||nu>0||az>0||azv>0){r.textContent='Total: '+cc+' cám.🐝 + '+cs+' vacías + '+nu+' núcleos · Alzas: '+az+'🍯 + '+azv+'□';r.style.display='block';}else r.style.display='none';}
 function totalMuertasNucleos(){return nv('mNucLA')+nv('mNucZ')+nv('mNucH')+nv('mNucPi')+nv('mNucNS');}
 function setNucleosError(err){['mNucLA','mNucZ','mNucH','mNucPi','mNucNS'].forEach(function(id){var el=document.getElementById(id);if(el)el.classList.toggle('error',err);});}
@@ -1043,8 +1064,12 @@ function resetForm(){
   var cr=document.getElementById('conteo-resumen');if(cr)cr.style.display='none';
   var ep=document.getElementById('enjambre-preview');if(ep)ep.style.display='none';
   var vp=document.getElementById('vacias-preview');if(vp)vp.style.display='none';
-  setMuertasError(false);setNucleosError(false);var amTop=document.getElementById('alertas-muertas-top');if(amTop)amTop.style.display='none';
+  setMuertasError(false);setNucleosError(false);
+  var amTop=document.getElementById('alertas-muertas-top');if(amTop)amTop.style.display='none';
   var nma=document.getElementById('nucleos-muertos-aviso');if(nma)nma.style.display='none';
+  var camSec=document.getElementById('muertas-camaras-section');if(camSec)camSec.style.display='none';
+  var nucSec=document.getElementById('muertas-nucleos-section');if(nucSec)nucSec.style.display='none';
+  var card=document.getElementById('muertas-card');if(card)card.style.display='none';
   var nr=document.getElementById('nucleo-res');if(nr)nr.textContent='';
   recalcAlim();recalcCosecha();updateProxima();
   document.getElementById('edit-banner').style.display='none';
@@ -1061,6 +1086,11 @@ function abrirEdicion(idStr){
   camConAbejasPrev=r.camConAbejas||0;camSinAbejasPrev=r.camSinAbejas||0;nucleosPrev=r.nucleosConteo||0;alzasPrev=r.alzas||0;updateConteoResumen();
   setV('mLA',r.mLA||0);setV('mZ',r.mZ||0);setV('mH',r.mH||0);setV('mPi',r.mPi||0);setV('mNS',r.mNS||0);
   setV('mNucLA',r.mNucLA||0);setV('mNucZ',r.mNucZ||0);setV('mNucH',r.mNucH||0);setV('mNucPi',r.mNucPi||0);setV('mNucNS',r.mNucNS||0);
+  var hasMuertCam=(r.mLA||0)+(r.mZ||0)+(r.mH||0)+(r.mPi||0)+(r.mNS||0)>0;
+  var hasMuertNuc=(r.mNucLA||0)+(r.mNucZ||0)+(r.mNucH||0)+(r.mNucPi||0)+(r.mNucNS||0)+(r.mNucleos||0)>0;
+  var camSec=document.getElementById('muertas-camaras-section');if(camSec)camSec.style.display=hasMuertCam?'block':'none';
+  var nucSec=document.getElementById('muertas-nucleos-section');if(nucSec)nucSec.style.display=hasMuertNuc?'block':'none';
+  var card=document.getElementById('muertas-card');if(card)card.style.display=(hasMuertCam||hasMuertNuc)?'block':'none';
   (r.tareas||[]).forEach(function(id){toggleTarea(id);});
   setV('aLc',r.aLc||0);recalcAlim();setV('coA',r.coAlzas||0);setV('coKgAlza',r.coKgAlza||0);recalcCosecha();
   setV('nuC',r.nucCant||0);setV('nuCria',r.nucCria||4);setV('nuMiel',r.nucMiel||1);document.getElementById('nuDestino').value=r.nuDestino||'mismo';toggleNuDestinoColm();updateNucleoRes();
@@ -1115,14 +1145,90 @@ function exportarExcel(){
 }
 
 function renderColmenares(){
-  document.getElementById('lista-colmenares').innerHTML=colmenares.map(function(c){return'<div class="colm-item"><div class="colm-cod">'+c.id+'</div><div class="colm-name">'+c.nombre+'</div><button class="btn-sm" onclick="editarColmenar('+c.id+')">Editar</button><button class="btn-sm btn-danger" onclick="eliminarColmenar('+c.id+')">Eliminar</button></div>';}).join('');
+  document.getElementById('lista-colmenares').innerHTML=colmenares.map(function(c){
+    var gps=c.lat&&c.lng?'<a href="https://www.google.com/maps?q='+c.lat+','+c.lng+'" target="_blank" style="font-size:11px;color:#1a5c2a;text-decoration:none;font-weight:700">📍</a>':'<span style="font-size:11px;color:#ccc">📍</span>';
+    return'<div class="colm-item"><div class="colm-cod">'+c.id+'</div><div class="colm-name">'+c.nombre+' '+gps+'</div><button class="btn-sm" onclick="editarColmenar('+c.id+')">Editar</button><button class="btn-sm btn-danger" onclick="eliminarColmenar('+c.id+')">Eliminar</button></div>';
+  }).join('');
   document.getElementById('lista-operarios').innerHTML=operarios.map(function(o,i){return'<div class="colm-item"><div class="colm-cod" style="font-size:11px">'+(i+1)+'</div><div class="colm-name">'+o+'</div><button class="btn-sm btn-danger" onclick="eliminarOperario('+i+')">Eliminar</button></div>';}).join('');
   renderCompradores();
   renderUsuariosApp();
 }
-function editarColmenar(id){id=parseInt(id);var c=colmenares.find(function(x){return parseInt(x.id)===id;});if(!c)return;editandoColmIdModal=id;var modal=document.getElementById('modal-colm');if(!modal){modal=document.createElement('div');modal.id='modal-colm';modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center';modal.innerHTML='<div style="background:#fff;border-radius:16px;padding:1.5rem;width:90%;max-width:380px;border:3px solid #F5C518"><div style="font-size:15px;font-weight:700;margin-bottom:12px">Editar colmenar</div><input type="text" id="modal-colm-input" style="width:100%;font-size:16px;padding:10px;border:1.5px solid #E8E0C8;border-radius:8px;margin-bottom:14px;font-family:inherit"><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button onclick="cerrarModalColm()" style="padding:12px;border:1.5px solid #ccc;border-radius:8px;background:#f5f5f5;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Cancelar</button><button onclick="guardarModalColm()" style="padding:12px;border:none;border-radius:8px;background:#F5C518;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">✓ Guardar</button></div></div>';document.body.appendChild(modal);}document.getElementById('modal-colm-input').value=c.nombre;modal.style.display='flex';setTimeout(function(){document.getElementById('modal-colm-input').focus();document.getElementById('modal-colm-input').select();},100);}
+function parsearCoordenadas(texto){
+  if(!texto)return null;
+  var mDir=texto.match(/(-?\d{1,3}\.\d+)[,\s]+(-?\d{1,3}\.\d+)/);
+  if(mDir)return{lat:parseFloat(mDir[1]),lng:parseFloat(mDir[2])};
+  var mAt=texto.match(/@(-?\d{1,3}\.\d+),(-?\d{1,3}\.\d+)/);
+  if(mAt)return{lat:parseFloat(mAt[1]),lng:parseFloat(mAt[2])};
+  var mQ=texto.match(/[?&]q=(-?\d{1,3}\.\d+),(-?\d{1,3}\.\d+)/);
+  if(mQ)return{lat:parseFloat(mQ[1]),lng:parseFloat(mQ[2])};
+  var mLL=texto.match(/ll=(-?\d{1,3}\.\d+),(-?\d{1,3}\.\d+)/);
+  if(mLL)return{lat:parseFloat(mLL[1]),lng:parseFloat(mLL[2])};
+  return null;
+}
+function onUbicacionInput(){
+  var val=document.getElementById('modal-colm-ubic').value;
+  var coords=parsearCoordenadas(val);
+  var preview=document.getElementById('modal-colm-ubic-preview');
+  var btnVer=document.getElementById('modal-colm-btn-ver');
+  if(coords){preview.textContent='✓ '+coords.lat.toFixed(6)+', '+coords.lng.toFixed(6);preview.style.color='#1a5c2a';if(btnVer)btnVer.style.display='inline-block';}
+  else if(val.trim()){preview.textContent='No se pudieron leer las coordenadas';preview.style.color='#c0392b';if(btnVer)btnVer.style.display='none';}
+  else{preview.textContent='';if(btnVer)btnVer.style.display='none';}
+}
+function verEnMapa(){
+  var val=document.getElementById('modal-colm-ubic').value;
+  var coords=parsearCoordenadas(val);
+  if(coords)window.open('https://www.google.com/maps?q='+coords.lat+','+coords.lng,'_blank');
+}
+function editarColmenar(id){
+  id=parseInt(id);var c=colmenares.find(function(x){return parseInt(x.id)===id;});if(!c)return;
+  editandoColmIdModal=id;
+  var modal=document.getElementById('modal-colm');
+  if(!modal){
+    modal=document.createElement('div');modal.id='modal-colm';
+    modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center';
+    modal.innerHTML='<div style="background:#fff;border-radius:16px;padding:1.5rem;width:90%;max-width:400px;border:3px solid #F5C518;max-height:90vh;overflow-y:auto">'
+      +'<div style="font-size:15px;font-weight:700;margin-bottom:12px">Editar colmenar</div>'
+      +'<label style="font-size:11px;font-weight:700;color:#5C5030;text-transform:uppercase;display:block;margin-bottom:5px">Nombre</label>'
+      +'<input type="text" id="modal-colm-input" style="width:100%;font-size:16px;padding:10px;border:1.5px solid #E8E0C8;border-radius:8px;margin-bottom:14px;font-family:inherit">'
+      +'<label style="font-size:11px;font-weight:700;color:#5C5030;text-transform:uppercase;display:block;margin-bottom:5px">Ubicación GPS</label>'
+      +'<div style="font-size:12px;color:#888;margin-bottom:8px">Pegá un link de Google Maps o las coordenadas directamente</div>'
+      +'<textarea id="modal-colm-ubic" rows="2" placeholder="Ej: https://maps.google.com/?q=-34.6037,-58.3815" oninput="onUbicacionInput()" style="width:100%;font-size:13px;padding:8px;border:1.5px solid #E8E0C8;border-radius:8px;font-family:inherit;margin-bottom:6px;resize:none;box-sizing:border-box"></textarea>'
+      +'<div id="modal-colm-ubic-preview" style="font-size:12px;font-weight:600;margin-bottom:8px;min-height:16px"></div>'
+      +'<div style="display:flex;gap:8px;margin-bottom:14px">'
+        +'<a href="https://www.google.com/maps" target="_blank" style="flex:1;padding:8px;background:#f0f0f0;border:1.5px solid #ccc;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;text-align:center;text-decoration:none;color:#333">🗺 Abrir Google Maps</a>'
+        +'<button id="modal-colm-btn-ver" onclick="verEnMapa()" style="display:none;flex:1;padding:8px;background:#FFF0A0;border:1.5px solid #E6B800;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">📍 Verificar punto</button>'
+      +'</div>'
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'
+        +'<button onclick="cerrarModalColm()" style="padding:12px;border:1.5px solid #ccc;border-radius:8px;background:#f5f5f5;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Cancelar</button>'
+        +'<button onclick="guardarModalColm()" style="padding:12px;border:none;border-radius:8px;background:#F5C518;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">✓ Guardar</button>'
+      +'</div></div>';
+    document.body.appendChild(modal);
+  }
+  document.getElementById('modal-colm-input').value=c.nombre;
+  var ubicEl=document.getElementById('modal-colm-ubic');
+  ubicEl.value=(c.lat&&c.lng)?c.lat+', '+c.lng:'';
+  var preview=document.getElementById('modal-colm-ubic-preview');
+  var btnVer=document.getElementById('modal-colm-btn-ver');
+  if(c.lat&&c.lng){preview.textContent='✓ '+c.lat+', '+c.lng;preview.style.color='#1a5c2a';if(btnVer)btnVer.style.display='inline-block';}
+  else{preview.textContent='';if(btnVer)btnVer.style.display='none';}
+  modal.style.display='flex';
+  setTimeout(function(){document.getElementById('modal-colm-input').focus();document.getElementById('modal-colm-input').select();},100);
+}
 function cerrarModalColm(){var modal=document.getElementById('modal-colm');if(modal)modal.style.display='none';editandoColmIdModal=null;}
-function guardarModalColm(){var inp=document.getElementById('modal-colm-input'),nuevo=inp.value.trim();if(!nuevo){cerrarModalColm();return;}var c=colmenares.find(function(x){return parseInt(x.id)===parseInt(editandoColmIdModal);});if(c){c.nombre=nuevo;registros.forEach(function(r){if(parseInt(r.colId)===parseInt(editandoColmIdModal))r.colNombre=nuevo;});ultimoEditColm=Date.now();fbSet('colmenares',String(editandoColmIdModal),c);buildSelects();renderColmenares();miniToast('Colmenar actualizado: '+nuevo);}cerrarModalColm();}
+function guardarModalColm(){
+  var inp=document.getElementById('modal-colm-input'),nuevo=inp.value.trim();
+  if(!nuevo){cerrarModalColm();return;}
+  var c=colmenares.find(function(x){return parseInt(x.id)===parseInt(editandoColmIdModal);});
+  if(c){
+    c.nombre=nuevo;
+    var ubicVal=(document.getElementById('modal-colm-ubic').value||'').trim();
+    var coords=parsearCoordenadas(ubicVal);
+    if(coords){c.lat=Math.round(coords.lat*1000000)/1000000;c.lng=Math.round(coords.lng*1000000)/1000000;}
+    registros.forEach(function(r){if(parseInt(r.colId)===parseInt(editandoColmIdModal))r.colNombre=nuevo;});
+    ultimoEditColm=Date.now();fbSet('colmenares',String(editandoColmIdModal),c);buildSelects();renderColmenares();
+    miniToast('Colmenar actualizado'+(coords?' · 📍 ubicación guardada':''));
+  }cerrarModalColm();
+}
 function eliminarColmenar(id){id=parseInt(id);if(registros.some(function(r){return parseInt(r.colId)===id;})){miniToast('No se puede eliminar: tiene registros');return;}fbDel('colmenares',String(id));miniToast('Eliminado');}
 function agregarColmenar(){var inp=document.getElementById('nuevo-nombre'),nombre=inp.value.trim();if(!nombre)return;var maxId=colmenares.length?Math.max.apply(null,colmenares.map(function(c){return parseInt(c.id);})):0;var nuevo={id:maxId+1,nombre:nombre};inp.value='';fbSet('colmenares',String(nuevo.id),nuevo);miniToast('Colmenar agregado: '+nombre);}
 function eliminarOperario(i){operarios.splice(i,1);fbList('operarios').then(function(docs){docs.forEach(function(d){fbDel('operarios',d.id);});operarios.forEach(function(o,j){fbSet('operarios',String(j),{nombre:o});});});buildSelects();renderColmenares();}
@@ -1143,12 +1249,12 @@ function renderResumen(){
   var allRows=colmenares.map(function(c){var d=data[c.id];var dp=d.proxima?diasEntre(h,d.proxima):null;return Object.assign({},d,{cod:c.id,dp:dp});});
   var activeRows=allRows.filter(function(r){return r.hasData||r.ultima;});
   var totalCam=0,totalVac=0,totalNuc=0,totalMiel=0;activeRows.forEach(function(r){totalCam+=r.camConAbejas;totalVac+=r.camSinAbejas;totalNuc+=r.nucleos;totalMiel+=r.cosecha;});
-  document.getElementById('stats-top').innerHTML='<div class="kpi kpi-bee"><div class="kpi-n">'+totalCam+'</div><div class="kpi-l">Cámaras con abejas</div></div><div class="kpi kpi-nuc"><div class="kpi-n">'+totalNuc+'</div><div class="kpi-l">Núcleos activos</div></div><div class="kpi kpi-vac"><div class="kpi-n">'+totalVac+'</div><div class="kpi-l">Cámaras vacías</div></div><div class="kpi kpi-cosecha"><div class="kpi-n">'+totalMiel+' kg</div><div class="kpi-l">Cosecha total</div></div>';
+  document.getElementById('stats-top').innerHTML='<div class="kpi" style="background:linear-gradient(135deg,#FFF0A0,#F5C518);border:1.5px solid #E6B800"><div class="kpi-n">'+( totalCam+totalNuc)+'</div><div class="kpi-l">Total activas</div><div class="kpi-sub">🐝 '+totalCam+' · núcl. '+totalNuc+'</div></div><div class="kpi kpi-bee"><div class="kpi-n">'+totalCam+'</div><div class="kpi-l">Cámaras con abejas</div></div><div class="kpi kpi-nuc"><div class="kpi-n">'+totalNuc+'</div><div class="kpi-l">Núcleos activos</div></div><div class="kpi kpi-vac"><div class="kpi-n">'+totalVac+'</div><div class="kpi-l">Cámaras vacías</div></div><div class="kpi kpi-cosecha"><div class="kpi-n">'+totalMiel+' kg</div><div class="kpi-l">Cosecha total</div></div>';
   document.getElementById('alertas-colm-zona').innerHTML='';
   var sorted=activeRows.sort(function(a,b){return(a.dp===null?9999:a.dp)-(b.dp===null?9999:b.dp);});
   function visitaBadge(r){if(!r.proxima)return'<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;background:#fee2e2;color:#7c1a1a">Sin planif.</span>';if(r.dp<0)return'<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;background:#fee2e2;color:#7c1a1a">'+Math.abs(r.dp)+'d vencida</span>';if(r.dp<=5)return'<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;background:#fff3cd;color:#7d5a00">en '+r.dp+'d</span>';return'<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;background:#d4edda;color:#1a5c2a">en '+r.dp+'d</span>';}
   function curaBadge(r){var done=[],pend=[];if(r.cP)done.push('Prim.');else if(temp.primavera)pend.push('Prim.');if(r.cV)done.push('Ver.');else if(temp.verano)pend.push('Ver.');if(r.cO)done.push('Oto.');else if(temp.otono)pend.push('Oto.');var parts=[];if(done.length)parts.push('<span style="font-size:11px;color:#1a5c2a;font-weight:600">✓ '+done.join(' ')+'</span>');if(pend.length)parts.push('<span style="font-size:11px;color:#c0392b;font-weight:700">⚠ '+pend.join(' ')+'</span>');return parts.length?parts.join('<br>'):'<span style="font-size:11px;color:#aaa">—</span>';}
-  document.getElementById('colm-cards-grid').innerHTML='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:var(--sua);border-bottom:2px solid var(--aml)"><th style="text-align:left;padding:8px 10px;font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase">Colmenar</th><th style="text-align:center;padding:8px 6px;font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase">🐝 Cám.</th><th style="text-align:center;padding:8px 6px;font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase">Núcl.</th><th style="text-align:center;padding:8px 6px;font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase">□ Vac.</th><th style="text-align:center;padding:8px 6px;font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase">Alzas🍯</th><th style="text-align:center;padding:8px 6px;font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase">Alzas□</th><th style="text-align:center;padding:8px 6px;font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase">Próxima</th><th style="text-align:center;padding:8px 6px;font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase">Trat.</th></tr></thead><tbody>'+sorted.map(function(r,i){return'<tr style="border-bottom:1px solid var(--sua);background:'+(i%2===0?'#fff':'#fafaf5')+'"><td style="padding:9px 10px;font-weight:700">'+r.nombre+'<div style="font-size:11px;font-weight:400;color:#aaa;margin-top:1px">'+fmtF(r.ultima)+'</div></td><td style="text-align:center;padding:9px 6px;font-weight:700;font-size:15px">'+(r.camConAbejas||'—')+'</td><td style="text-align:center;padding:9px 6px;font-weight:700;font-size:15px">'+(r.nucleos||'—')+'</td><td style="text-align:center;padding:9px 6px;color:#888">'+(r.camSinAbejas||'—')+'</td><td style="text-align:center;padding:9px 6px;color:#888">'+(r.alzas||'—')+'</td><td style="text-align:center;padding:9px 6px;color:#888">'+(r.alzasSinAbejas||'—')+'</td><td style="text-align:center;padding:9px 6px">'+visitaBadge(r)+'<div style="font-size:11px;color:#aaa;margin-top:2px">'+fmtF(r.proxima)+'</div></td><td style="text-align:center;padding:9px 6px">'+curaBadge(r)+'</td></tr>';}).join('')+'</tbody></table></div>';
+  document.getElementById('colm-cards-grid').innerHTML='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:var(--sua);border-bottom:2px solid var(--aml)"><th style="text-align:left;padding:8px 10px;font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase">Colmenar</th><th style="text-align:center;padding:8px 6px;font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase">Total</th><th style="text-align:center;padding:8px 6px;font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase">🐝 Cám.</th><th style="text-align:center;padding:8px 6px;font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase">Núcl.</th><th style="text-align:center;padding:8px 6px;font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase">□ Vac.</th><th style="text-align:center;padding:8px 6px;font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase">Alzas🍯</th><th style="text-align:center;padding:8px 6px;font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase">Alzas□</th><th style="text-align:center;padding:8px 6px;font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase">Próxima</th><th style="text-align:center;padding:8px 6px;font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase">Trat.</th></tr></thead><tbody>'+sorted.map(function(r,i){return'<tr style="border-bottom:1px solid var(--sua);background:'+(i%2===0?'#fff':'#fafaf5')+'"><td style="padding:9px 10px;font-weight:700">'+r.nombre+'<div style="font-size:11px;font-weight:400;color:#aaa;margin-top:1px">'+fmtF(r.ultima)+'</div></td><td style="text-align:center;padding:9px 6px;font-weight:700;font-size:15px;color:var(--na)">'+(((r.camConAbejas||0)+(r.nucleos||0))||'—')+'</td><td style="text-align:center;padding:9px 6px;font-weight:700;font-size:15px">'+(r.camConAbejas||'—')+'</td><td style="text-align:center;padding:9px 6px;font-weight:700;font-size:15px">'+(r.nucleos||'—')+'</td><td style="text-align:center;padding:9px 6px;color:#888">'+(r.camSinAbejas||'—')+'</td><td style="text-align:center;padding:9px 6px;color:#888">'+(r.alzas||'—')+'</td><td style="text-align:center;padding:9px 6px;color:#888">'+(r.alzasSinAbejas||'—')+'</td><td style="text-align:center;padding:9px 6px">'+visitaBadge(r)+'<div style="font-size:11px;color:#aaa;margin-top:2px">'+fmtF(r.proxima)+'</div></td><td style="text-align:center;padding:9px 6px">'+curaBadge(r)+'</td></tr>';}).join('')+'</tbody></table></div>';
   var totIniCam=0,totFinCam=0,totMLA=0,totMZ=0,totMH=0,totMPi=0,totMNS=0,totMuert=0,totIniNuc=0,totFinNuc=0,totMuertNuc=0,totNucLA=0,totNucZ=0,totNucH=0,totNucPi=0,totNucNS=0,totLitros=0,totCosecha=0;
   var seasRows=allRows.filter(function(r){return r.hasData;});seasRows.forEach(function(r){totIniCam+=r.iniCam||0;totFinCam+=r.finCam||0;totMLA+=r.mLA||0;totMZ+=r.mZ||0;totMH+=r.mH||0;totMPi+=r.mPi||0;totMNS+=r.mNS||0;totMuert+=r.mTot||0;totIniNuc+=r.iniNuc||0;totFinNuc+=r.finNuc||0;totMuertNuc+=r.mNucleos||0;totNucLA+=r.mNucLA||0;totNucZ+=r.mNucZ||0;totNucH+=r.mNucH||0;totNucPi+=r.mNucPi||0;totNucNS+=r.mNucNS||0;totLitros+=r.litrosTotal||0;totCosecha+=r.cosecha||0;});
   var pctMort=pct(totMuert,totIniCam);
@@ -1575,7 +1681,7 @@ function renderRankingColmenares(seasRows){
 
 function miniToast(msg){var ex=document.getElementById('_mt');if(ex)ex.remove();var t=document.createElement('div');t.id='_mt';t.textContent=msg;t.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:500;z-index:9999;white-space:nowrap;max-width:90vw;text-align:center';document.body.appendChild(t);clearTimeout(window._mtt);window._mtt=setTimeout(function(){t.remove();},3000);}
 
-window.selRankingMetrica=selRankingMetrica;window.renderRankingColmenares=renderRankingColmenares;window.adjMN=adjMN;window.onNucleoChange=onNucleoChange;window.exportarTambores=exportarTambores;window.abrirScanner=abrirScanner;window.cerrarScanner=cerrarScanner;window.usarCodigoManual=usarCodigoManual;window.cerrarModalTambor=cerrarModalTambor;window.guardarTambor=guardarTambor;window.eliminarTambor=eliminarTambor;window.renderVentas=renderVentas;window.abrirNuevaVenta=abrirNuevaVenta;window.cerrarNuevaVenta=cerrarNuevaVenta;window.agregarTamborAVenta=agregarTamborAVenta;window.quitarTamborDeVenta=quitarTamborDeVenta;window.actualizarResumenVenta=actualizarResumenVenta;window.confirmarVenta=confirmarVenta;window.eliminarVenta=eliminarVenta;window.abrirScannerVenta=abrirScannerVenta;window.renderCompradores=renderCompradores;window.agregarComprador=agregarComprador;window.eliminarComprador=eliminarComprador;window.abrirModalComprador=abrirModalComprador;window.renderExtraccion=renderExtraccion;window.abrirTurnoExtraccion=abrirTurnoExtraccion;window.cerrarTurnoExt=cerrarTurnoExt;window.guardarTurnoExt=guardarTurnoExt;window.eliminarTurnoExt=eliminarTurnoExt;window.exportarCosecha=exportarCosecha;window.go=go;window.toggleTarea=toggleTarea;window.toggleCura=toggleCura;window.toggleAnti=toggleAnti;window.adjN=adjN;window.adjM=adjM;window.adjAlim=adjAlim;window.adjCosecha=adjCosecha;window.adjP=adjP;window.setDias=setDias;window.filtrarColmenares=filtrarColmenares;window.colmenarKeydown=colmenarKeydown;window.selColmenar=selColmenar;window.cerrarDropdownColm=cerrarDropdownColm;window.toggleNuDestinoColm=toggleNuDestinoColm;window.updateTrasladoPreview=updateTrasladoPreview;window.updateVaciasPreview=updateVaciasPreview;window.updateEnjambrePreview=updateEnjambrePreview;window.updateDestinoMuertas=updateDestinoMuertas;window.fillDmColmenarDest=fillDmColmenarDest;window.guardar=guardar;window.cerrarOverlay=cerrarOverlay;window.cancelarEdicion=cancelarEdicion;window.abrirEdicion=abrirEdicion;window.eliminarRegistro=eliminarRegistro;window.editarColmenar=editarColmenar;window.eliminarColmenar=eliminarColmenar;window.agregarColmenar=agregarColmenar;window.eliminarOperario=eliminarOperario;window.agregarOperario=agregarOperario;window.renderHist=renderHist;window.exportarExcel=exportarExcel;window.switchTab=switchTab;window.renderResumen=renderResumen;window.cerrarModalColm=cerrarModalColm;window.guardarModalColm=guardarModalColm;window.syncAll=syncAll;window.loginIngresar=loginIngresar;window.cerrarSesion=cerrarSesion;window.agregarUsuarioApp=agregarUsuarioApp;window.eliminarUsuarioApp=eliminarUsuarioApp;window.cambiarPassUsuario=cambiarPassUsuario;window.guardarNuevaPass=guardarNuevaPass;window.resaltarDDItem=resaltarDDItem;
+window.parsearCoordenadas=parsearCoordenadas;window.onUbicacionInput=onUbicacionInput;window.verEnMapa=verEnMapa;window.selRankingMetrica=selRankingMetrica;window.renderRankingColmenares=renderRankingColmenares;window.updateMuertasCardVisibility=updateMuertasCardVisibility;window.adjMN=adjMN;window.onNucleoChange=onNucleoChange;window.exportarTambores=exportarTambores;window.abrirScanner=abrirScanner;window.cerrarScanner=cerrarScanner;window.usarCodigoManual=usarCodigoManual;window.cerrarModalTambor=cerrarModalTambor;window.guardarTambor=guardarTambor;window.eliminarTambor=eliminarTambor;window.renderVentas=renderVentas;window.abrirNuevaVenta=abrirNuevaVenta;window.cerrarNuevaVenta=cerrarNuevaVenta;window.agregarTamborAVenta=agregarTamborAVenta;window.quitarTamborDeVenta=quitarTamborDeVenta;window.actualizarResumenVenta=actualizarResumenVenta;window.confirmarVenta=confirmarVenta;window.eliminarVenta=eliminarVenta;window.abrirScannerVenta=abrirScannerVenta;window.renderCompradores=renderCompradores;window.agregarComprador=agregarComprador;window.eliminarComprador=eliminarComprador;window.abrirModalComprador=abrirModalComprador;window.renderExtraccion=renderExtraccion;window.abrirTurnoExtraccion=abrirTurnoExtraccion;window.cerrarTurnoExt=cerrarTurnoExt;window.guardarTurnoExt=guardarTurnoExt;window.eliminarTurnoExt=eliminarTurnoExt;window.exportarCosecha=exportarCosecha;window.go=go;window.toggleTarea=toggleTarea;window.toggleCura=toggleCura;window.toggleAnti=toggleAnti;window.adjN=adjN;window.adjM=adjM;window.adjAlim=adjAlim;window.adjCosecha=adjCosecha;window.adjP=adjP;window.setDias=setDias;window.filtrarColmenares=filtrarColmenares;window.colmenarKeydown=colmenarKeydown;window.selColmenar=selColmenar;window.cerrarDropdownColm=cerrarDropdownColm;window.toggleNuDestinoColm=toggleNuDestinoColm;window.updateTrasladoPreview=updateTrasladoPreview;window.updateVaciasPreview=updateVaciasPreview;window.updateEnjambrePreview=updateEnjambrePreview;window.updateDestinoMuertas=updateDestinoMuertas;window.fillDmColmenarDest=fillDmColmenarDest;window.guardar=guardar;window.cerrarOverlay=cerrarOverlay;window.cancelarEdicion=cancelarEdicion;window.abrirEdicion=abrirEdicion;window.eliminarRegistro=eliminarRegistro;window.editarColmenar=editarColmenar;window.eliminarColmenar=eliminarColmenar;window.agregarColmenar=agregarColmenar;window.eliminarOperario=eliminarOperario;window.agregarOperario=agregarOperario;window.renderHist=renderHist;window.exportarExcel=exportarExcel;window.switchTab=switchTab;window.renderResumen=renderResumen;window.cerrarModalColm=cerrarModalColm;window.guardarModalColm=guardarModalColm;window.syncAll=syncAll;window.loginIngresar=loginIngresar;window.cerrarSesion=cerrarSesion;window.agregarUsuarioApp=agregarUsuarioApp;window.eliminarUsuarioApp=eliminarUsuarioApp;window.cambiarPassUsuario=cambiarPassUsuario;window.guardarNuevaPass=guardarNuevaPass;window.resaltarDDItem=resaltarDDItem;
 
 buildSelects();buildTareas();recalcAlim();recalcCosecha();updateProxima();actualizarAviso();
 document.getElementById('fecha').value=hoy();
