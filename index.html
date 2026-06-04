@@ -812,6 +812,9 @@ function authSubmit(){
       errEl.textContent=msgs[data.error.message]||'Error: '+data.error.message;errEl.style.display='block';return;
     }
     authUser={uid:data.localId,email:data.email,idToken:data.idToken};
+    // Si el UID cambió, limpiar caché local del usuario anterior
+    var prevAuth=localStorage.getItem('arl_authUser');
+    if(prevAuth){try{var prev=JSON.parse(prevAuth);if(prev.uid!==data.localId){['registros','colmenares','operarios','extracciones','tambores','compradores','ventas','usuariosApp'].forEach(function(k){localStorage.removeItem('arl_'+k);});localStorage.removeItem('arl_operario');}}catch(e){}}
     localStorage.setItem('arl_authUser',JSON.stringify(authUser));
     document.getElementById('pantalla-login').style.display='none';
     initData().then(function(){mostrarSelectorOperario();});
