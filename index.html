@@ -724,9 +724,8 @@ function mostrarSelectorOperario(){
 function seleccionarOperario(nombre){
   opSeleccionado=nombre;
   var u=usuariosApp.find(function(x){return x.nombre===nombre;});
-  // Si no tiene contraseña, entra directo
-  if(!u||!u.pass){entrarComoOperario(u||{nombre:nombre,admin:false});return;}
-  // Marcar botón seleccionado
+  // Si es admin o no tiene contraseña, entra directo
+  if(!u||!u.pass||u.admin){entrarComoOperario(u||{nombre:nombre,pass:'',admin:false});return;}
   document.querySelectorAll('#op-lista button').forEach(function(b){
     b.style.background=b.textContent.trim()===nombre?'var(--am)':'var(--neg)';
     b.style.color=b.textContent.trim()===nombre?'var(--neg)':'#fff';
