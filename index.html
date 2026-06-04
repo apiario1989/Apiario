@@ -1876,36 +1876,31 @@ function renderRankingColmenares(seasRows){
 function migrarDatosLegacy(){
   var UID=authUser?authUser.uid:null;
   if(!UID){miniToast('Tenés que estar logueado');return;}
-  var FB_OLD='https://firestore.googleapis.com/v1/projects/apiario-la-reina-f1b84/databases/(default)/documents';
-  var FB_OLD_KEY='AIzaSyAaRHPSauJrTnrQN4LrbZuYJZcO78gxGcw';
   var m=document.createElement('div');m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center';
-  m.innerHTML='<div style="background:#fff;border-radius:16px;padding:1.5rem;width:90%;max-width:380px;border:3px solid #F5C518;text-align:center"><div style="font-size:28px;margin-bottom:8px">📦</div><div style="font-size:15px;font-weight:700;margin-bottom:8px">Migrar datos a Appicultura</div><div style="font-size:13px;color:#888;margin-bottom:1.25rem">Copia todos tus datos al nuevo sistema. No se borra nada del lugar original.</div><div id="mig-status" style="font-size:13px;color:#1a5c2a;margin-bottom:1rem;min-height:20px"></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button id="mig-cancel" style="padding:11px;border:1.5px solid #ccc;border-radius:8px;background:#f5f5f5;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Cancelar</button><button id="mig-ok" style="padding:11px;border:none;border-radius:8px;background:#F5C518;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">Migrar ahora</button></div></div>';
+  m.innerHTML='<div style="background:#fff;border-radius:16px;padding:1.5rem;width:90%;max-width:380px;border:3px solid #F5C518;text-align:center"><div style="font-size:28px;margin-bottom:8px">📦</div><div style="font-size:15px;font-weight:700;margin-bottom:8px">Migrar datos a Appicultura</div><div style="font-size:13px;color:#888;margin-bottom:1.25rem">Copia todos tus datos al nuevo sistema.</div><div id="mig-status" style="font-size:13px;color:#1a5c2a;margin-bottom:1rem;min-height:20px"></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button id="mig-cancel" style="padding:11px;border:1.5px solid #ccc;border-radius:8px;background:#f5f5f5;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Cancelar</button><button id="mig-ok" style="padding:11px;border:none;border-radius:8px;background:#F5C518;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">Migrar ahora</button></div></div>';
   document.body.appendChild(m);
   document.getElementById('mig-cancel').onclick=function(){m.remove();};
   document.getElementById('mig-ok').onclick=function(){
     var btn=document.getElementById('mig-ok');btn.disabled=true;btn.textContent='Migrando...';
     var status=document.getElementById('mig-status');
-    var cols=['colmenares','operarios','registros','usuariosApp'];
-    var done=0;
-    cols.forEach(function(col){
-      fetch(FB_OLD+'/users/TazhX9raGYQXcBesDNYQzJxqzva2/'+col+'?key='+FB_OLD_KEY+'&pageSize=500')
-      .then(function(r){return r.json();})
-      .then(function(d){
-        var docs=d.documents||[];
-        status.textContent='Migrando '+col+' ('+docs.length+' registros)...';
-        if(!docs.length){done++;if(done===cols.length){status.textContent='✓ Migración completa';btn.textContent='Listo';var b=document.getElementById('banner-migracion');if(b)b.style.display='none';miniToast('Migración completa');setTimeout(function(){m.remove();syncAll();},1500);}return;}
-        var promises=docs.map(function(doc){
-          var obj=docToObj(doc);
-          var fields={};for(var k in obj){if(k!=='id')fields[k]=toFS(obj[k]);}
-          return fetch(FB_BASE+'/users/'+UID+'/'+col+'/'+obj.id+'?key='+FB_KEY,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:fields})});
-        });
-        return Promise.all(promises);
-      })
-      .then(function(){
-        done++;
-        if(done===cols.length){status.textContent='✓ Migración completa';btn.textContent='Listo';var b=document.getElementById('banner-migracion');if(b)b.style.display='none';miniToast('Migración completa');setTimeout(function(){m.remove();syncAll();},1500);}
-      })
-      .catch(function(e){status.textContent='Error en '+col+': '+e.message;});
+    var promises=[];
+    // Migrar registros
+    status.textContent='Migrando registros ('+registros.length+')...';
+    registros.forEach(function(r){var fields={};for(var k in r){if(k!=='id')fields[k]=toFS(r[k]);}promises.push(fetch(FB_BASE+'/users/'+UID+'/registros/'+r.id+'?key='+FB_KEY,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:fields})}));});
+    // Migrar colmenares
+    colmenares.forEach(function(c){var fields={};for(var k in c){if(k!=='id')fields[k]=toFS(c[k]);}promises.push(fetch(FB_BASE+'/users/'+UID+'/colmenares/'+c.id+'?key='+FB_KEY,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:fields})}));});
+    // Migrar operarios
+    operarios.forEach(function(o,i){var id='op_'+i;promises.push(fetch(FB_BASE+'/users/'+UID+'/operarios/'+id+'?key='+FB_KEY,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:{nombre:{stringValue:o}}})}));});
+    // Migrar usuariosApp
+    usuariosApp.forEach(function(u){var fields={};for(var k in u){if(k!=='id')fields[k]=toFS(u[k]);}var id=u.nombre||('u_'+Date.now());promises.push(fetch(FB_BASE+'/users/'+UID+'/usuariosApp/'+id+'?key='+FB_KEY,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:fields})}));});
+    Promise.all(promises).then(function(){
+      status.textContent='✓ '+promises.length+' registros migrados correctamente';
+      btn.textContent='Listo';
+      var b=document.getElementById('banner-migracion');if(b)b.style.display='none';
+      miniToast('Migración completa — '+promises.length+' registros');
+      setTimeout(function(){m.remove();},2000);
+    }).catch(function(e){
+      status.textContent='Error: '+e.message;
     });
   };
 }
