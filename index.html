@@ -1888,7 +1888,7 @@ function migrarDatosLegacy(){
     var cols=['colmenares','operarios','registros','usuariosApp'];
     var done=0;
     cols.forEach(function(col){
-      fetch(FB_OLD+'/'+col+'?key='+FB_OLD_KEY+'&pageSize=500')
+      fetch(FB_OLD+'/users/TazhX9raGYQXcBesDNYQzJxqzva2/'+col+'?key='+FB_OLD_KEY+'&pageSize=500')
       .then(function(r){return r.json();})
       .then(function(d){
         var docs=d.documents||[];
