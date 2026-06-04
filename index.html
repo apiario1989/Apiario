@@ -145,19 +145,28 @@ textarea{resize:vertical;min-height:60px}
 
 <div id="pantalla-login" style="position:fixed;inset:0;background:var(--neg);z-index:99999;display:flex;align-items:center;justify-content:center">
   <div style="background:#fff;border-radius:20px;padding:2rem;width:90%;max-width:360px;border:3px solid var(--am);text-align:center">
-    <div style="font-size:32px;margin-bottom:8px">🐝</div>
-    <div style="font-size:20px;font-weight:700;margin-bottom:4px">Apiario La Reina</div>
-    <div style="font-size:13px;color:#888;margin-bottom:1.5rem">Ingresá tus datos</div>
+    <div style="font-size:36px;margin-bottom:6px">🐝</div>
+    <div style="font-size:22px;font-weight:700;margin-bottom:2px;color:var(--neg)">Appicultura</div>
+    <div style="font-size:12px;color:#aaa;margin-bottom:1.5rem;letter-spacing:.04em">GESTIÓN DE APIARIOS</div>
+    <div style="display:flex;background:var(--sua);border-radius:10px;padding:3px;margin-bottom:1.25rem">
+      <button id="auth-tab-login" onclick="setAuthMode('login')" style="flex:1;padding:8px;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;background:var(--am);color:var(--neg)">Iniciar sesión</button>
+      <button id="auth-tab-register" onclick="setAuthMode('register')" style="flex:1;padding:8px;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;background:transparent;color:#888">Crear cuenta</button>
+    </div>
     <div style="margin-bottom:12px;text-align:left">
-      <label style="font-size:11px;font-weight:700;color:var(--txt);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:5px">Usuario</label>
-      <select id="login-usuario" style="width:100%;font-size:15px;font-family:inherit;color:var(--neg);border:1.5px solid var(--bor);border-radius:9px;padding:8px 10px;background:#fff"><option value="">Seleccionar...</option></select>
+      <label style="font-size:11px;font-weight:700;color:var(--txt);text-transform:uppercase;display:block;margin-bottom:5px">Email</label>
+      <input type="email" id="auth-email" placeholder="tu@email.com" onkeydown="if(event.key==='Enter')authSubmit()" style="width:100%;font-size:15px;font-family:inherit;border:1.5px solid var(--bor);border-radius:9px;padding:8px 10px;color:var(--neg)">
     </div>
-    <div style="margin-bottom:1.5rem;text-align:left">
-      <label style="font-size:11px;font-weight:700;color:var(--txt);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:5px">Contraseña</label>
-      <input type="password" id="login-pass" placeholder="••••••" style="width:100%;font-size:15px;font-family:inherit;color:var(--neg);border:1.5px solid var(--bor);border-radius:9px;padding:8px 10px;background:#fff" onkeydown="if(event.key==='Enter')loginIngresar()">
+    <div style="margin-bottom:12px;text-align:left">
+      <label style="font-size:11px;font-weight:700;color:var(--txt);text-transform:uppercase;display:block;margin-bottom:5px">Contraseña</label>
+      <input type="password" id="auth-pass" placeholder="••••••" onkeydown="if(event.key==='Enter')authSubmit()" style="width:100%;font-size:15px;font-family:inherit;border:1.5px solid var(--bor);border-radius:9px;padding:8px 10px;color:var(--neg)">
     </div>
-    <div id="login-error" style="color:#c0392b;font-size:13px;margin-bottom:12px;display:none">Usuario o contraseña incorrectos</div>
-    <button onclick="loginIngresar()" style="width:100%;padding:14px;background:var(--am);border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;color:var(--neg);font-family:inherit">Ingresar</button>
+    <div id="auth-confirm-row" style="display:none;margin-bottom:12px;text-align:left">
+      <label style="font-size:11px;font-weight:700;color:var(--txt);text-transform:uppercase;display:block;margin-bottom:5px">Confirmar contraseña</label>
+      <input type="password" id="auth-pass2" placeholder="••••••" onkeydown="if(event.key==='Enter')authSubmit()" style="width:100%;font-size:15px;font-family:inherit;border:1.5px solid var(--bor);border-radius:9px;padding:8px 10px;color:var(--neg)">
+    </div>
+    <div id="auth-error" style="color:#c0392b;font-size:13px;margin-bottom:12px;display:none;text-align:left"></div>
+    <button id="auth-submit-btn" onclick="authSubmit()" style="width:100%;padding:14px;background:var(--am);border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;color:var(--neg);font-family:inherit">Entrar</button>
+    <div id="auth-loading" style="display:none;color:#888;font-size:13px;margin-top:10px">Verificando...</div>
   </div>
 </div>
 
@@ -619,6 +628,9 @@ textarea{resize:vertical;min-height:60px}
 
 <script>
 var FB_KEY='AIzaSyAaRHPSauJrTnrQN4LrbZuYJZcO78gxGcw';
+var FB_AUTH_URL='https://identitytoolkit.googleapis.com/v1/accounts:';
+var authUser=null; // {uid, email, idToken}
+var authModo='login';
 
 // ---- LOCAL STORAGE FALLBACK ----
 function lsSave(key,data){try{localStorage.setItem('arl_'+key,JSON.stringify(data));}catch(e){}}
@@ -635,9 +647,10 @@ var FB_BASE='https://firestore.googleapis.com/v1/projects/apiario-la-reina-f1b84
 function toFS(v){if(v===null||v===undefined)return{nullValue:null};if(typeof v==='boolean')return{booleanValue:v};if(typeof v==='number'){if(Number.isInteger(v))return{integerValue:String(v)};return{doubleValue:v};}if(typeof v==='string')return{stringValue:v};if(Array.isArray(v))return{arrayValue:{values:v.map(toFS)}};if(typeof v==='object'){var f={};for(var k in v)f[k]=toFS(v[k]);return{mapValue:{fields:f}};}return{stringValue:String(v)};}
 function fromFS(fv){if(!fv)return null;if('nullValue'in fv)return null;if('booleanValue'in fv)return fv.booleanValue;if('integerValue'in fv)return parseInt(fv.integerValue);if('doubleValue'in fv)return fv.doubleValue;if('stringValue'in fv)return fv.stringValue;if('arrayValue'in fv)return(fv.arrayValue.values||[]).map(fromFS);if('mapValue'in fv){var o={};for(var k in fv.mapValue.fields)o[k]=fromFS(fv.mapValue.fields[k]);return o;}return null;}
 function docToObj(doc){var o={};for(var k in doc.fields)o[k]=fromFS(doc.fields[k]);o.id=doc.name.split('/').pop();return o;}
-function fbList(col){return fetch(FB_BASE+'/'+col+'?key='+FB_KEY+'&pageSize=500').then(function(r){return r.json();}).then(function(d){return(d.documents||[]).map(docToObj);}).catch(function(){return[];});}
-function fbSet(col,id,obj){var fields={};for(var k in obj){if(k!=='id')fields[k]=toFS(obj[k]);}return fetch(FB_BASE+'/'+col+'/'+id+'?key='+FB_KEY,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:fields})}).then(function(res){if(!res.ok){return res.text().then(function(t){var msg='HTTP '+res.status;try{var e=JSON.parse(t);if(e.error&&e.error.message)msg=e.error.message;}catch(x){}console.warn('fbSet error',res.status,col,id,msg);return{ok:false,status:res.status,fbMsg:msg};});}return res;}).catch(function(e){console.warn('fbSet red:',col,id,e.message);return null;});}
-function fbDel(col,id){return fetch(FB_BASE+'/'+col+'/'+id+'?key='+FB_KEY,{method:'DELETE'}).catch(function(){});}
+function fbPath(col){return authUser?'users/'+authUser.uid+'/'+col:col;}
+function fbList(col){return fetch(FB_BASE+'/'+fbPath(col)+'?key='+FB_KEY+'&pageSize=500').then(function(r){return r.json();}).then(function(d){return(d.documents||[]).map(docToObj);}).catch(function(){return[];});}
+function fbSet(col,id,obj){var fields={};for(var k in obj){if(k!=='id')fields[k]=toFS(obj[k]);}return fetch(FB_BASE+'/'+fbPath(col)+'/'+id+'?key='+FB_KEY,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:fields})}).then(function(res){if(!res.ok){return res.text().then(function(t){var msg='HTTP '+res.status;try{var e=JSON.parse(t);if(e.error&&e.error.message)msg=e.error.message;}catch(x){}console.warn('fbSet error',res.status,col,id,msg);return{ok:false,status:res.status,fbMsg:msg};});}return res;}).catch(function(e){console.warn('fbSet red:',col,id,e.message);return null;});}
+function fbDel(col,id){return fetch(FB_BASE+'/'+fbPath(col)+'/'+id+'?key='+FB_KEY,{method:'DELETE'}).catch(function(){});}
 
 var DC=[{id:1,nombre:'Genero'},{id:2,nombre:'Vasco 1'},{id:3,nombre:'Vasco 2'},{id:4,nombre:'Ramirez 1'},{id:5,nombre:'Pepino'},{id:6,nombre:'Ramirez 3'},{id:7,nombre:'Gambino'},{id:8,nombre:'Papurello'},{id:9,nombre:'Porporato'},{id:10,nombre:'Tortelli M'},{id:11,nombre:'Federico'},{id:12,nombre:'Marcelino'},{id:13,nombre:'Pueblo'},{id:14,nombre:'Almada'},{id:15,nombre:'Siete case 1'},{id:16,nombre:'Siete case 2'},{id:17,nombre:'Tacuru'},{id:18,nombre:'Molinari'},{id:19,nombre:'Saravalle 1'},{id:20,nombre:'Saravalle 2'}];
 var DO=['Juan','Carlos','Marcos','Laura','Pedro'];
@@ -666,9 +679,68 @@ var usuarioActual=null;
 
 function setSyncBadge(e){var el=document.getElementById('sync-indicator');if(e==='ok'){el.textContent='🟢';el.className='sync-ok';}else if(e==='off'){el.textContent='🔴';el.className='sync-off';}else{el.textContent='⏳';el.className='sync-wait';}}
 
-function cargarLoginSelect(){var sel=document.getElementById('login-usuario');sel.innerHTML='<option value="">Seleccionar...</option>'+usuariosApp.map(function(u){return'<option value="'+u.nombre+'">'+u.nombre+'</option>';}).join('');}
-function loginIngresar(){var nombre=document.getElementById('login-usuario').value,pass=document.getElementById('login-pass').value,err=document.getElementById('login-error');if(!nombre){err.style.display='block';return;}var u=usuariosApp.find(function(x){return x.nombre===nombre&&x.pass===pass;});if(!u){err.style.display='block';return;}err.style.display='none';usuarioActual=u;localStorage.setItem('arl_sesion',JSON.stringify({nombre:u.nombre,pass:u.pass}));document.getElementById('pantalla-login').style.display='none';document.getElementById('usuario-badge').textContent=u.nombre;var opSel=document.getElementById('op');for(var i=0;i<opSel.options.length;i++){if(opSel.options[i].text===u.nombre){opSel.value=opSel.options[i].value;break;}}miniToast('Bienvenido, '+u.nombre+'!');updateNavVisibility();}
-function cerrarSesion(){localStorage.removeItem('arl_sesion');usuarioActual=null;document.getElementById('login-pass').value='';document.getElementById('login-usuario').value='';document.getElementById('login-error').style.display='none';document.getElementById('usuario-badge').textContent='';document.getElementById('pantalla-login').style.display='flex';updateNavVisibility();}
+function setAuthMode(modo){
+  authModo=modo;
+  var isReg=modo==='register';
+  document.getElementById('auth-tab-login').style.background=isReg?'transparent':'var(--am)';
+  document.getElementById('auth-tab-login').style.color=isReg?'#888':'var(--neg)';
+  document.getElementById('auth-tab-register').style.background=isReg?'var(--am)':'transparent';
+  document.getElementById('auth-tab-register').style.color=isReg?'var(--neg)':'#888';
+  document.getElementById('auth-confirm-row').style.display=isReg?'block':'none';
+  document.getElementById('auth-submit-btn').textContent=isReg?'Crear cuenta':'Entrar';
+  document.getElementById('auth-error').style.display='none';
+}
+function authSubmit(){
+  var email=(document.getElementById('auth-email').value||'').trim();
+  var pass=document.getElementById('auth-pass').value||'';
+  var errEl=document.getElementById('auth-error');
+  if(!email||!pass){errEl.textContent='Completá email y contraseña';errEl.style.display='block';return;}
+  if(authModo==='register'){
+    var pass2=document.getElementById('auth-pass2').value||'';
+    if(pass!==pass2){errEl.textContent='Las contraseñas no coinciden';errEl.style.display='block';return;}
+    if(pass.length<6){errEl.textContent='La contraseña debe tener al menos 6 caracteres';errEl.style.display='block';return;}
+  }
+  errEl.style.display='none';
+  document.getElementById('auth-loading').style.display='block';
+  document.getElementById('auth-submit-btn').disabled=true;
+  var endpoint=authModo==='register'?'signUp':'signInWithPassword';
+  fetch(FB_AUTH_URL+endpoint+'?key='+FB_KEY,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,password:pass,returnSecureToken:true})})
+  .then(function(r){return r.json();})
+  .then(function(data){
+    document.getElementById('auth-loading').style.display='none';
+    document.getElementById('auth-submit-btn').disabled=false;
+    if(data.error){
+      var msgs={'EMAIL_EXISTS':'Ese email ya tiene una cuenta. Iniciá sesión.','EMAIL_NOT_FOUND':'Email no encontrado. ¿Ya tenés cuenta?','INVALID_PASSWORD':'Contraseña incorrecta.','INVALID_EMAIL':'Email inválido.','WEAK_PASSWORD : Password should be at least 6 characters':'La contraseña debe tener al menos 6 caracteres.','TOO_MANY_ATTEMPTS_TRY_LATER':'Demasiados intentos. Esperá unos minutos.'};
+      errEl.textContent=msgs[data.error.message]||'Error: '+data.error.message;errEl.style.display='block';return;
+    }
+    authUser={uid:data.localId,email:data.email,idToken:data.idToken};
+    localStorage.setItem('arl_authUser',JSON.stringify(authUser));
+    usuarioActual={nombre:data.email.split('@')[0],admin:true,email:data.email};
+    document.getElementById('pantalla-login').style.display='none';
+    document.getElementById('usuario-badge').textContent=usuarioActual.nombre;
+    updateNavVisibility();
+    initData();
+    miniToast(authModo==='register'?'¡Cuenta creada! Bienvenido 🐝':'Bienvenido, '+usuarioActual.nombre+'!');
+  })
+  .catch(function(){
+    document.getElementById('auth-loading').style.display='none';
+    document.getElementById('auth-submit-btn').disabled=false;
+    errEl.textContent='Sin conexión. Verificá tu internet.';errEl.style.display='block';
+  });
+}
+function cerrarSesion(){
+  authUser=null;usuarioActual=null;
+  localStorage.removeItem('arl_authUser');
+  registros=[];colmenares=DC.slice();operarios=DO.slice();extracciones=[];tambores=[];compradores=[];ventas=[];
+  document.getElementById('usuario-badge').textContent='';
+  document.getElementById('auth-email').value='';
+  document.getElementById('auth-pass').value='';
+  document.getElementById('auth-pass2').value='';
+  document.getElementById('auth-error').style.display='none';
+  document.getElementById('pantalla-login').style.display='flex';
+  updateNavVisibility();
+}
+function cargarLoginSelect(){} // ya no se usa pero la dejamos para no romper referencias
 function renderUsuariosApp(){var el=document.getElementById('lista-usuarios-app');if(!el)return;el.innerHTML=usuariosApp.map(function(u){return'<div class="colm-item"><div class="colm-cod" style="font-size:16px">'+(u.admin?'👑':'👤')+'</div><div class="colm-name">'+u.nombre+'</div><button class="btn-sm" onclick="cambiarPassUsuario(\''+u.nombre+'\')">Cambiar pass</button>'+(!u.admin?'<button class="btn-sm btn-danger" onclick="eliminarUsuarioApp(\''+u.nombre+'\')">Eliminar</button>':'')+'</div>';}).join('');}
 function agregarUsuarioApp(){var nombre=document.getElementById('nuevo-usuario-nombre').value.trim(),pass=document.getElementById('nuevo-usuario-pass').value.trim();if(!nombre||!pass){miniToast('Completá nombre y contraseña');return;}if(usuariosApp.find(function(u){return u.nombre===nombre;})){miniToast('Ya existe ese usuario');return;}var nuevo={nombre:nombre,pass:pass,admin:false};usuariosApp.push(nuevo);fbSet('usuariosApp',nombre,nuevo);document.getElementById('nuevo-usuario-nombre').value='';document.getElementById('nuevo-usuario-pass').value='';renderUsuariosApp();miniToast('Usuario agregado: '+nombre);}
 function eliminarUsuarioApp(nombre){var u=usuariosApp.find(function(x){return x.nombre===nombre;});if(!u||u.admin){miniToast('No se puede eliminar al administrador');return;}fbDel('usuariosApp',nombre);usuariosApp=usuariosApp.filter(function(x){return x.nombre!==nombre;});renderUsuariosApp();miniToast('Usuario eliminado');}
@@ -711,8 +783,17 @@ function initData(){
   var lu=lsLoad('usuariosApp');
   if(lu&&lu.length>0){usuariosApp=lu;}else{usuariosApp=USUARIOS_DEFAULT.slice();lsSave('usuariosApp',usuariosApp);}
   cargarLoginSelect();renderUsuariosApp();
-  var sesion=localStorage.getItem('arl_sesion');
-  if(sesion){try{var s=JSON.parse(sesion);var uValido=usuariosApp.find(function(x){return x.nombre===s.nombre&&x.pass===s.pass;});if(uValido){usuarioActual=uValido;document.getElementById('pantalla-login').style.display='none';document.getElementById('usuario-badge').textContent=uValido.nombre;updateNavVisibility();}}catch(e){}}
+  // Restaurar sesión Firebase Auth
+  var storedAuth=localStorage.getItem('arl_authUser');
+  if(storedAuth){
+    try{
+      authUser=JSON.parse(storedAuth);
+      usuarioActual={nombre:authUser.email.split('@')[0],admin:true,email:authUser.email};
+      document.getElementById('pantalla-login').style.display='none';
+      document.getElementById('usuario-badge').textContent=usuarioActual.nombre;
+      updateNavVisibility();
+    }catch(e){authUser=null;localStorage.removeItem('arl_authUser');}
+  }
   buildSelects();
   // Luego intentar sincronizar con Firebase
   syncAll().then(function(){
@@ -1681,7 +1762,7 @@ function renderRankingColmenares(seasRows){
 
 function miniToast(msg){var ex=document.getElementById('_mt');if(ex)ex.remove();var t=document.createElement('div');t.id='_mt';t.textContent=msg;t.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:500;z-index:9999;white-space:nowrap;max-width:90vw;text-align:center';document.body.appendChild(t);clearTimeout(window._mtt);window._mtt=setTimeout(function(){t.remove();},3000);}
 
-window.parsearCoordenadas=parsearCoordenadas;window.onUbicacionInput=onUbicacionInput;window.verEnMapa=verEnMapa;window.selRankingMetrica=selRankingMetrica;window.renderRankingColmenares=renderRankingColmenares;window.updateMuertasCardVisibility=updateMuertasCardVisibility;window.adjMN=adjMN;window.onNucleoChange=onNucleoChange;window.exportarTambores=exportarTambores;window.abrirScanner=abrirScanner;window.cerrarScanner=cerrarScanner;window.usarCodigoManual=usarCodigoManual;window.cerrarModalTambor=cerrarModalTambor;window.guardarTambor=guardarTambor;window.eliminarTambor=eliminarTambor;window.renderVentas=renderVentas;window.abrirNuevaVenta=abrirNuevaVenta;window.cerrarNuevaVenta=cerrarNuevaVenta;window.agregarTamborAVenta=agregarTamborAVenta;window.quitarTamborDeVenta=quitarTamborDeVenta;window.actualizarResumenVenta=actualizarResumenVenta;window.confirmarVenta=confirmarVenta;window.eliminarVenta=eliminarVenta;window.abrirScannerVenta=abrirScannerVenta;window.renderCompradores=renderCompradores;window.agregarComprador=agregarComprador;window.eliminarComprador=eliminarComprador;window.abrirModalComprador=abrirModalComprador;window.renderExtraccion=renderExtraccion;window.abrirTurnoExtraccion=abrirTurnoExtraccion;window.cerrarTurnoExt=cerrarTurnoExt;window.guardarTurnoExt=guardarTurnoExt;window.eliminarTurnoExt=eliminarTurnoExt;window.exportarCosecha=exportarCosecha;window.go=go;window.toggleTarea=toggleTarea;window.toggleCura=toggleCura;window.toggleAnti=toggleAnti;window.adjN=adjN;window.adjM=adjM;window.adjAlim=adjAlim;window.adjCosecha=adjCosecha;window.adjP=adjP;window.setDias=setDias;window.filtrarColmenares=filtrarColmenares;window.colmenarKeydown=colmenarKeydown;window.selColmenar=selColmenar;window.cerrarDropdownColm=cerrarDropdownColm;window.toggleNuDestinoColm=toggleNuDestinoColm;window.updateTrasladoPreview=updateTrasladoPreview;window.updateVaciasPreview=updateVaciasPreview;window.updateEnjambrePreview=updateEnjambrePreview;window.updateDestinoMuertas=updateDestinoMuertas;window.fillDmColmenarDest=fillDmColmenarDest;window.guardar=guardar;window.cerrarOverlay=cerrarOverlay;window.cancelarEdicion=cancelarEdicion;window.abrirEdicion=abrirEdicion;window.eliminarRegistro=eliminarRegistro;window.editarColmenar=editarColmenar;window.eliminarColmenar=eliminarColmenar;window.agregarColmenar=agregarColmenar;window.eliminarOperario=eliminarOperario;window.agregarOperario=agregarOperario;window.renderHist=renderHist;window.exportarExcel=exportarExcel;window.switchTab=switchTab;window.renderResumen=renderResumen;window.cerrarModalColm=cerrarModalColm;window.guardarModalColm=guardarModalColm;window.syncAll=syncAll;window.loginIngresar=loginIngresar;window.cerrarSesion=cerrarSesion;window.agregarUsuarioApp=agregarUsuarioApp;window.eliminarUsuarioApp=eliminarUsuarioApp;window.cambiarPassUsuario=cambiarPassUsuario;window.guardarNuevaPass=guardarNuevaPass;window.resaltarDDItem=resaltarDDItem;
+window.setAuthMode=setAuthMode;window.authSubmit=authSubmit;window.parsearCoordenadas=parsearCoordenadas;window.onUbicacionInput=onUbicacionInput;window.verEnMapa=verEnMapa;window.selRankingMetrica=selRankingMetrica;window.renderRankingColmenares=renderRankingColmenares;window.updateMuertasCardVisibility=updateMuertasCardVisibility;window.adjMN=adjMN;window.onNucleoChange=onNucleoChange;window.exportarTambores=exportarTambores;window.abrirScanner=abrirScanner;window.cerrarScanner=cerrarScanner;window.usarCodigoManual=usarCodigoManual;window.cerrarModalTambor=cerrarModalTambor;window.guardarTambor=guardarTambor;window.eliminarTambor=eliminarTambor;window.renderVentas=renderVentas;window.abrirNuevaVenta=abrirNuevaVenta;window.cerrarNuevaVenta=cerrarNuevaVenta;window.agregarTamborAVenta=agregarTamborAVenta;window.quitarTamborDeVenta=quitarTamborDeVenta;window.actualizarResumenVenta=actualizarResumenVenta;window.confirmarVenta=confirmarVenta;window.eliminarVenta=eliminarVenta;window.abrirScannerVenta=abrirScannerVenta;window.renderCompradores=renderCompradores;window.agregarComprador=agregarComprador;window.eliminarComprador=eliminarComprador;window.abrirModalComprador=abrirModalComprador;window.renderExtraccion=renderExtraccion;window.abrirTurnoExtraccion=abrirTurnoExtraccion;window.cerrarTurnoExt=cerrarTurnoExt;window.guardarTurnoExt=guardarTurnoExt;window.eliminarTurnoExt=eliminarTurnoExt;window.exportarCosecha=exportarCosecha;window.go=go;window.toggleTarea=toggleTarea;window.toggleCura=toggleCura;window.toggleAnti=toggleAnti;window.adjN=adjN;window.adjM=adjM;window.adjAlim=adjAlim;window.adjCosecha=adjCosecha;window.adjP=adjP;window.setDias=setDias;window.filtrarColmenares=filtrarColmenares;window.colmenarKeydown=colmenarKeydown;window.selColmenar=selColmenar;window.cerrarDropdownColm=cerrarDropdownColm;window.toggleNuDestinoColm=toggleNuDestinoColm;window.updateTrasladoPreview=updateTrasladoPreview;window.updateVaciasPreview=updateVaciasPreview;window.updateEnjambrePreview=updateEnjambrePreview;window.updateDestinoMuertas=updateDestinoMuertas;window.fillDmColmenarDest=fillDmColmenarDest;window.guardar=guardar;window.cerrarOverlay=cerrarOverlay;window.cancelarEdicion=cancelarEdicion;window.abrirEdicion=abrirEdicion;window.eliminarRegistro=eliminarRegistro;window.editarColmenar=editarColmenar;window.eliminarColmenar=eliminarColmenar;window.agregarColmenar=agregarColmenar;window.eliminarOperario=eliminarOperario;window.agregarOperario=agregarOperario;window.renderHist=renderHist;window.exportarExcel=exportarExcel;window.switchTab=switchTab;window.renderResumen=renderResumen;window.cerrarModalColm=cerrarModalColm;window.guardarModalColm=guardarModalColm;window.syncAll=syncAll;window.loginIngresar=loginIngresar;window.cerrarSesion=cerrarSesion;window.agregarUsuarioApp=agregarUsuarioApp;window.eliminarUsuarioApp=eliminarUsuarioApp;window.cambiarPassUsuario=cambiarPassUsuario;window.guardarNuevaPass=guardarNuevaPass;window.resaltarDDItem=resaltarDDItem;
 
 buildSelects();buildTareas();recalcAlim();recalcCosecha();updateProxima();actualizarAviso();
 document.getElementById('fecha').value=hoy();
