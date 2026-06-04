@@ -1874,20 +1874,34 @@ function renderRankingColmenares(seasRows){
 }
 
 function escribirEnAppicultura(loaded,UID,btn,status,m){
-  var promises=[];
-  status.textContent='Migrando...';
-  loaded.registros.forEach(function(r){var fields={};for(var k in r){if(k!=='id')fields[k]=toFS(r[k]);}promises.push(fetch(FB_BASE+'/users/'+UID+'/registros/'+r.id+'?key='+FB_KEY,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:fields})}));});
-  loaded.colmenares.forEach(function(c){var fields={};for(var k in c){if(k!=='id')fields[k]=toFS(c[k]);}promises.push(fetch(FB_BASE+'/users/'+UID+'/colmenares/'+c.id+'?key='+FB_KEY,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:fields})}));});
-  loaded.operarios.forEach(function(o){var fields={};for(var k in o){if(k!=='id')fields[k]=toFS(o[k]);}var id=o.id||o.nombre;promises.push(fetch(FB_BASE+'/users/'+UID+'/operarios/'+id+'?key='+FB_KEY,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:fields})}));});
-  loaded.usuariosApp.forEach(function(u){var fields={};for(var k in u){if(k!=='id')fields[k]=toFS(u[k]);}var id=u.id||u.nombre;promises.push(fetch(FB_BASE+'/users/'+UID+'/usuariosApp/'+id+'?key='+FB_KEY,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:fields})}));});
-  if(!promises.length){status.textContent='No se encontraron datos para migrar';btn.textContent='Cerrar';return;}
-  Promise.all(promises).then(function(){
-    status.textContent='✓ '+promises.length+' registros migrados a Appicultura';
-    btn.textContent='Listo';
-    var b=document.getElementById('banner-migracion');if(b)b.style.display='none';
-    miniToast('✓ Migración completa — '+promises.length+' registros');
-    setTimeout(function(){m.remove();syncAll();},2000);
-  }).catch(function(e){status.textContent='Error: '+e.message;});
+  status.textContent='Verificando conexión...';
+  // Test write primero
+  fetch(FB_BASE+'/users/'+UID+'/test/ping?key='+FB_KEY,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:{ok:{booleanValue:true}}})})
+  .then(function(r){
+    if(!r.ok)return r.text().then(function(t){throw new Error('HTTP '+r.status+': '+t.slice(0,200));});
+    return r.json();
+  })
+  .then(function(){
+    // Test OK, proceder con migración
+    status.textContent='Conexión OK. Migrando datos...';
+    var promises=[];
+    loaded.registros.forEach(function(r){var fields={};for(var k in r){if(k!=='id')fields[k]=toFS(r[k]);}promises.push(fetch(FB_BASE+'/users/'+UID+'/registros/'+r.id+'?key='+FB_KEY,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:fields})}));});
+    loaded.colmenares.forEach(function(c){var fields={};for(var k in c){if(k!=='id')fields[k]=toFS(c[k]);}promises.push(fetch(FB_BASE+'/users/'+UID+'/colmenares/'+c.id+'?key='+FB_KEY,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:fields})}));});
+    loaded.operarios.forEach(function(o){var fields={};for(var k in o){if(k!=='id')fields[k]=toFS(o[k]);}var id=o.id||o.nombre;promises.push(fetch(FB_BASE+'/users/'+UID+'/operarios/'+id+'?key='+FB_KEY,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:fields})}));});
+    loaded.usuariosApp.forEach(function(u){var fields={};for(var k in u){if(k!=='id')fields[k]=toFS(u[k]);}var id=u.id||u.nombre;promises.push(fetch(FB_BASE+'/users/'+UID+'/usuariosApp/'+id+'?key='+FB_KEY,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:fields})}));});
+    if(!promises.length){status.textContent='⚠ No se encontraron datos (col:'+loaded.colmenares.length+' reg:'+loaded.registros.length+')';btn.textContent='Cerrar';return;}
+    Promise.all(promises).then(function(){
+      status.textContent='✓ '+promises.length+' registros migrados';
+      btn.textContent='Listo';
+      var b=document.getElementById('banner-migracion');if(b)b.style.display='none';
+      miniToast('✓ Migración completa — '+promises.length+' registros');
+      setTimeout(function(){m.remove();syncAll();},2000);
+    }).catch(function(e){status.textContent='Error escribiendo: '+e.message;});
+  })
+  .catch(function(e){
+    status.textContent='Error de conexión: '+e.message;
+    btn.disabled=false;btn.textContent='Reintentar';
+  });
 }
 function migrarDatosLegacy(){
   var UID=authUser?authUser.uid:null;
