@@ -204,6 +204,7 @@ textarea{resize:vertical;min-height:60px}
 </div> style="display:none;background:var(--am);color:var(--neg);padding:10px 16px;text-align:center;font-size:13px;font-weight:700;cursor:pointer;position:sticky;top:0;z-index:100" onclick="migrarDatosLegacy()">
   📦 Tenés datos del sistema anterior — tocá aquí para migrarlos a tu cuenta nueva
 </div>
+<div id="banner-migracion" style="display:none;background:#F5C518;color:#1A1200;padding:10px 16px;text-align:center;font-size:13px;font-weight:700;cursor:pointer;position:sticky;top:0;z-index:100" onclick="migrarDatosLegacy()">📦 Tens datos del sistema anterior - toca aqui para migrarlos</div>
 <div class="nav">
   <button class="on" onclick="go('carga')">Nueva visita</button>
   <button onclick="go('resumen')">Resultados</button>
@@ -812,9 +813,9 @@ function authSubmit(){
       errEl.textContent=msgs[data.error.message]||'Error: '+data.error.message;errEl.style.display='block';return;
     }
     authUser={uid:data.localId,email:data.email,idToken:data.idToken};
-    // Si el UID cambió, limpiar caché local del usuario anterior
-    var prevAuth=localStorage.getItem('arl_authUser');
-    if(prevAuth){try{var prev=JSON.parse(prevAuth);if(prev.uid!==data.localId){['registros','colmenares','operarios','extracciones','tambores','compradores','ventas','usuariosApp'].forEach(function(k){localStorage.removeItem('arl_'+k);});localStorage.removeItem('arl_operario');}}catch(e){}}
+    // Siempre limpiar caché local al hacer login para evitar ver datos de otro usuario
+    ['registros','colmenares','operarios','extracciones','tambores','compradores','ventas','usuariosApp'].forEach(function(k){localStorage.removeItem('arl_'+k);});
+    localStorage.removeItem('arl_operario');
     localStorage.setItem('arl_authUser',JSON.stringify(authUser));
     document.getElementById('pantalla-login').style.display='none';
     initData().then(function(){mostrarSelectorOperario();});
