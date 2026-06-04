@@ -652,9 +652,9 @@ textarea{resize:vertical;min-height:60px}
 </div>
 
 <script>
-var FB_KEY='AIzaSyAaRHPSauJrTnrQN4LrbZuYJZcO78gxGcw';
-var FB_PROJECT='apiario-la-reina-f1b84';
-var FB_BASE='https://firestore.googleapis.com/v1/projects/apiario-la-reina-f1b84/databases/(default)/documents';
+var FB_KEY='AIzaSyA-BEi9GHk8YP-CThOAdBVTKzL83C43sMk';
+var FB_PROJECT='appicultura-1d603';
+var FB_BASE='https://firestore.googleapis.com/v1/projects/appicultura-1d603/databases/(default)/documents';
 var FB_AUTH_URL='https://identitytoolkit.googleapis.com/v1/accounts:';
 var authUser=null;
 var authModo='login';
@@ -1879,8 +1879,10 @@ function renderRankingColmenares(seasRows){
 function migrarDatosLegacy(){
   var UID=authUser?authUser.uid:null;
   if(!UID){miniToast('Tenés que estar logueado');return;}
+  var FB_OLD='https://firestore.googleapis.com/v1/projects/apiario-la-reina-f1b84/databases/(default)/documents';
+  var FB_OLD_KEY='AIzaSyAaRHPSauJrTnrQN4LrbZuYJZcO78gxGcw';
   var m=document.createElement('div');m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center';
-  m.innerHTML='<div style="background:#fff;border-radius:16px;padding:1.5rem;width:90%;max-width:380px;border:3px solid var(--am);text-align:center"><div style="font-size:28px;margin-bottom:8px">📦</div><div style="font-size:15px;font-weight:700;margin-bottom:8px">Migrar datos existentes</div><div style="font-size:13px;color:#888;margin-bottom:1.25rem">Esto copia colmenares, registros, operarios y usuarios a tu cuenta nueva. Los datos originales no se tocan.</div><div id="mig-status" style="font-size:13px;color:#1a5c2a;margin-bottom:1rem;min-height:20px"></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button id="mig-cancel" style="padding:11px;border:1.5px solid #ccc;border-radius:8px;background:#f5f5f5;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Cancelar</button><button id="mig-ok" style="padding:11px;border:none;border-radius:8px;background:var(--am);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">Migrar ahora</button></div></div>';
+  m.innerHTML='<div style="background:#fff;border-radius:16px;padding:1.5rem;width:90%;max-width:380px;border:3px solid #F5C518;text-align:center"><div style="font-size:28px;margin-bottom:8px">📦</div><div style="font-size:15px;font-weight:700;margin-bottom:8px">Migrar datos a Appicultura</div><div style="font-size:13px;color:#888;margin-bottom:1.25rem">Copia todos tus datos al nuevo sistema. No se borra nada del lugar original.</div><div id="mig-status" style="font-size:13px;color:#1a5c2a;margin-bottom:1rem;min-height:20px"></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button id="mig-cancel" style="padding:11px;border:1.5px solid #ccc;border-radius:8px;background:#f5f5f5;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Cancelar</button><button id="mig-ok" style="padding:11px;border:none;border-radius:8px;background:#F5C518;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">Migrar ahora</button></div></div>';
   document.body.appendChild(m);
   document.getElementById('mig-cancel').onclick=function(){m.remove();};
   document.getElementById('mig-ok').onclick=function(){
@@ -1889,11 +1891,12 @@ function migrarDatosLegacy(){
     var cols=['colmenares','operarios','registros','usuariosApp'];
     var done=0;
     cols.forEach(function(col){
-      fetch(FB_BASE+'/'+col+'?key='+FB_KEY+'&pageSize=500')
+      fetch(FB_OLD+'/'+col+'?key='+FB_OLD_KEY+'&pageSize=500')
       .then(function(r){return r.json();})
       .then(function(d){
         var docs=d.documents||[];
         status.textContent='Migrando '+col+' ('+docs.length+' registros)...';
+        if(!docs.length){done++;if(done===cols.length){status.textContent='✓ Migración completa';btn.textContent='Listo';var b=document.getElementById('banner-migracion');if(b)b.style.display='none';miniToast('Migración completa');setTimeout(function(){m.remove();syncAll();},1500);}return;}
         var promises=docs.map(function(doc){
           var obj=docToObj(doc);
           var fields={};for(var k in obj){if(k!=='id')fields[k]=toFS(obj[k]);}
@@ -1903,13 +1906,7 @@ function migrarDatosLegacy(){
       })
       .then(function(){
         done++;
-        if(done===cols.length){
-          status.textContent='✓ Migración completa. Recargá la app.';
-          btn.textContent='Listo';
-          var b=document.getElementById('banner-migracion');if(b)b.style.display='none';
-          miniToast('Datos migrados correctamente');
-          setTimeout(function(){m.remove();syncAll();},2000);
-        }
+        if(done===cols.length){status.textContent='✓ Migración completa';btn.textContent='Listo';var b=document.getElementById('banner-migracion');if(b)b.style.display='none';miniToast('Migración completa');setTimeout(function(){m.remove();syncAll();},1500);}
       })
       .catch(function(e){status.textContent='Error en '+col+': '+e.message;});
     });
