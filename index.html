@@ -1874,7 +1874,7 @@ function renderRankingColmenares(seasRows){
 
 function escribirEnAppicultura(loaded,UID,btn,status,m){
   status.textContent='Verificando conexión...';
-  fetch(FB_BASE+'/test_ping?key='+FB_KEY,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:{ok:{booleanValue:true}}})})
+  fetch(FB_BASE+'/test/ping?key='+FB_KEY,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:{ok:{booleanValue:true}}})})
   .then(function(r){return r.text().then(function(t){return{status:r.status,ok:r.ok,body:t};});})
   .then(function(res){
     if(!res.ok){
