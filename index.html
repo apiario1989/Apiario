@@ -839,12 +839,15 @@ function guardarNuevaPass(){var modal=document.getElementById('modal-pass'),nomb
 
 function sortRegs(arr){return arr.sort(function(a,b){var fc=(b.fecha||'').localeCompare(a.fecha||'');return fc!==0?fc:(b.id||'').localeCompare(a.id||'');});}
 
-function syncAll(){return Promise.all([fbList('registros'),fbList('colmenares'),fbList('operarios'),fbList('extraccion'),fbList('tambores'),fbList('compradores'),fbList('ventas')]).then(function(results){
+function syncAll(){
+  setSyncBadge('wait');
+  var tout=setTimeout(function(){setSyncBadge('local');},8000);return Promise.all([fbList('registros'),fbList('colmenares'),fbList('operarios'),fbList('extraccion'),fbList('tambores'),fbList('compradores'),fbList('ventas')]).then(function(results){
   var regs=results[0],cols=results[1],ops=results[2],extrs=results[3],tambs=results[4],comps=results[5],vents=results[6];
   var fbTieneData=regs.length>0||cols.length>0;
-  // Mostrar banner de migración si no hay datos bajo el UID del usuario
   var bannerMig=document.getElementById('banner-migracion');
-  if(bannerMig&&authUser){bannerMig.style.display=(!fbTieneData)?'block':'none';}
+  // Solo mostrar banner para el usuario legacy que tiene datos viejos
+  var esLegacy=authUser&&authUser.email&&authUser.email.indexOf('apiariolareinasas')>=0;
+  if(bannerMig&&authUser){bannerMig.style.display=(esLegacy&&!fbTieneData)?'block':'none';}
   if(regs.length>0){registros=sortRegs(regs);lsSave('registros',registros);}
   else{var lr=lsLoad('registros');if(lr&&lr.length>0)registros=lr;}
   if(cols.length>0&&Date.now()-ultimoEditColm>5000){colmenares=cols.sort(function(a,b){return parseInt(a.id)-parseInt(b.id);});lsSave('colmenares',colmenares);}
@@ -853,12 +856,12 @@ function syncAll(){return Promise.all([fbList('registros'),fbList('colmenares'),
   else{var lo=lsLoad('operarios');if(lo&&lo.length>0)operarios=lo;}
   if(extrs.length>0){extracciones=extrs.sort(function(a,b){return(b.fechaCosecha||'').localeCompare(a.fechaCosecha||'');});lsSave('extracciones',extracciones);}
   else{var le=lsLoad('extracciones');if(le&&le.length>0)extracciones=le;}if(tambs&&tambs.length>0){tambores=tambs.sort(function(a,b){return(b.fecha||'').localeCompare(a.fecha||'');});lsSave('tambores',tambores);}else{var lt=lsLoad('tambores');if(lt&&lt.length>0)tambores=lt;}if(comps&&comps.length>0){compradores=comps;lsSave('compradores',compradores);}else{var lcomp=lsLoad('compradores');if(lcomp&&lcomp.length>0)compradores=lcomp;}if(vents&&vents.length>0){ventas=vents.sort(function(a,b){return(b.fecha||'').localeCompare(a.fecha||'');});lsSave('ventas',ventas);}else{var lv=lsLoad('ventas');if(lv&&lv.length>0)ventas=lv;}
-  setSyncBadge(fbTieneData?'ok':'local');
+  clearTimeout(tout);setSyncBadge(fbTieneData?'ok':'local');
   buildSelects();
   var secActiva=document.querySelector('.sec.on');
   if(secActiva){if(secActiva.id==='sec-historial')renderHist();if(secActiva.id==='sec-resumen')renderResumen();if(secActiva.id==='sec-extraccion')renderExtraccion();if(secActiva.id==='sec-ventas')renderVentas();if(secActiva.id==='sec-colmenares'&&editandoColmIdModal===null)renderColmenares();}
 }).catch(function(){
-  setSyncBadge('local');
+  clearTimeout(tout);setSyncBadge('local');
   var lr=lsLoad('registros');if(lr&&lr.length>0)registros=lr;
   var lc=lsLoad('colmenares');if(lc&&lc.length>0)colmenares=lc;
   var lo=lsLoad('operarios');if(lo&&lo.length>0)operarios=lo;
