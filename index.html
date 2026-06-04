@@ -612,6 +612,11 @@ textarea{resize:vertical;min-height:60px}
       <button class="btn-sm" onclick="agregarComprador()" style="width:100%;padding:8px">+ Agregar comprador</button>
     </div>
   </div>
+  <div class="card" id="card-migracion" style="display:none;border:2px solid var(--am);background:var(--aml)">
+    <div class="stitle">Migrar datos a tu cuenta</div>
+    <div style="font-size:13px;color:#5C3A00;margin-bottom:12px">Tus datos anteriores (colmenares, registros, operarios) están en el sistema viejo. Migralos a tu cuenta nueva para asegurarlos.</div>
+    <button class="btn-save" onclick="migrarDatosLegacy()" style="margin-top:0">📦 Migrar mis datos ahora</button>
+  </div>
   <div class="card">
     <div class="stitle">Usuarios y contraseñas</div>
     <div id="lista-usuarios-app"></div>
@@ -1226,6 +1231,8 @@ function exportarExcel(){
 }
 
 function renderColmenares(){
+  var migCard=document.getElementById('card-migracion');
+  if(migCard)migCard.style.display=authUser?'block':'none';
   document.getElementById('lista-colmenares').innerHTML=colmenares.map(function(c){
     var gps=c.lat&&c.lng?'<a href="https://www.google.com/maps?q='+c.lat+','+c.lng+'" target="_blank" style="font-size:11px;color:#1a5c2a;text-decoration:none;font-weight:700">📍</a>':'<span style="font-size:11px;color:#ccc">📍</span>';
     return'<div class="colm-item"><div class="colm-cod">'+c.id+'</div><div class="colm-name">'+c.nombre+' '+gps+'</div><button class="btn-sm" onclick="editarColmenar('+c.id+')">Editar</button><button class="btn-sm btn-danger" onclick="eliminarColmenar('+c.id+')">Eliminar</button></div>';
@@ -1760,9 +1767,47 @@ function renderRankingColmenares(seasRows){
   '</div>';
 }
 
+function migrarDatosLegacy(){
+  var UID=authUser?authUser.uid:null;
+  if(!UID){miniToast('Tenés que estar logueado');return;}
+  var m=document.createElement('div');m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center';
+  m.innerHTML='<div style="background:#fff;border-radius:16px;padding:1.5rem;width:90%;max-width:380px;border:3px solid var(--am);text-align:center"><div style="font-size:28px;margin-bottom:8px">📦</div><div style="font-size:15px;font-weight:700;margin-bottom:8px">Migrar datos existentes</div><div style="font-size:13px;color:#888;margin-bottom:1.25rem">Esto copia colmenares, registros, operarios y usuarios a tu cuenta nueva. Los datos originales no se tocan.</div><div id="mig-status" style="font-size:13px;color:#1a5c2a;margin-bottom:1rem;min-height:20px"></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button id="mig-cancel" style="padding:11px;border:1.5px solid #ccc;border-radius:8px;background:#f5f5f5;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Cancelar</button><button id="mig-ok" style="padding:11px;border:none;border-radius:8px;background:var(--am);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">Migrar ahora</button></div></div>';
+  document.body.appendChild(m);
+  document.getElementById('mig-cancel').onclick=function(){m.remove();};
+  document.getElementById('mig-ok').onclick=function(){
+    var btn=document.getElementById('mig-ok');btn.disabled=true;btn.textContent='Migrando...';
+    var status=document.getElementById('mig-status');
+    var cols=['colmenares','operarios','registros','usuariosApp'];
+    var done=0;
+    cols.forEach(function(col){
+      fetch(FB_BASE+'/'+col+'?key='+FB_KEY+'&pageSize=500')
+      .then(function(r){return r.json();})
+      .then(function(d){
+        var docs=d.documents||[];
+        status.textContent='Migrando '+col+' ('+docs.length+' registros)...';
+        var promises=docs.map(function(doc){
+          var obj=docToObj(doc);
+          var fields={};for(var k in obj){if(k!=='id')fields[k]=toFS(obj[k]);}
+          return fetch(FB_BASE+'/users/'+UID+'/'+col+'/'+obj.id+'?key='+FB_KEY,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:fields})});
+        });
+        return Promise.all(promises);
+      })
+      .then(function(){
+        done++;
+        if(done===cols.length){
+          status.textContent='✓ Migración completa. Recargá la app.';
+          btn.textContent='Listo';
+          miniToast('Datos migrados correctamente');
+          setTimeout(function(){m.remove();syncAll();},2000);
+        }
+      })
+      .catch(function(e){status.textContent='Error en '+col+': '+e.message;});
+    });
+  };
+}
 function miniToast(msg){var ex=document.getElementById('_mt');if(ex)ex.remove();var t=document.createElement('div');t.id='_mt';t.textContent=msg;t.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:500;z-index:9999;white-space:nowrap;max-width:90vw;text-align:center';document.body.appendChild(t);clearTimeout(window._mtt);window._mtt=setTimeout(function(){t.remove();},3000);}
 
-window.setAuthMode=setAuthMode;window.authSubmit=authSubmit;window.parsearCoordenadas=parsearCoordenadas;window.onUbicacionInput=onUbicacionInput;window.verEnMapa=verEnMapa;window.selRankingMetrica=selRankingMetrica;window.renderRankingColmenares=renderRankingColmenares;window.updateMuertasCardVisibility=updateMuertasCardVisibility;window.adjMN=adjMN;window.onNucleoChange=onNucleoChange;window.exportarTambores=exportarTambores;window.abrirScanner=abrirScanner;window.cerrarScanner=cerrarScanner;window.usarCodigoManual=usarCodigoManual;window.cerrarModalTambor=cerrarModalTambor;window.guardarTambor=guardarTambor;window.eliminarTambor=eliminarTambor;window.renderVentas=renderVentas;window.abrirNuevaVenta=abrirNuevaVenta;window.cerrarNuevaVenta=cerrarNuevaVenta;window.agregarTamborAVenta=agregarTamborAVenta;window.quitarTamborDeVenta=quitarTamborDeVenta;window.actualizarResumenVenta=actualizarResumenVenta;window.confirmarVenta=confirmarVenta;window.eliminarVenta=eliminarVenta;window.abrirScannerVenta=abrirScannerVenta;window.renderCompradores=renderCompradores;window.agregarComprador=agregarComprador;window.eliminarComprador=eliminarComprador;window.abrirModalComprador=abrirModalComprador;window.renderExtraccion=renderExtraccion;window.abrirTurnoExtraccion=abrirTurnoExtraccion;window.cerrarTurnoExt=cerrarTurnoExt;window.guardarTurnoExt=guardarTurnoExt;window.eliminarTurnoExt=eliminarTurnoExt;window.exportarCosecha=exportarCosecha;window.go=go;window.toggleTarea=toggleTarea;window.toggleCura=toggleCura;window.toggleAnti=toggleAnti;window.adjN=adjN;window.adjM=adjM;window.adjAlim=adjAlim;window.adjCosecha=adjCosecha;window.adjP=adjP;window.setDias=setDias;window.filtrarColmenares=filtrarColmenares;window.colmenarKeydown=colmenarKeydown;window.selColmenar=selColmenar;window.cerrarDropdownColm=cerrarDropdownColm;window.toggleNuDestinoColm=toggleNuDestinoColm;window.updateTrasladoPreview=updateTrasladoPreview;window.updateVaciasPreview=updateVaciasPreview;window.updateEnjambrePreview=updateEnjambrePreview;window.updateDestinoMuertas=updateDestinoMuertas;window.fillDmColmenarDest=fillDmColmenarDest;window.guardar=guardar;window.cerrarOverlay=cerrarOverlay;window.cancelarEdicion=cancelarEdicion;window.abrirEdicion=abrirEdicion;window.eliminarRegistro=eliminarRegistro;window.editarColmenar=editarColmenar;window.eliminarColmenar=eliminarColmenar;window.agregarColmenar=agregarColmenar;window.eliminarOperario=eliminarOperario;window.agregarOperario=agregarOperario;window.renderHist=renderHist;window.exportarExcel=exportarExcel;window.switchTab=switchTab;window.renderResumen=renderResumen;window.cerrarModalColm=cerrarModalColm;window.guardarModalColm=guardarModalColm;window.syncAll=syncAll;window.loginIngresar=loginIngresar;window.cerrarSesion=cerrarSesion;window.agregarUsuarioApp=agregarUsuarioApp;window.eliminarUsuarioApp=eliminarUsuarioApp;window.cambiarPassUsuario=cambiarPassUsuario;window.guardarNuevaPass=guardarNuevaPass;window.resaltarDDItem=resaltarDDItem;
+window.migrarDatosLegacy=migrarDatosLegacy;window.setAuthMode=setAuthMode;window.authSubmit=authSubmit;window.parsearCoordenadas=parsearCoordenadas;window.onUbicacionInput=onUbicacionInput;window.verEnMapa=verEnMapa;window.selRankingMetrica=selRankingMetrica;window.renderRankingColmenares=renderRankingColmenares;window.updateMuertasCardVisibility=updateMuertasCardVisibility;window.adjMN=adjMN;window.onNucleoChange=onNucleoChange;window.exportarTambores=exportarTambores;window.abrirScanner=abrirScanner;window.cerrarScanner=cerrarScanner;window.usarCodigoManual=usarCodigoManual;window.cerrarModalTambor=cerrarModalTambor;window.guardarTambor=guardarTambor;window.eliminarTambor=eliminarTambor;window.renderVentas=renderVentas;window.abrirNuevaVenta=abrirNuevaVenta;window.cerrarNuevaVenta=cerrarNuevaVenta;window.agregarTamborAVenta=agregarTamborAVenta;window.quitarTamborDeVenta=quitarTamborDeVenta;window.actualizarResumenVenta=actualizarResumenVenta;window.confirmarVenta=confirmarVenta;window.eliminarVenta=eliminarVenta;window.abrirScannerVenta=abrirScannerVenta;window.renderCompradores=renderCompradores;window.agregarComprador=agregarComprador;window.eliminarComprador=eliminarComprador;window.abrirModalComprador=abrirModalComprador;window.renderExtraccion=renderExtraccion;window.abrirTurnoExtraccion=abrirTurnoExtraccion;window.cerrarTurnoExt=cerrarTurnoExt;window.guardarTurnoExt=guardarTurnoExt;window.eliminarTurnoExt=eliminarTurnoExt;window.exportarCosecha=exportarCosecha;window.go=go;window.toggleTarea=toggleTarea;window.toggleCura=toggleCura;window.toggleAnti=toggleAnti;window.adjN=adjN;window.adjM=adjM;window.adjAlim=adjAlim;window.adjCosecha=adjCosecha;window.adjP=adjP;window.setDias=setDias;window.filtrarColmenares=filtrarColmenares;window.colmenarKeydown=colmenarKeydown;window.selColmenar=selColmenar;window.cerrarDropdownColm=cerrarDropdownColm;window.toggleNuDestinoColm=toggleNuDestinoColm;window.updateTrasladoPreview=updateTrasladoPreview;window.updateVaciasPreview=updateVaciasPreview;window.updateEnjambrePreview=updateEnjambrePreview;window.updateDestinoMuertas=updateDestinoMuertas;window.fillDmColmenarDest=fillDmColmenarDest;window.guardar=guardar;window.cerrarOverlay=cerrarOverlay;window.cancelarEdicion=cancelarEdicion;window.abrirEdicion=abrirEdicion;window.eliminarRegistro=eliminarRegistro;window.editarColmenar=editarColmenar;window.eliminarColmenar=eliminarColmenar;window.agregarColmenar=agregarColmenar;window.eliminarOperario=eliminarOperario;window.agregarOperario=agregarOperario;window.renderHist=renderHist;window.exportarExcel=exportarExcel;window.switchTab=switchTab;window.renderResumen=renderResumen;window.cerrarModalColm=cerrarModalColm;window.guardarModalColm=guardarModalColm;window.syncAll=syncAll;window.cerrarSesion=cerrarSesion;window.agregarUsuarioApp=agregarUsuarioApp;window.eliminarUsuarioApp=eliminarUsuarioApp;window.cambiarPassUsuario=cambiarPassUsuario;window.guardarNuevaPass=guardarNuevaPass;window.resaltarDDItem=resaltarDDItem;
 
 buildSelects();buildTareas();recalcAlim();recalcCosecha();updateProxima();actualizarAviso();
 document.getElementById('fecha').value=hoy();
