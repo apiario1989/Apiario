@@ -810,9 +810,9 @@ function authSubmit(){
       errEl.textContent=msgs[data.error.message]||'Error: '+data.error.message;errEl.style.display='block';return;
     }
     authUser={uid:data.localId,email:data.email,idToken:data.idToken};
-    // Siempre limpiar caché local al hacer login para evitar ver datos de otro usuario
-    ['registros','colmenares','operarios','extracciones','tambores','compradores','ventas','usuariosApp'].forEach(function(k){localStorage.removeItem('arl_'+k);});
-    localStorage.removeItem('arl_operario');
+    // Solo limpiar caché si cambió el usuario
+    var prevAuth=localStorage.getItem('arl_authUser');
+    if(prevAuth){try{var prev=JSON.parse(prevAuth);if(prev.uid!==data.localId){['registros','colmenares','operarios','extracciones','tambores','compradores','ventas','usuariosApp'].forEach(function(k){localStorage.removeItem('arl_'+k);});localStorage.removeItem('arl_operario');}}catch(e){}}
     localStorage.setItem('arl_authUser',JSON.stringify(authUser));
     document.getElementById('pantalla-login').style.display='none';
     initData().then(function(){mostrarSelectorOperario();});
@@ -1873,6 +1873,22 @@ function renderRankingColmenares(seasRows){
   '</div>';
 }
 
+function escribirEnAppicultura(loaded,UID,btn,status,m){
+  var promises=[];
+  status.textContent='Migrando...';
+  loaded.registros.forEach(function(r){var fields={};for(var k in r){if(k!=='id')fields[k]=toFS(r[k]);}promises.push(fetch(FB_BASE+'/users/'+UID+'/registros/'+r.id+'?key='+FB_KEY,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:fields})}));});
+  loaded.colmenares.forEach(function(c){var fields={};for(var k in c){if(k!=='id')fields[k]=toFS(c[k]);}promises.push(fetch(FB_BASE+'/users/'+UID+'/colmenares/'+c.id+'?key='+FB_KEY,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:fields})}));});
+  loaded.operarios.forEach(function(o){var fields={};for(var k in o){if(k!=='id')fields[k]=toFS(o[k]);}var id=o.id||o.nombre;promises.push(fetch(FB_BASE+'/users/'+UID+'/operarios/'+id+'?key='+FB_KEY,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:fields})}));});
+  loaded.usuariosApp.forEach(function(u){var fields={};for(var k in u){if(k!=='id')fields[k]=toFS(u[k]);}var id=u.id||u.nombre;promises.push(fetch(FB_BASE+'/users/'+UID+'/usuariosApp/'+id+'?key='+FB_KEY,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:fields})}));});
+  if(!promises.length){status.textContent='No se encontraron datos para migrar';btn.textContent='Cerrar';return;}
+  Promise.all(promises).then(function(){
+    status.textContent='✓ '+promises.length+' registros migrados a Appicultura';
+    btn.textContent='Listo';
+    var b=document.getElementById('banner-migracion');if(b)b.style.display='none';
+    miniToast('✓ Migración completa — '+promises.length+' registros');
+    setTimeout(function(){m.remove();syncAll();},2000);
+  }).catch(function(e){status.textContent='Error: '+e.message;});
+}
 function migrarDatosLegacy(){
   var UID=authUser?authUser.uid:null;
   if(!UID){miniToast('Tenés que estar logueado');return;}
@@ -1881,32 +1897,36 @@ function migrarDatosLegacy(){
   document.body.appendChild(m);
   document.getElementById('mig-cancel').onclick=function(){m.remove();};
   document.getElementById('mig-ok').onclick=function(){
-    var btn=document.getElementById('mig-ok');btn.disabled=true;btn.textContent='Migrando...';
+    var btn=document.getElementById('mig-ok');btn.disabled=true;btn.textContent='Cargando datos...';
     var status=document.getElementById('mig-status');
-    var promises=[];
-    // Migrar registros
-    status.textContent='Migrando registros ('+registros.length+')...';
-    registros.forEach(function(r){var fields={};for(var k in r){if(k!=='id')fields[k]=toFS(r[k]);}promises.push(fetch(FB_BASE+'/users/'+UID+'/registros/'+r.id+'?key='+FB_KEY,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:fields})}));});
-    // Migrar colmenares
-    colmenares.forEach(function(c){var fields={};for(var k in c){if(k!=='id')fields[k]=toFS(c[k]);}promises.push(fetch(FB_BASE+'/users/'+UID+'/colmenares/'+c.id+'?key='+FB_KEY,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:fields})}));});
-    // Migrar operarios
-    operarios.forEach(function(o,i){var id='op_'+i;promises.push(fetch(FB_BASE+'/users/'+UID+'/operarios/'+id+'?key='+FB_KEY,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:{nombre:{stringValue:o}}})}));});
-    // Migrar usuariosApp
-    usuariosApp.forEach(function(u){var fields={};for(var k in u){if(k!=='id')fields[k]=toFS(u[k]);}var id=u.nombre||('u_'+Date.now());promises.push(fetch(FB_BASE+'/users/'+UID+'/usuariosApp/'+id+'?key='+FB_KEY,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:fields})}));});
-    Promise.all(promises).then(function(){
-      status.textContent='✓ '+promises.length+' registros migrados correctamente';
-      btn.textContent='Listo';
-      var b=document.getElementById('banner-migracion');if(b)b.style.display='none';
-      miniToast('Migración completa — '+promises.length+' registros');
-      setTimeout(function(){m.remove();},2000);
-    }).catch(function(e){
-      status.textContent='Error: '+e.message;
+    var FB_OLD='https://firestore.googleapis.com/v1/projects/apiario-la-reina-f1b84/databases/(default)/documents';
+    var FB_OLD_KEY='AIzaSyAaRHPSauJrTnrQN4LrbZuYJZcO78gxGcw';
+    var oldUID='TazhX9raGYQXcBesDNYQzJxqzva2';
+    // Cargar datos del Firebase viejo primero
+    var paths=['colmenares','operarios','registros','usuariosApp'];
+    var loaded={colmenares:[],operarios:[],registros:[],usuariosApp:[]};
+    var fetchDone=0;
+    paths.forEach(function(col){
+      // Intentar path con UID primero, luego raíz
+      fetch(FB_OLD+'/users/'+oldUID+'/'+col+'?key='+FB_OLD_KEY+'&pageSize=500')
+      .then(function(r){return r.json();})
+      .then(function(d){
+        loaded[col]=(d.documents||[]).map(docToObj);
+        if(!loaded[col].length){
+          return fetch(FB_OLD+'/'+col+'?key='+FB_OLD_KEY+'&pageSize=500').then(function(r){return r.json();}).then(function(d2){loaded[col]=(d2.documents||[]).map(docToObj);});
+        }
+      })
+      .then(function(){
+        fetchDone++;
+        if(fetchDone===paths.length) escribirEnAppicultura(loaded,UID,btn,status,m);
+      })
+      .catch(function(){fetchDone++;if(fetchDone===paths.length)escribirEnAppicultura(loaded,UID,btn,status,m);});
     });
   };
 }
 function miniToast(msg){var ex=document.getElementById('_mt');if(ex)ex.remove();var t=document.createElement('div');t.id='_mt';t.textContent=msg;t.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:500;z-index:9999;white-space:nowrap;max-width:90vw;text-align:center';document.body.appendChild(t);clearTimeout(window._mtt);window._mtt=setTimeout(function(){t.remove();},3000);}
 
-window.seleccionarOperario=seleccionarOperario;window.confirmarOperario=confirmarOperario;window.cancelarOperario=cancelarOperario;window.cerrarSesionFirebase=cerrarSesionFirebase;window.migrarDatosLegacy=migrarDatosLegacy;window.setAuthMode=setAuthMode;window.authSubmit=authSubmit;window.parsearCoordenadas=parsearCoordenadas;window.onUbicacionInput=onUbicacionInput;window.verEnMapa=verEnMapa;window.selRankingMetrica=selRankingMetrica;window.renderRankingColmenares=renderRankingColmenares;window.updateMuertasCardVisibility=updateMuertasCardVisibility;window.adjMN=adjMN;window.onNucleoChange=onNucleoChange;window.exportarTambores=exportarTambores;window.abrirScanner=abrirScanner;window.cerrarScanner=cerrarScanner;window.usarCodigoManual=usarCodigoManual;window.cerrarModalTambor=cerrarModalTambor;window.guardarTambor=guardarTambor;window.eliminarTambor=eliminarTambor;window.renderVentas=renderVentas;window.abrirNuevaVenta=abrirNuevaVenta;window.cerrarNuevaVenta=cerrarNuevaVenta;window.agregarTamborAVenta=agregarTamborAVenta;window.quitarTamborDeVenta=quitarTamborDeVenta;window.actualizarResumenVenta=actualizarResumenVenta;window.confirmarVenta=confirmarVenta;window.eliminarVenta=eliminarVenta;window.abrirScannerVenta=abrirScannerVenta;window.renderCompradores=renderCompradores;window.agregarComprador=agregarComprador;window.eliminarComprador=eliminarComprador;window.abrirModalComprador=abrirModalComprador;window.renderExtraccion=renderExtraccion;window.abrirTurnoExtraccion=abrirTurnoExtraccion;window.cerrarTurnoExt=cerrarTurnoExt;window.guardarTurnoExt=guardarTurnoExt;window.eliminarTurnoExt=eliminarTurnoExt;window.exportarCosecha=exportarCosecha;window.go=go;window.toggleTarea=toggleTarea;window.toggleCura=toggleCura;window.toggleAnti=toggleAnti;window.adjN=adjN;window.adjM=adjM;window.adjAlim=adjAlim;window.adjCosecha=adjCosecha;window.adjP=adjP;window.setDias=setDias;window.filtrarColmenares=filtrarColmenares;window.colmenarKeydown=colmenarKeydown;window.selColmenar=selColmenar;window.cerrarDropdownColm=cerrarDropdownColm;window.toggleNuDestinoColm=toggleNuDestinoColm;window.updateTrasladoPreview=updateTrasladoPreview;window.updateVaciasPreview=updateVaciasPreview;window.updateEnjambrePreview=updateEnjambrePreview;window.updateDestinoMuertas=updateDestinoMuertas;window.fillDmColmenarDest=fillDmColmenarDest;window.guardar=guardar;window.cerrarOverlay=cerrarOverlay;window.cancelarEdicion=cancelarEdicion;window.abrirEdicion=abrirEdicion;window.eliminarRegistro=eliminarRegistro;window.editarColmenar=editarColmenar;window.eliminarColmenar=eliminarColmenar;window.agregarColmenar=agregarColmenar;window.eliminarOperario=eliminarOperario;window.agregarOperario=agregarOperario;window.renderHist=renderHist;window.exportarExcel=exportarExcel;window.switchTab=switchTab;window.renderResumen=renderResumen;window.cerrarModalColm=cerrarModalColm;window.guardarModalColm=guardarModalColm;window.syncAll=syncAll;window.cerrarSesion=cerrarSesion;window.agregarUsuarioApp=agregarUsuarioApp;window.eliminarUsuarioApp=eliminarUsuarioApp;window.cambiarPassUsuario=cambiarPassUsuario;window.guardarNuevaPass=guardarNuevaPass;window.resaltarDDItem=resaltarDDItem;
+window.escribirEnAppicultura=escribirEnAppicultura;window.seleccionarOperario=seleccionarOperario;window.confirmarOperario=confirmarOperario;window.cancelarOperario=cancelarOperario;window.cerrarSesionFirebase=cerrarSesionFirebase;window.migrarDatosLegacy=migrarDatosLegacy;window.setAuthMode=setAuthMode;window.authSubmit=authSubmit;window.parsearCoordenadas=parsearCoordenadas;window.onUbicacionInput=onUbicacionInput;window.verEnMapa=verEnMapa;window.selRankingMetrica=selRankingMetrica;window.renderRankingColmenares=renderRankingColmenares;window.updateMuertasCardVisibility=updateMuertasCardVisibility;window.adjMN=adjMN;window.onNucleoChange=onNucleoChange;window.exportarTambores=exportarTambores;window.abrirScanner=abrirScanner;window.cerrarScanner=cerrarScanner;window.usarCodigoManual=usarCodigoManual;window.cerrarModalTambor=cerrarModalTambor;window.guardarTambor=guardarTambor;window.eliminarTambor=eliminarTambor;window.renderVentas=renderVentas;window.abrirNuevaVenta=abrirNuevaVenta;window.cerrarNuevaVenta=cerrarNuevaVenta;window.agregarTamborAVenta=agregarTamborAVenta;window.quitarTamborDeVenta=quitarTamborDeVenta;window.actualizarResumenVenta=actualizarResumenVenta;window.confirmarVenta=confirmarVenta;window.eliminarVenta=eliminarVenta;window.abrirScannerVenta=abrirScannerVenta;window.renderCompradores=renderCompradores;window.agregarComprador=agregarComprador;window.eliminarComprador=eliminarComprador;window.abrirModalComprador=abrirModalComprador;window.renderExtraccion=renderExtraccion;window.abrirTurnoExtraccion=abrirTurnoExtraccion;window.cerrarTurnoExt=cerrarTurnoExt;window.guardarTurnoExt=guardarTurnoExt;window.eliminarTurnoExt=eliminarTurnoExt;window.exportarCosecha=exportarCosecha;window.go=go;window.toggleTarea=toggleTarea;window.toggleCura=toggleCura;window.toggleAnti=toggleAnti;window.adjN=adjN;window.adjM=adjM;window.adjAlim=adjAlim;window.adjCosecha=adjCosecha;window.adjP=adjP;window.setDias=setDias;window.filtrarColmenares=filtrarColmenares;window.colmenarKeydown=colmenarKeydown;window.selColmenar=selColmenar;window.cerrarDropdownColm=cerrarDropdownColm;window.toggleNuDestinoColm=toggleNuDestinoColm;window.updateTrasladoPreview=updateTrasladoPreview;window.updateVaciasPreview=updateVaciasPreview;window.updateEnjambrePreview=updateEnjambrePreview;window.updateDestinoMuertas=updateDestinoMuertas;window.fillDmColmenarDest=fillDmColmenarDest;window.guardar=guardar;window.cerrarOverlay=cerrarOverlay;window.cancelarEdicion=cancelarEdicion;window.abrirEdicion=abrirEdicion;window.eliminarRegistro=eliminarRegistro;window.editarColmenar=editarColmenar;window.eliminarColmenar=eliminarColmenar;window.agregarColmenar=agregarColmenar;window.eliminarOperario=eliminarOperario;window.agregarOperario=agregarOperario;window.renderHist=renderHist;window.exportarExcel=exportarExcel;window.switchTab=switchTab;window.renderResumen=renderResumen;window.cerrarModalColm=cerrarModalColm;window.guardarModalColm=guardarModalColm;window.syncAll=syncAll;window.cerrarSesion=cerrarSesion;window.agregarUsuarioApp=agregarUsuarioApp;window.eliminarUsuarioApp=eliminarUsuarioApp;window.cambiarPassUsuario=cambiarPassUsuario;window.guardarNuevaPass=guardarNuevaPass;window.resaltarDDItem=resaltarDDItem;
 
 buildSelects();buildTareas();recalcAlim();recalcCosecha();updateProxima();actualizarAviso();
 document.getElementById('fecha').value=hoy();
