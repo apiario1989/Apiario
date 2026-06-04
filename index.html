@@ -652,9 +652,9 @@ textarea{resize:vertical;min-height:60px}
 </div>
 
 <script>
-var FB_KEY='AIzaSyA-BEi9GHk8YP-CThOAdBVTKzL83C43sMk';
-var FB_PROJECT='appicultura-1d603';
-var FB_BASE='https://firestore.googleapis.com/v1/projects/appicultura-1d603/databases/(default)/documents';
+var FB_KEY='AIzaSyAaRHPSauJrTnrQN4LrbZuYJZcO78gxGcw';
+var FB_PROJECT='apiario-la-reina-f1b84';
+var FB_BASE='https://firestore.googleapis.com/v1/projects/apiario-la-reina-f1b84/databases/(default)/documents';
 var FB_AUTH_URL='https://identitytoolkit.googleapis.com/v1/accounts:';
 var authUser=null;
 var authModo='login';
@@ -713,11 +713,11 @@ function mostrarSelectorOperario(){
   var label=document.getElementById('op-cuenta-label');
   var lista=document.getElementById('op-lista');
   if(label)label.textContent='Cuenta: '+(authUser?authUser.email:'');
-  // Construir lista de operarios
-  var usuarios=usuariosApp.length?usuariosApp:[];
-  lista.innerHTML=usuarios.length?usuarios.map(function(u){
+  // Usar usuariosApp si están cargados, si no mostrar solo el email como opción
+  var usuarios=usuariosApp.length?usuariosApp:[{nombre:(authUser?authUser.email.split('@')[0]:'Usuario'),pass:'',admin:true}];
+  lista.innerHTML=usuarios.map(function(u){
     return'<button onclick="seleccionarOperario(\''+u.nombre+'\')" style="padding:12px;border:1.5px solid var(--bor);border-radius:10px;background:var(--neg);color:#fff;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;text-align:left">'+u.nombre+'</button>';
-  }).join(''):'<div style="color:#aaa;font-size:13px">No hay operarios configurados</div>';
+  }).join('');
   document.getElementById('op-pass-row').style.display='none';
   document.getElementById('op-error').style.display='none';
   panel.style.display='flex';
