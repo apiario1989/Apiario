@@ -1573,7 +1573,8 @@ function guardarTurnoExt(){
   var op=document.getElementById('turno-ext-op').value;
   var alzas=parseInt(document.getElementById('turno-ext-alzas').value)||0;
   var kg=parseFloat(document.getElementById('turno-ext-kg').value)||0;
-  if(!fecha||!op){miniToast('Completá fecha y operario');return;}
+  if(!fecha){miniToast('Ingresá la fecha');return;}
+  if(!op)op=usuarioActual?usuarioActual.nombre:'Sin nombre';
   if(alzas<=0){miniToast('Ingresá la cantidad de alzas');return;}
   var turno={id:'ext_'+String(Date.now()),fecha:fecha,operario:op,alzasExtraidas:alzas,kgObtenidos:kg};
   extracciones.unshift(turno);
