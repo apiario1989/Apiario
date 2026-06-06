@@ -1141,8 +1141,9 @@ function mostrarOverlay(sub){document.getElementById('overlay-sub').textContent=
 
 function guardar(){
 try{
-  var op=document.getElementById('op').value,colId=parseInt(document.getElementById('colmenar').value),fecha=document.getElementById('fecha').value;
-  if(!op){miniToast('Seleccioná el operario');return;}
+  var opEl=document.getElementById('op');
+  if((!opEl.value)&&usuarioActual)opEl.value=usuarioActual.nombre;
+  var op=opEl.value||'Sin nombre',colId=parseInt(document.getElementById('colmenar').value),fecha=document.getElementById('fecha').value;
   if(!colId){miniToast('Seleccioná el colmenar');return;}
   if(!fecha){miniToast('Ingresá la fecha');return;}
   if(tareasSel.has('cosecha')&&nv('coA')===0){miniToast('Ingresá la cantidad de alzas cosechadas');return;}
