@@ -619,7 +619,7 @@ textarea{resize:vertical;min-height:60px}
       <button class="btn-sm" onclick="agregarOperario()" style="white-space:nowrap;padding:8px 16px">+ Agregar</button>
     </div>
   </div>
-  <div class="card">
+  <div class="card" id="card-compradores">
     <div class="stitle">Compradores</div>
     <div id="lista-compradores"></div>
     <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid #eee">
@@ -691,7 +691,7 @@ var TAREAS=[
   {id:'traslado',label:'Traslado',cond:'traslado'},
   {id:'mover-vacias',label:'Mover cám. vacías',cond:'mover-vacias'}
 ];
-var USUARIOS_DEFAULT=[{nombre:'Marcos',pass:'marcos123',admin:true},{nombre:'Juan',pass:'juan123',admin:false},{nombre:'Carlos',pass:'carlos123',admin:false}];
+var USUARIOS_DEFAULT=[];
 
 var colmenares=DC.slice(),operarios=DO.slice(),registros=[],usuariosApp=[],extracciones=[],tambores=[],compradores=[],ventas=[];
 var ventaActual=[];
@@ -1361,8 +1361,11 @@ function exportarExcel(){
 }
 
 function renderColmenares(){
+  var esMarcos=authUser&&authUser.email&&authUser.email.indexOf('apiariolareinasas')>=0;
   var migCard=document.getElementById('card-migracion');
-  if(migCard)migCard.style.display=authUser?'block':'none';
+  if(migCard)migCard.style.display='none';
+  var compCard=document.getElementById('card-compradores');
+  if(compCard)compCard.style.display=esMarcos?'block':'none';
   document.getElementById('lista-colmenares').innerHTML=colmenares.map(function(c){
     var gps=c.lat&&c.lng?'<a href="https://www.google.com/maps?q='+c.lat+','+c.lng+'" target="_blank" style="font-size:11px;color:#1a5c2a;text-decoration:none;font-weight:700">📍</a>':'<span style="font-size:11px;color:#ccc">📍</span>';
     return'<div class="colm-item"><div class="colm-cod">'+c.id+'</div><div class="colm-name">'+c.nombre+' '+gps+'</div><button class="btn-sm" onclick="editarColmenar('+c.id+')">Editar</button><button class="btn-sm btn-danger" onclick="eliminarColmenar('+c.id+')">Eliminar</button></div>';
@@ -1504,8 +1507,11 @@ function renderResumen(){
 }
 
 function updateNavVisibility(){
+  var esMarcos=authUser&&authUser.email&&authUser.email.indexOf('apiariolareinasas')>=0;
   var btn=document.getElementById('nav-btn-ventas');
-  if(btn)btn.style.display=(usuarioActual&&usuarioActual.admin)?'':'none';
+  if(btn)btn.style.display=(usuarioActual&&usuarioActual.admin&&esMarcos)?'':'none';
+  var bannerMig=document.getElementById('banner-migracion');
+  if(bannerMig)bannerMig.style.display='none';
 }
 function go(s){
   if(s==='ventas'&&!(usuarioActual&&usuarioActual.admin)){miniToast('Solo el administrador puede ver Ventas');return;}
