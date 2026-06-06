@@ -611,14 +611,6 @@ textarea{resize:vertical;min-height:60px}
       <button class="btn-sm" onclick="agregarColmenar()" style="white-space:nowrap;padding:8px 16px">+ Agregar</button>
     </div>
   </div>
-  <div class="card">
-    <div class="stitle">Operarios</div>
-    <div id="lista-operarios"></div>
-    <div class="add-colm" style="margin-top:1rem;padding-top:1rem;border-top:1px solid #eee">
-      <input type="text" id="nuevo-op" placeholder="Nombre del operario...">
-      <button class="btn-sm" onclick="agregarOperario()" style="white-space:nowrap;padding:8px 16px">+ Agregar</button>
-    </div>
-  </div>
   <div class="card" id="card-compradores">
     <div class="stitle">Compradores</div>
     <div id="lista-compradores"></div>
@@ -880,8 +872,10 @@ function initData(){
   var lc=lsLoad('colmenares');if(lc&&lc.length>0)colmenares=lc;
   var lo=lsLoad('operarios');if(lo&&lo.length>0)operarios=lo;
   var le=lsLoad('extracciones');if(le&&le.length>0)extracciones=le;var lt=lsLoad('tambores');if(lt&&lt.length>0)tambores=lt;var lcomp=lsLoad('compradores');if(lcomp&&lcomp.length>0)compradores=lcomp;var lv=lsLoad('ventas');if(lv&&lv.length>0)ventas=lv;var lcomp=lsLoad('compradores');if(lcomp&&lcomp.length>0)compradores=lcomp;var lv=lsLoad('ventas');if(lv&&lv.length>0)ventas=lv;
-  var lu=lsLoad('usuariosApp');
-  if(lu&&lu.length>0){usuariosApp=lu;}else{usuariosApp=USUARIOS_DEFAULT.slice();lsSave('usuariosApp',usuariosApp);}
+  var luApp=lsLoad('usuariosApp');
+  if(luApp&&luApp.length>0&&fbTieneData){usuariosApp=luApp;}
+  else if(!fbTieneData){usuariosApp=[];}
+  else{usuariosApp=USUARIOS_DEFAULT.slice();}
   cargarLoginSelect();renderUsuariosApp();
   // Restaurar sesión Firebase Auth
   var storedAuth=localStorage.getItem('arl_authUser');
