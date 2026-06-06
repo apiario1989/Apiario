@@ -666,16 +666,20 @@ function refreshToken(){
   if(!authUser||!authUser.refreshToken)return Promise.resolve();
   return fetch('https://securetoken.googleapis.com/v1/token?key='+FB_KEY,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'grant_type=refresh_token&refresh_token='+authUser.refreshToken})
   .then(function(r){return r.json();})
-  .then(function(d){if(d.id_token){authUser.idToken=d.id_token;authUser.refreshToken=d.refresh_token;authUser.expiresAt=Date.now()+3500000;localStorage.setItem('arl_authUser',JSON.stringify(authUser));}})
+  .then(function(d){
+    if(d.id_token){
+      authUser.idToken=d.id_token;
+      authUser.refreshToken=d.refresh_token;
+      authUser.expiresAt=Date.now()+3500000;
+      localStorage.setItem('arl_authUser',JSON.stringify(authUser));
+    }
+  })
   .catch(function(){});
 }
-function fbHeaders(){
-  var h={'Content-Type':'application/json'};
-  if(authUser&&authUser.idToken)h['Authorization']='Bearer '+authUser.idToken;
-  return h;
-}
 function getTokenPromise(){
-  if(authUser&&authUser.expiresAt&&Date.now()>authUser.expiresAt)return refreshToken();
+  if(!authUser)return Promise.resolve();
+  // Refrescar si no hay expiresAt, si expiró, o si faltan menos de 5 minutos
+  if(!authUser.expiresAt||Date.now()>authUser.expiresAt-300000)return refreshToken();
   return Promise.resolve();
 }
 function fbList(col){return fetch(FB_BASE+'/'+fbPath(col)+'?key='+FB_KEY+'&pageSize=500',{headers:fbHeaders()}).then(function(r){return r.json();}).then(function(d){return(d.documents||[]).map(docToObj);}).catch(function(){return[];});}
@@ -852,6 +856,7 @@ function sortRegs(arr){return arr.sort(function(a,b){var fc=(b.fecha||'').locale
 function syncAll(){
   setSyncBadge('wait');
   var tout=setTimeout(function(){setSyncBadge('local');},8000);
+  return getTokenPromise().then(function(){
   return Promise.all([fbList('registros'),fbList('colmenares'),fbList('operarios'),fbList('extraccion'),fbList('tambores'),fbList('compradores'),fbList('ventas')]).then(function(results){
   var regs=results[0],cols=results[1],ops=results[2],extrs=results[3],tambs=results[4],comps=results[5],vents=results[6];
   var fbTieneData=regs.length>0||cols.length>0;
@@ -881,7 +886,7 @@ function syncAll(){
   var lo=lsLoad('operarios');if(lo&&lo.length>0)operarios=lo;
   var le=lsLoad('extracciones');if(le&&le.length>0)extracciones=le;var lt=lsLoad('tambores');if(lt&&lt.length>0)tambores=lt;var lcomp=lsLoad('compradores');if(lcomp&&lcomp.length>0)compradores=lcomp;var lv=lsLoad('ventas');if(lv&&lv.length>0)ventas=lv;var lcomp=lsLoad('compradores');if(lcomp&&lcomp.length>0)compradores=lcomp;var lv=lsLoad('ventas');if(lv&&lv.length>0)ventas=lv;
   buildSelects();
-});}
+});});}
 
 function initData(){
   setSyncBadge('wait');
