@@ -677,8 +677,8 @@ function fbList(col){return fetch(FB_BASE+'/'+fbPath(col)+'?key='+FB_KEY+'&pageS
 function fbSet(col,id,obj){var fields={};for(var k in obj){if(k!=='id')fields[k]=toFS(obj[k]);}return fetch(FB_BASE+'/'+fbPath(col)+'/'+id+'?key='+FB_KEY,{method:'PATCH',headers:fbHeaders(),body:JSON.stringify({fields:fields})}).then(function(res){if(!res.ok){return res.text().then(function(t){var msg='HTTP '+res.status;try{var e=JSON.parse(t);if(e.error&&e.error.message)msg=e.error.message;}catch(x){}console.warn('fbSet error',res.status,col,id,msg);return{ok:false,status:res.status,fbMsg:msg};});}return res;}).catch(function(e){console.warn('fbSet red:',col,id,e.message);return null;});}
 function fbDel(col,id){return fetch(FB_BASE+'/'+fbPath(col)+'/'+id+'?key='+FB_KEY,{method:'DELETE',headers:fbHeaders()}).catch(function(){});}
 
-var DC=[{id:1,nombre:'Genero'},{id:2,nombre:'Vasco 1'},{id:3,nombre:'Vasco 2'},{id:4,nombre:'Ramirez 1'},{id:5,nombre:'Pepino'},{id:6,nombre:'Ramirez 3'},{id:7,nombre:'Gambino'},{id:8,nombre:'Papurello'},{id:9,nombre:'Porporato'},{id:10,nombre:'Tortelli M'},{id:11,nombre:'Federico'},{id:12,nombre:'Marcelino'},{id:13,nombre:'Pueblo'},{id:14,nombre:'Almada'},{id:15,nombre:'Siete case 1'},{id:16,nombre:'Siete case 2'},{id:17,nombre:'Tacuru'},{id:18,nombre:'Molinari'},{id:19,nombre:'Saravalle 1'},{id:20,nombre:'Saravalle 2'}];
-var DO=['Juan','Carlos','Marcos','Laura','Pedro'];
+var DC=[];
+var DO=[];
 var TAREAS=[
   {id:'alimentacion',label:'Alimentación',cond:'alimentacion'},
   {id:'cosecha',label:'Cosecha',cond:'cosecha'},
@@ -841,7 +841,8 @@ function sortRegs(arr){return arr.sort(function(a,b){var fc=(b.fecha||'').locale
 
 function syncAll(){
   setSyncBadge('wait');
-  var tout=setTimeout(function(){setSyncBadge('local');},8000);return Promise.all([fbList('registros'),fbList('colmenares'),fbList('operarios'),fbList('extraccion'),fbList('tambores'),fbList('compradores'),fbList('ventas')]).then(function(results){
+  var tout=setTimeout(function(){setSyncBadge('local');},8000);
+  return Promise.all([fbList('registros'),fbList('colmenares'),fbList('operarios'),fbList('extraccion'),fbList('tambores'),fbList('compradores'),fbList('ventas')]).then(function(results){
   var regs=results[0],cols=results[1],ops=results[2],extrs=results[3],tambs=results[4],comps=results[5],vents=results[6];
   var fbTieneData=regs.length>0||cols.length>0;
   var bannerMig=document.getElementById('banner-migracion');
