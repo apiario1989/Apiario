@@ -220,7 +220,7 @@ textarea{resize:vertical;min-height:60px}
 <div id="sec-carga" class="sec on">
   <div class="card">
     <div class="g2">
-      <div class="fld"><label class="lbl">Operario</label><select id="op"><option value="">Seleccionar...</option></select></div>
+      <div class="fld"><label class="lbl">Operario</label><div style="padding:10px;background:var(--sua);border-radius:9px;font-size:14px;font-weight:600;color:var(--txt)" id="op-display">—</div><input type="hidden" id="op"></div>
       <div class="fld"><label class="lbl">Fecha de visita</label><input type="date" id="fecha"></div>
     </div>
     <div class="fld" style="position:relative">
@@ -750,9 +750,9 @@ function entrarComoOperario(u){
   localStorage.setItem('arl_operario',JSON.stringify({nombre:u.nombre,pass:u.pass||''}));
   document.getElementById('pantalla-operario').style.display='none';
   document.getElementById('usuario-badge').textContent=u.nombre;
+  var opEl=document.getElementById('op');if(opEl)opEl.value=u.nombre;
+  var opDisplay=document.getElementById('op-display');if(opDisplay)opDisplay.textContent=u.nombre;
   updateNavVisibility();
-  var opSel=document.getElementById('op');
-  if(opSel){for(var i=0;i<opSel.options.length;i++){if(opSel.options[i].text===u.nombre){opSel.value=opSel.options[i].value;break;}}}
   miniToast('Bienvenido, '+u.nombre+'!');
 }
 
@@ -1449,7 +1449,16 @@ function agregarColmenar(){var inp=document.getElementById('nuevo-nombre'),nombr
 function eliminarOperario(i){operarios.splice(i,1);fbList('operarios').then(function(docs){docs.forEach(function(d){fbDel('operarios',d.id);});operarios.forEach(function(o,j){fbSet('operarios',String(j),{nombre:o});});});buildSelects();renderColmenares();}
 function agregarOperario(){var inp=document.getElementById('nuevo-op'),nombre=inp.value.trim();if(!nombre)return;operarios.push(nombre);inp.value='';fbSet('operarios',String(operarios.length-1),{nombre:nombre});buildSelects();renderColmenares();miniToast('Operario agregado');}
 
-function buildSelects(){var opActual=document.getElementById('op').value;document.getElementById('op').innerHTML='<option value="">Seleccionar...</option>'+operarios.map(function(o){return'<option'+(o===opActual?' selected':'')+'>'+o+'</option>';}).join('');document.getElementById('filtro-col').innerHTML='<option value="">Todos</option>'+colmenares.map(function(c){return'<option value="'+c.id+'">'+c.nombre+'</option>';}).join('');if(usuarioActual&&!opActual){var opSel=document.getElementById('op');for(var i=0;i<opSel.options.length;i++){if(opSel.options[i].text===usuarioActual.nombre){opSel.value=opSel.options[i].value;break;}}}}
+function buildSelects(){
+  // Operario viene del usuario logueado — setear automáticamente
+  if(usuarioActual&&usuarioActual.nombre){
+    var opEl=document.getElementById('op');
+    var opDisplay=document.getElementById('op-display');
+    if(opEl)opEl.value=usuarioActual.nombre;
+    if(opDisplay)opDisplay.textContent=usuarioActual.nombre;
+  }
+  document.getElementById('filtro-col').innerHTML='<option value="">Todos</option>'+colmenares.map(function(c){return'<option value="'+c.id+'">'+c.nombre+'</option>';}).join('');
+}
 
 function switchTab(t){document.querySelectorAll('.res-tab').forEach(function(b,i){b.classList.toggle('on',['estado','temporada'][i]===t);});document.querySelectorAll('.rtab').forEach(function(s,i){s.classList.toggle('on',['estado','temporada'][i]===t);});}
 function getTemporadas(){var anioActual=new Date().getFullYear(),mesActual=new Date().getMonth()+1,tempActualAnio=mesActual>=7?anioActual:anioActual-1;var temps=new Set([tempActualAnio-1,tempActualAnio]);registros.forEach(function(r){if(!r.fecha)return;var y=parseInt(r.fecha.split('-')[0]),m=parseInt(r.fecha.split('-')[1]);temps.add(m>=7?y:y-1);});return Array.from(temps).sort(function(a,b){return b-a;});}
