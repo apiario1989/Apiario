@@ -906,15 +906,13 @@ function initData(){
       if(storedOp){
         try{
           var op=JSON.parse(storedOp);
-          var uValido=usuariosApp.find(function(x){return x.nombre===op.nombre&&(x.pass||'')===(op.pass||'');});
-          if(uValido){
-            usuarioActual=uValido;
-            document.getElementById('usuario-badge').textContent=uValido.nombre;
+          if(op&&op.nombre){
+            usuarioActual={nombre:op.nombre,pass:op.pass||'',admin:op.admin||false};
+            document.getElementById('usuario-badge').textContent=op.nombre;
+            var opEl=document.getElementById('op');if(opEl)opEl.value=op.nombre;
             updateNavVisibility();
           }else{
-            // Operario no válido, pedir selector
-            syncAll().then(function(){mostrarSelectorOperario();});
-            return;
+            syncAll().then(function(){mostrarSelectorOperario();});return;
           }
         }catch(e){syncAll().then(function(){mostrarSelectorOperario();});return;}
       }else{
