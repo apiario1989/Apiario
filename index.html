@@ -662,9 +662,29 @@ function toFS(v){if(v===null||v===undefined)return{nullValue:null};if(typeof v==
 function fromFS(fv){if(!fv)return null;if('nullValue'in fv)return null;if('booleanValue'in fv)return fv.booleanValue;if('integerValue'in fv)return parseInt(fv.integerValue);if('doubleValue'in fv)return fv.doubleValue;if('stringValue'in fv)return fv.stringValue;if('arrayValue'in fv)return(fv.arrayValue.values||[]).map(fromFS);if('mapValue'in fv){var o={};for(var k in fv.mapValue.fields)o[k]=fromFS(fv.mapValue.fields[k]);return o;}return null;}
 function docToObj(doc){var o={};for(var k in doc.fields)o[k]=fromFS(doc.fields[k]);o.id=doc.name.split('/').pop();return o;}
 function fbPath(col){return authUser?'users/'+authUser.uid+'/'+col:col;}
-function fbHeaders(){var h={'Content-Type':'application/json'};if(authUser&&authUser.idToken)h['Authorization']='Bearer '+authUser.idToken;return h;}
+function refreshToken(){
+  if(!authUser||!authUser.refreshToken)return Promise.resolve();
+  return fetch('https://securetoken.googleapis.com/v1/token?key='+FB_KEY,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'grant_type=refresh_token&refresh_token='+authUser.refreshToken})
+  .then(function(r){return r.json();})
+  .then(function(d){if(d.id_token){authUser.idToken=d.id_token;authUser.refreshToken=d.refresh_token;authUser.expiresAt=Date.now()+3500000;localStorage.setItem('arl_authUser',JSON.stringify(authUser));}})
+  .catch(function(){});
+}
+function fbHeaders(){
+  var h={'Content-Type':'application/json'};
+  if(authUser&&authUser.idToken)h['Authorization']='Bearer '+authUser.idToken;
+  return h;
+}
+function getTokenPromise(){
+  if(authUser&&authUser.expiresAt&&Date.now()>authUser.expiresAt)return refreshToken();
+  return Promise.resolve();
+}
 function fbList(col){return fetch(FB_BASE+'/'+fbPath(col)+'?key='+FB_KEY+'&pageSize=500',{headers:fbHeaders()}).then(function(r){return r.json();}).then(function(d){return(d.documents||[]).map(docToObj);}).catch(function(){return[];});}
-function fbSet(col,id,obj){var fields={};for(var k in obj){if(k!=='id')fields[k]=toFS(obj[k]);}return fetch(FB_BASE+'/'+fbPath(col)+'/'+id+'?key='+FB_KEY,{method:'PATCH',headers:fbHeaders(),body:JSON.stringify({fields:fields})}).then(function(res){if(!res.ok){return res.text().then(function(t){var msg='HTTP '+res.status;try{var e=JSON.parse(t);if(e.error&&e.error.message)msg=e.error.message;}catch(x){}console.warn('fbSet error',res.status,col,id,msg);return{ok:false,status:res.status,fbMsg:msg};});}return res;}).catch(function(e){console.warn('fbSet red:',col,id,e.message);return null;});}
+function fbSet(col,id,obj){
+  var fields={};for(var k in obj){if(k!=='id')fields[k]=toFS(obj[k]);}
+  return getTokenPromise().then(function(){
+    return fetch(FB_BASE+'/'+fbPath(col)+'/'+id+'?key='+FB_KEY,{method:'PATCH',headers:fbHeaders(),body:JSON.stringify({fields:fields})});
+  }).then(function(res){if(!res.ok){return res.text().then(function(t){var msg='HTTP '+res.status;try{var e=JSON.parse(t);if(e.error&&e.error.message)msg=e.error.message;}catch(x){}console.warn('fbSet error',res.status,col,id,msg);return{ok:false,status:res.status,fbMsg:msg};});}return res;}).catch(function(e){console.warn('fbSet red:',col,id,e.message);return null;});
+}
 function fbDel(col,id){return fetch(FB_BASE+'/'+fbPath(col)+'/'+id+'?key='+FB_KEY,{method:'DELETE',headers:fbHeaders()}).catch(function(){});}
 
 var DC=[];
@@ -799,7 +819,7 @@ function authSubmit(){
       var msgs={'EMAIL_EXISTS':'Ese email ya tiene una cuenta. Iniciá sesión.','EMAIL_NOT_FOUND':'Email no encontrado. ¿Ya tenés cuenta?','INVALID_PASSWORD':'Contraseña incorrecta.','INVALID_EMAIL':'Email inválido.','WEAK_PASSWORD : Password should be at least 6 characters':'La contraseña debe tener al menos 6 caracteres.','TOO_MANY_ATTEMPTS_TRY_LATER':'Demasiados intentos. Esperá unos minutos.'};
       errEl.textContent=msgs[data.error.message]||'Error: '+data.error.message;errEl.style.display='block';return;
     }
-    authUser={uid:data.localId,email:data.email,idToken:data.idToken};
+    authUser={uid:data.localId,email:data.email,idToken:data.idToken,refreshToken:data.refreshToken,expiresAt:Date.now()+3500000};
     // Solo limpiar caché si cambió el usuario
     var prevAuth=localStorage.getItem('arl_authUser');
     if(prevAuth){try{var prev=JSON.parse(prevAuth);if(prev.uid!==data.localId){['registros','colmenares','operarios','extracciones','tambores','compradores','ventas','usuariosApp'].forEach(function(k){localStorage.removeItem('arl_'+k);});localStorage.removeItem('arl_operario');}}catch(e){}}
@@ -1444,7 +1464,7 @@ function guardarModalColm(){
   }cerrarModalColm();
 }
 function eliminarColmenar(id){id=parseInt(id);if(registros.some(function(r){return parseInt(r.colId)===id;})){miniToast('No se puede eliminar: tiene registros');return;}fbDel('colmenares',String(id));miniToast('Eliminado');}
-function agregarColmenar(){var inp=document.getElementById('nuevo-nombre'),nombre=inp.value.trim();if(!nombre)return;var maxId=colmenares.length?Math.max.apply(null,colmenares.map(function(c){return parseInt(c.id);})):0;var nuevo={id:maxId+1,nombre:nombre};inp.value='';fbSet('colmenares',String(nuevo.id),nuevo);miniToast('Colmenar agregado: '+nombre);}
+function agregarColmenar(){var inp=document.getElementById('nuevo-nombre'),nombre=inp.value.trim();if(!nombre)return;var maxId=colmenares.length?Math.max.apply(null,colmenares.map(function(c){return parseInt(c.id);})):0;var nuevo={id:maxId+1,nombre:nombre};colmenares.push(nuevo);colmenares.sort(function(a,b){return parseInt(a.id)-parseInt(b.id);});lsSave('colmenares',colmenares);inp.value='';fbSet('colmenares',String(nuevo.id),nuevo);buildSelects();renderColmenares();miniToast('Colmenar agregado: '+nombre);}
 function eliminarOperario(i){operarios.splice(i,1);fbList('operarios').then(function(docs){docs.forEach(function(d){fbDel('operarios',d.id);});operarios.forEach(function(o,j){fbSet('operarios',String(j),{nombre:o});});});buildSelects();renderColmenares();}
 function agregarOperario(){var inp=document.getElementById('nuevo-op'),nombre=inp.value.trim();if(!nombre)return;operarios.push(nombre);inp.value='';fbSet('operarios',String(operarios.length-1),{nombre:nombre});buildSelects();renderColmenares();miniToast('Operario agregado');}
 
