@@ -919,7 +919,6 @@ function initData(){
     try{
       authUser=JSON.parse(storedAuth);
       document.getElementById('pantalla-login').style.display='none';
-      // Restaurar operario si había uno guardado
       var storedOp=localStorage.getItem('arl_operario');
       if(storedOp){
         try{
@@ -930,18 +929,17 @@ function initData(){
             var opEl=document.getElementById('op');if(opEl)opEl.value=op.nombre;
             updateNavVisibility();
           }else{
-            syncAll().then(function(){mostrarSelectorOperario();});return;
+            refreshToken().then(function(){syncAll().then(function(){mostrarSelectorOperario();});});return;
           }
-        }catch(e){syncAll().then(function(){mostrarSelectorOperario();});return;}
+        }catch(e){refreshToken().then(function(){syncAll().then(function(){mostrarSelectorOperario();});});return;}
       }else{
-        // No hay operario guardado, mostrar selector después de cargar datos
-        syncAll().then(function(){mostrarSelectorOperario();});
+        refreshToken().then(function(){syncAll().then(function(){mostrarSelectorOperario();});});
         return;
       }
     }catch(e){authUser=null;localStorage.removeItem('arl_authUser');}
   }
   buildSelects();
-  // Luego intentar sincronizar con Firebase
+  refreshToken().then(function(){
   syncAll().then(function(){
     // Actualizar usuarios desde Firebase si está disponible
     fbList('usuariosApp').then(function(users){
@@ -949,7 +947,7 @@ function initData(){
     }).catch(function(){});
     setInterval(syncAll,10000);
   }).catch(function(){setInterval(syncAll,30000);});
-}
+  });}// close refreshToken then
 
 function hoy(){return new Date().toISOString().split('T')[0];}
 function addDias(f,d){var dt=new Date(f+'T00:00:00');dt.setDate(dt.getDate()+parseInt(d));return dt.toISOString().split('T')[0];}
