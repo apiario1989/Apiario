@@ -1653,7 +1653,7 @@ function proximoNumeroTambor(){
 
 function beepScan(){try{var ctx=new(window.AudioContext||window.webkitAudioContext)();var osc=ctx.createOscillator();var gain=ctx.createGain();osc.connect(gain);gain.connect(ctx.destination);osc.frequency.value=1200;osc.type='square';gain.gain.setValueAtTime(0.3,ctx.currentTime);gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.12);osc.start(ctx.currentTime);osc.stop(ctx.currentTime+0.12);}catch(e){}}
 function onCodigoDetectado(codigo){
-  if(!/^\d{11}$/.test(codigo)){miniToast('Código inválido — debe tener 11 dígitos (tiene '+codigo.length+')');return;}
+  if(!/^\d{13}$/.test(codigo)){miniToast('Código inválido — debe tener 13 dígitos (tiene '+codigo.length+')');return;}
   beepScan();
   // Si estamos en modo venta, agregar al ventaActual
   if(window._scannerModo==='venta'){
