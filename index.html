@@ -864,14 +864,11 @@ function syncAll(){
   var esLegacy=authUser&&authUser.email&&authUser.email.indexOf('apiariolareinasas')>=0;
   if(bannerMig&&authUser){bannerMig.style.display=(esLegacy&&!fbTieneData)?'block':'none';}
   if(regs.length>0){registros=sortRegs(regs);lsSave('registros',registros);}
-  else if(fbTieneData){var lr=lsLoad('registros');if(lr&&lr.length>0)registros=lr;}
-  else{registros=[];}
+  else{var lr=lsLoad('registros');if(lr&&lr.length>0)registros=lr;}
   if(cols.length>0&&Date.now()-ultimoEditColm>5000){colmenares=cols.sort(function(a,b){return parseInt(a.id)-parseInt(b.id);});lsSave('colmenares',colmenares);}
-  else if(cols.length===0&&fbTieneData){var lc=lsLoad('colmenares');if(lc&&lc.length>0)colmenares=lc;}
-  else if(cols.length===0){colmenares=[];}
+  else if(cols.length===0){var lc=lsLoad('colmenares');if(lc&&lc.length>0)colmenares=lc;}
   if(uApp.length>0){usuariosApp=uApp;lsSave('usuariosApp',usuariosApp);}
-  else if(fbTieneData){var luApp=lsLoad('usuariosApp');if(luApp&&luApp.length>0)usuariosApp=luApp;}
-  else{usuariosApp=[];}
+  else{var luApp=lsLoad('usuariosApp');if(luApp&&luApp.length>0)usuariosApp=luApp;}
   if(extrs.length>0){extracciones=extrs.sort(function(a,b){return(b.fechaCosecha||'').localeCompare(a.fechaCosecha||'');});lsSave('extracciones',extracciones);}
   else{var le=lsLoad('extracciones');if(le&&le.length>0)extracciones=le;}if(tambs&&tambs.length>0){tambores=tambs.sort(function(a,b){return(b.fecha||'').localeCompare(a.fecha||'');});lsSave('tambores',tambores);}else{var lt=lsLoad('tambores');if(lt&&lt.length>0)tambores=lt;}if(comps&&comps.length>0){compradores=comps;lsSave('compradores',compradores);}else{var lcomp=lsLoad('compradores');if(lcomp&&lcomp.length>0)compradores=lcomp;}if(vents&&vents.length>0){ventas=vents.sort(function(a,b){return(b.fecha||'').localeCompare(a.fecha||'');});lsSave('ventas',ventas);}else{var lv=lsLoad('ventas');if(lv&&lv.length>0)ventas=lv;}
   clearTimeout(tout);setSyncBadge(fbTieneData?'ok':'local');
