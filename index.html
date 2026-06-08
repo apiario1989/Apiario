@@ -678,7 +678,7 @@ function reconectar(){
   miniToast('Reconectando...');
   refreshToken().then(function(){syncAll();});
 }
-function fbList(col){return fetchConTimeout(FB_BASE+'/'+fbPath(col)+'?key='+FB_KEY+'&pageSize=500',{headers:fbHeaders()},7000).then(function(r){if(!r)return[];return r.json();}).then(function(d){return(d.documents||[]).map(docToObj);}).catch(function(){return[];});}
+function fbList(col){return fetchConTimeout(FB_BASE+'/'+fbPath(col)+'?key='+FB_KEY+'&pageSize=500',{headers:fbHeaders()},7000).then(function(r){if(!r){console.warn('fbList timeout:',col);return[];}return r.json();}).then(function(d){if(d.error){console.warn('fbList error:',col,JSON.stringify(d.error));return[];}return(d.documents||[]).map(docToObj);}).catch(function(e){console.warn('fbList catch:',col,e.message);return[];});}
 function fbSet(col,id,obj){
   var fields={};for(var k in obj){if(k!=='id')fields[k]=toFS(obj[k]);}
   return getTokenPromise().then(function(){
@@ -861,9 +861,17 @@ function sortRegs(arr){return arr.sort(function(a,b){var fc=(b.fecha||'').locale
 function syncAll(){
   setSyncBadge('wait');
   var tout=setTimeout(function(){setSyncBadge('local');},8000);
-  return Promise.all([fbList('registros'),fbList('colmenares'),fbList('usuariosApp'),fbList('extraccion'),fbList('tambores'),fbList('compradores'),fbList('ventas')]).then(function(results){
+  return Promise.all([fbList('registros'),fbList('colmenares'),fbList('usuariosApp'),fbList('extraccion'),fbList('tambores'),fbList('compradores'),fbList('ventas'),fbList('operarios')]).then(function(results){
   var regs=results[0],cols=results[1],uApp=results[2],extrs=results[3],tambs=results[4],comps=results[5],vents=results[6];
   var fbTieneData=regs.length>0||cols.length>0;
+  // Cargar usuarios — intentar usuariosApp primero, luego operarios como fallback
+  var uAppFinal=uApp.length>0?uApp:[];
+  if(!uAppFinal.length&&results[7]&&results[7].length>0){
+    // Tenemos operarios, convertirlos a formato usuariosApp
+    uAppFinal=results[7].map(function(o){return{nombre:o.nombre||o,pass:o.pass||'',admin:o.admin||false};});
+    // Migrar a usuariosApp en Firebase
+    uAppFinal.forEach(function(u){fbSet('usuariosApp',u.nombre,u);});
+  }
   var bannerMig=document.getElementById('banner-migracion');
   // Solo mostrar banner para el usuario legacy que tiene datos viejos
   var esLegacy=authUser&&authUser.email&&authUser.email.indexOf('apiariolareinasas')>=0;
@@ -872,7 +880,7 @@ function syncAll(){
   else{var lr=lsLoad('registros');if(lr&&lr.length>0)registros=lr;}
   if(cols.length>0&&Date.now()-ultimoEditColm>5000){colmenares=cols.sort(function(a,b){return parseInt(a.id)-parseInt(b.id);});lsSave('colmenares',colmenares);}
   else if(cols.length===0){var lc=lsLoad('colmenares');if(lc&&lc.length>0)colmenares=lc;}
-  if(uApp.length>0){usuariosApp=uApp;lsSave('usuariosApp',usuariosApp);}
+  if(uAppFinal.length>0){usuariosApp=uAppFinal;lsSave('usuariosApp',usuariosApp);}
   else{var luApp=lsLoad('usuariosApp');if(luApp&&luApp.length>0)usuariosApp=luApp;}
   if(extrs.length>0){extracciones=extrs.sort(function(a,b){return(b.fechaCosecha||'').localeCompare(a.fechaCosecha||'');});lsSave('extracciones',extracciones);}
   else{var le=lsLoad('extracciones');if(le&&le.length>0)extracciones=le;}if(tambs&&tambs.length>0){tambores=tambs.sort(function(a,b){return(b.fecha||'').localeCompare(a.fecha||'');});lsSave('tambores',tambores);}else{var lt=lsLoad('tambores');if(lt&&lt.length>0)tambores=lt;}if(comps&&comps.length>0){compradores=comps;lsSave('compradores',compradores);}else{var lcomp=lsLoad('compradores');if(lcomp&&lcomp.length>0)compradores=lcomp;}if(vents&&vents.length>0){ventas=vents.sort(function(a,b){return(b.fecha||'').localeCompare(a.fecha||'');});lsSave('ventas',ventas);}else{var lv=lsLoad('ventas');if(lv&&lv.length>0)ventas=lv;}
