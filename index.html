@@ -665,34 +665,27 @@ function toFS(v){if(v===null||v===undefined)return{nullValue:null};if(typeof v==
 function fromFS(fv){if(!fv)return null;if('nullValue'in fv)return null;if('booleanValue'in fv)return fv.booleanValue;if('integerValue'in fv)return parseInt(fv.integerValue);if('doubleValue'in fv)return fv.doubleValue;if('stringValue'in fv)return fv.stringValue;if('arrayValue'in fv)return(fv.arrayValue.values||[]).map(fromFS);if('mapValue'in fv){var o={};for(var k in fv.mapValue.fields)o[k]=fromFS(fv.mapValue.fields[k]);return o;}return null;}
 function docToObj(doc){var o={};for(var k in doc.fields)o[k]=fromFS(doc.fields[k]);o.id=doc.name.split('/').pop();return o;}
 function fbPath(col){return authUser?'users/'+authUser.uid+'/'+col:col;}
+function fetchConTimeout(url,opts,ms){var t=new Promise(function(res){setTimeout(function(){res(null);},ms||7000);});return Promise.race([fetch(url,opts||{}),t]);}
 function refreshToken(){
   if(!authUser||!authUser.refreshToken)return Promise.resolve();
-  return fetch('https://securetoken.googleapis.com/v1/token?key='+FB_KEY,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'grant_type=refresh_token&refresh_token='+authUser.refreshToken})
-  .then(function(r){return r.json();})
-  .then(function(d){
-    if(d.id_token){
-      authUser.idToken=d.id_token;
-      authUser.refreshToken=d.refresh_token;
-      authUser.expiresAt=Date.now()+3500000;
-      localStorage.setItem('arl_authUser',JSON.stringify(authUser));
-    }
-  })
+  return fetchConTimeout('https://securetoken.googleapis.com/v1/token?key='+FB_KEY,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'grant_type=refresh_token&refresh_token='+authUser.refreshToken},5000)
+  .then(function(r){if(!r)return;return r.json();})
+  .then(function(d){if(d&&d.id_token){authUser.idToken=d.id_token;authUser.refreshToken=d.refresh_token;authUser.expiresAt=Date.now()+3500000;localStorage.setItem('arl_authUser',JSON.stringify(authUser));}})
   .catch(function(){});
 }
 function getTokenPromise(){
   if(!authUser)return Promise.resolve();
-  // Refrescar si no hay expiresAt, si expiró, o si faltan menos de 5 minutos
   if(!authUser.expiresAt||Date.now()>authUser.expiresAt-300000)return refreshToken();
   return Promise.resolve();
 }
-function fbList(col){return fetch(FB_BASE+'/'+fbPath(col)+'?key='+FB_KEY+'&pageSize=500',{headers:fbHeaders()}).then(function(r){return r.json();}).then(function(d){return(d.documents||[]).map(docToObj);}).catch(function(){return[];});}
+function fbList(col){return fetchConTimeout(FB_BASE+'/'+fbPath(col)+'?key='+FB_KEY+'&pageSize=500',{headers:fbHeaders()},7000).then(function(r){if(!r)return[];return r.json();}).then(function(d){return(d.documents||[]).map(docToObj);}).catch(function(){return[];});}
 function fbSet(col,id,obj){
   var fields={};for(var k in obj){if(k!=='id')fields[k]=toFS(obj[k]);}
   return getTokenPromise().then(function(){
-    return fetch(FB_BASE+'/'+fbPath(col)+'/'+id+'?key='+FB_KEY,{method:'PATCH',headers:fbHeaders(),body:JSON.stringify({fields:fields})});
-  }).then(function(res){if(!res.ok){return res.text().then(function(t){var msg='HTTP '+res.status;try{var e=JSON.parse(t);if(e.error&&e.error.message)msg=e.error.message;}catch(x){}console.warn('fbSet error',res.status,col,id,msg);return{ok:false,status:res.status,fbMsg:msg};});}return res;}).catch(function(e){console.warn('fbSet red:',col,id,e.message);return null;});
+    return fetchConTimeout(FB_BASE+'/'+fbPath(col)+'/'+id+'?key='+FB_KEY,{method:'PATCH',headers:fbHeaders(),body:JSON.stringify({fields:fields})},7000);
+  }).then(function(res){if(!res||!res.ok){console.warn('fbSet fail',col,id);return null;}return res;}).catch(function(e){console.warn('fbSet err:',e.message);return null;});
 }
-function fbDel(col,id){return fetch(FB_BASE+'/'+fbPath(col)+'/'+id+'?key='+FB_KEY,{method:'DELETE',headers:fbHeaders()}).catch(function(){});}
+function fbDel(col,id){return fetchConTimeout(FB_BASE+'/'+fbPath(col)+'/'+id+'?key='+FB_KEY,{method:'DELETE',headers:fbHeaders()},7000).catch(function(){});}
 
 var DC=[];
 var DO=[];
