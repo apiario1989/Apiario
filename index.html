@@ -673,6 +673,7 @@ function getTokenPromise(){
   if(!authUser.expiresAt||Date.now()>authUser.expiresAt-300000)return refreshToken();
   return Promise.resolve();
 }
+function fbHeaders(){var h={'Content-Type':'application/json'};if(authUser&&authUser.idToken)h['Authorization']='Bearer '+authUser.idToken;return h;}
 function reconectar(){
   miniToast('Reconectando...');
   refreshToken().then(function(){syncAll();});
