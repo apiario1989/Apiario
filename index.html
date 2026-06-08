@@ -721,11 +721,22 @@ function mostrarSelectorOperario(){
   var label=document.getElementById('op-cuenta-label');
   var lista=document.getElementById('op-lista');
   if(label)label.textContent='Cuenta: '+(authUser?authUser.email:'');
-  // Usar usuariosApp si están cargados, si no mostrar solo el email como opción
-  var usuarios=usuariosApp.length?usuariosApp:[{nombre:(authUser?authUser.email.split('@')[0]:'Usuario'),pass:'',admin:true}];
-  lista.innerHTML=usuarios.map(function(u){
-    return'<button onclick="seleccionarOperario(\''+u.nombre+'\')" style="padding:12px;border:1.5px solid var(--bor);border-radius:10px;background:var(--neg);color:#fff;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;text-align:left">'+u.nombre+'</button>';
-  }).join('');
+  var usuarios=usuariosApp.length?usuariosApp:[];
+  if(!usuarios.length){
+    // No hay usuarios cargados aún — mostrar solo opción de admin
+    lista.innerHTML='<div style="color:#aaa;font-size:13px;text-align:center;padding:1rem">Cargando usuarios...</div>';
+    panel.style.display='flex';
+    // Reintentar en 2 segundos
+    setTimeout(function(){
+      if(usuariosApp.length){
+        lista.innerHTML=usuariosApp.map(function(u){return'<button onclick="seleccionarOperario(\''+u.nombre+'\')" style="padding:12px;border:1.5px solid var(--bor);border-radius:10px;background:var(--neg);color:#fff;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;text-align:left">'+u.nombre+'</button>';}).join('');
+      }else{
+        lista.innerHTML='<button onclick="seleccionarOperario(\'Admin\')" style="padding:12px;border:1.5px solid var(--am);border-radius:10px;background:var(--am);color:var(--neg);font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;text-align:left">Entrar como administrador</button>';
+      }
+    },2000);
+  }else{
+    lista.innerHTML=usuarios.map(function(u){return'<button onclick="seleccionarOperario(\''+u.nombre+'\')" style="padding:12px;border:1.5px solid var(--bor);border-radius:10px;background:var(--neg);color:#fff;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;text-align:left">'+u.nombre+'</button>';}).join('');
+  }
   document.getElementById('op-pass-row').style.display='none';
   document.getElementById('op-error').style.display='none';
   panel.style.display='flex';
@@ -787,12 +798,13 @@ function cerrarSesionFirebase(){
 }
 function entrarComoUsuario(){
   var storedAuth=localStorage.getItem('arl_authUser');
-  if(!storedAuth){miniToast('Este dispositivo debe ser configurado primero por el dueño de la cuenta');return;}
+  if(!storedAuth){miniToast('El dueño de la cuenta debe configurar este dispositivo primero');return;}
   try{
     authUser=JSON.parse(storedAuth);
     document.getElementById('pantalla-login').style.display='none';
-    initData().then(function(){mostrarSelectorOperario();});
-  }catch(e){miniToast('Error al recuperar la sesión');}
+    mostrarSelectorOperario();
+    refreshToken().then(function(){syncAll();});
+  }catch(e){miniToast('Error al recuperar la sesión — volvé a loguearte');}
 }
 function setAuthMode(modo){
   authModo=modo;
@@ -880,7 +892,12 @@ function syncAll(){
   else{var lr=lsLoad('registros');if(lr&&lr.length>0)registros=lr;}
   if(cols.length>0&&Date.now()-ultimoEditColm>5000){colmenares=cols.sort(function(a,b){return parseInt(a.id)-parseInt(b.id);});lsSave('colmenares',colmenares);}
   else if(cols.length===0){var lc=lsLoad('colmenares');if(lc&&lc.length>0)colmenares=lc;}
-  if(uAppFinal.length>0){usuariosApp=uAppFinal;lsSave('usuariosApp',usuariosApp);renderUsuariosApp();}
+  if(uAppFinal.length>0){
+    usuariosApp=uAppFinal;lsSave('usuariosApp',usuariosApp);renderUsuariosApp();
+    // Si el selector está abierto y no tiene usuarios reales, refrescarlo
+    var panel=document.getElementById('pantalla-operario');
+    if(panel&&panel.style.display==='flex'){mostrarSelectorOperario();}
+  }
   else{var luApp=lsLoad('usuariosApp');if(luApp&&luApp.length>0){usuariosApp=luApp;renderUsuariosApp();}}
   if(extrs.length>0){extracciones=extrs.sort(function(a,b){return(b.fechaCosecha||'').localeCompare(a.fechaCosecha||'');});lsSave('extracciones',extracciones);}
   else{var le=lsLoad('extracciones');if(le&&le.length>0)extracciones=le;}if(tambs&&tambs.length>0){tambores=tambs.sort(function(a,b){return(b.fecha||'').localeCompare(a.fecha||'');});lsSave('tambores',tambores);}else{var lt=lsLoad('tambores');if(lt&&lt.length>0)tambores=lt;}if(comps&&comps.length>0){compradores=comps;lsSave('compradores',compradores);}else{var lcomp=lsLoad('compradores');if(lcomp&&lcomp.length>0)compradores=lcomp;}if(vents&&vents.length>0){ventas=vents.sort(function(a,b){return(b.fecha||'').localeCompare(a.fecha||'');});lsSave('ventas',ventas);}else{var lv=lsLoad('ventas');if(lv&&lv.length>0)ventas=lv;}
@@ -899,7 +916,15 @@ function syncAll(){
 
 function initData(){
   var btnOpContainer=document.getElementById('btn-operario-container');
-  if(btnOpContainer)btnOpContainer.style.display=localStorage.getItem('arl_authUser')?'block':'none';
+  // Si ya hay sesión guardada, ir directo al selector sin mostrar login
+  var storedAuth=localStorage.getItem('arl_authUser');
+  if(storedAuth){
+    try{
+      authUser=JSON.parse(storedAuth);
+      document.getElementById('pantalla-login').style.display='none';
+    }catch(e){authUser=null;localStorage.removeItem('arl_authUser');}
+  }
+  if(btnOpContainer)btnOpContainer.style.display=storedAuth?'block':'none';
   setSyncBadge('wait');
   // Cargar localStorage primero para que la app funcione de inmediato
   var lr=lsLoad('registros');if(lr&&lr.length>0)registros=lr;
