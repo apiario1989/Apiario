@@ -147,7 +147,7 @@ textarea{resize:vertical;min-height:60px}
 
 <div id="pantalla-login" style="position:fixed;inset:0;background:var(--neg);z-index:99999;display:flex;align-items:center;justify-content:center">
   <div style="background:#fff;border-radius:20px;padding:2rem;width:90%;max-width:360px;border:3px solid var(--am);text-align:center">
-    <div style="font-size:36px;margin-bottom:6px">🐝</div>
+    <div style="margin-bottom:6px"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 220" width="72" height="72"><polygon points="80,18 114,37 114,75 80,94 46,75 46,37" fill="#111" stroke="#FF7A00" stroke-width="9" stroke-linejoin="round"/><polygon points="146,18 180,37 180,75 146,94 112,75 112,37" fill="#111" stroke="#FF7A00" stroke-width="9" stroke-linejoin="round"/><polygon points="47,75 81,94 81,132 47,151 13,132 13,94" fill="#111" stroke="#FF7A00" stroke-width="9" stroke-linejoin="round"/><polygon points="113,75 147,94 147,132 113,151 79,132 79,94" fill="#111" stroke="#FF7A00" stroke-width="9" stroke-linejoin="round"/><polygon points="179,75 213,94 213,132 179,151 145,132 145,94" fill="#111" stroke="#FF7A00" stroke-width="9" stroke-linejoin="round"/><polygon points="80,132 114,151 114,189 80,208 46,189 46,151" fill="#111" stroke="#FF7A00" stroke-width="9" stroke-linejoin="round"/><polygon points="146,132 180,151 180,189 146,208 112,189 112,151" fill="#111" stroke="#FF7A00" stroke-width="9" stroke-linejoin="round"/></svg></div>
     <div style="font-size:22px;font-weight:700;margin-bottom:2px;color:var(--neg)">Appicultura</div>
     <div style="font-size:12px;color:#aaa;margin-bottom:1.5rem;letter-spacing:.04em">GESTIÓN DE APIARIOS</div>
     <div style="display:flex;background:var(--sua);border-radius:10px;padding:3px;margin-bottom:1.25rem">
@@ -1384,6 +1384,15 @@ function eliminarRegistro(idStr){
   document.getElementById('btn-confirm-del').onclick=function(){fbDel('registros',idStr);registros=registros.filter(function(r){return r.id!==idStr;});renderHist();miniToast('Registro eliminado');modal.remove();};
 }
 
+function puedeEditarRegistro(r){
+  // Obtener timestamp de creación del registro
+  var ts=parseInt(r.id);
+  var creado=ts>1000000000000?ts:new Date((r.fecha||hoy())+'T23:59:59').getTime();
+  var horasTranscurridas=(Date.now()-creado)/3600000;
+  var esAdmin=usuarioActual&&usuarioActual.admin;
+  if(esAdmin)return horasTranscurridas<168;// 7 días
+  return horasTranscurridas<24;// 24 horas
+}
 function renderHist(){
   var txt=(document.getElementById('filtro-txt').value||'').toLowerCase(),col=document.getElementById('filtro-col').value;
   var list=registros;
@@ -1404,7 +1413,10 @@ function renderHist(){
     var curas=r.curas?[r.curas.primavera&&'Prim.',r.curas.verano&&'Ver.',r.curas.otono&&'Oto.'].filter(Boolean):[];if(curas.length)tags.push('Tratamiento: '+curas.join('/'));
     if(r.antiPrimera||r.antiSegunda){var av=[];if(r.antiPrimera)av.push('1ra vuelta');if(r.antiSegunda)av.push('2da vuelta');tags.push('Antibióticos: '+av.join(' + '));}
     var vencida=r.proximaVisita&&diasEntre(hoy(),r.proximaVisita)<0;
-    return'<div class="hist-item"><div class="hist-head"><div style="flex:1"><div class="hist-title">'+r.colNombre+' <span style="font-weight:400;color:#888">— '+(r.tarea||'')+'</span></div><div class="hist-sub">'+(r.operario||'')+' · '+fmtF(r.fecha)+'</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">'+(r.proximaVisita?'<span class="badge b-vence" style="'+(vencida?'color:#c0392b':'')+'">Volver: '+fmtF(r.proximaVisita)+'</span>':'')+'<div style="display:flex;gap:4px"><button class="btn-sm" onclick="abrirEdicion(\''+r.id+'\')" style="font-size:11px;padding:3px 10px">Editar</button><button class="btn-sm btn-danger" onclick="eliminarRegistro(\''+r.id+'\')" style="font-size:11px;padding:3px 10px">Eliminar</button></div></div></div>'+(tags.length?'<div class="tags">'+tags.map(function(t){return'<span class="tag">'+t+'</span>';}).join('')+'</div>':'')+(r.obs?'<div style="margin-top:7px;font-size:13px;color:#888">'+r.obs+'</div>':'')+'</div>';
+    var puedeEditar=puedeEditarRegistro(r);
+    var esAdmin=usuarioActual&&usuarioActual.admin;
+    var tiempoLimite=esAdmin?'7 días':'24 hs';
+    return'<div class="hist-item"><div class="hist-head"><div style="flex:1"><div class="hist-title">'+r.colNombre+' <span style="font-weight:400;color:#888">— '+(r.tarea||'')+'</span></div><div class="hist-sub">'+(r.operario||'')+' · '+fmtF(r.fecha)+'</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">'+(r.proximaVisita?'<span class="badge b-vence" style="'+(vencida?'color:#c0392b':'')+'">Volver: '+fmtF(r.proximaVisita)+'</span>':'')+'<div style="display:flex;gap:4px">'+(puedeEditar?'<button class="btn-sm" onclick="abrirEdicion(\''+r.id+'\')" style="font-size:11px;padding:3px 10px">Editar</button><button class="btn-sm btn-danger" onclick="eliminarRegistro(\''+r.id+'\')" style="font-size:11px;padding:3px 10px">Eliminar</button>':'<span style="font-size:10px;color:#ccc">🔒 '+tiempoLimite+'</span>')+'</div></div></div>'+(tags.length?'<div class="tags">'+tags.map(function(t){return'<span class="tag">'+t+'</span>';}).join('')+'</div>':'')+(r.obs?'<div style="margin-top:7px;font-size:13px;color:#888">'+r.obs+'</div>':'')+'</div>';
   }).join('');
 }
 
