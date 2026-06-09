@@ -793,7 +793,8 @@ function entrarComoOperario(u){
 
 function cerrarSesionFirebase(){
   authUser=null;usuarioActual=null;
-  localStorage.removeItem('arl_authUser');localStorage.removeItem('arl_operario');
+  // Borrar TODO el localStorage — datos + sesión
+  ['authUser','operario','registros','colmenares','operarios','extracciones','tambores','compradores','ventas','usuariosApp'].forEach(function(k){localStorage.removeItem('arl_'+k);});
   document.getElementById('pantalla-operario').style.display='none';
   document.getElementById('usuario-badge').textContent='';
   document.getElementById('auth-email').value='';
@@ -850,6 +851,8 @@ function authSubmit(){
     // Solo limpiar caché si cambió el usuario
     var prevAuth=localStorage.getItem('arl_authUser');
     if(prevAuth){try{var prev=JSON.parse(prevAuth);if(prev.uid!==data.localId){['registros','colmenares','operarios','extracciones','tambores','compradores','ventas','usuariosApp'].forEach(function(k){localStorage.removeItem('arl_'+k);});localStorage.removeItem('arl_operario');}}catch(e){}}
+    else{// No había sesión previa — limpiar datos para que no aparezcan de otro usuario
+      ['registros','colmenares','operarios','extracciones','tambores','compradores','ventas','usuariosApp'].forEach(function(k){localStorage.removeItem('arl_'+k);});}
     localStorage.setItem('arl_authUser',JSON.stringify(authUser));
     document.getElementById('pantalla-login').style.display='none';
     initData().then(function(){mostrarSelectorOperario();});
