@@ -477,4 +477,21 @@
     }
   }, 200);
 
+  // ─── 8. Fallback: reintentar renderInicio cada segundo hasta que haya datos ──
+  var dataRetry = setInterval(function() {
+    var si = document.getElementById('sec-inicio');
+    if (!si) { clearInterval(dataRetry); return; }
+    var hasData = (window.colmenares || []).length > 0 || (window.registros || []).length > 0;
+    if (hasData) {
+      clearInterval(dataRetry);
+      // Forzar sec-inicio visible si es la sección activa del nav
+      var btnInicio = document.getElementById('nav-btn-inicio');
+      if (btnInicio && btnInicio.classList.contains('on')) {
+        document.querySelectorAll('.sec').forEach(function(s) { s.classList.remove('on'); });
+        si.classList.add('on');
+        renderInicio();
+      }
+    }
+  }, 1000);
+
 })();
