@@ -209,7 +209,8 @@ textarea{resize:vertical;min-height:60px}
 </div>
 <div id="banner-migracion" style="display:none;background:#F5C518;color:#1A1200;padding:10px 16px;text-align:center;font-size:13px;font-weight:700;cursor:pointer;position:sticky;top:0;z-index:100" onclick="migrarDatosLegacy()">📦 Tenés datos del sistema anterior — tocá aquí para migrarlos</div>
 <div class="nav">
-  <button class="on" onclick="go('carga')">Nueva visita</button>
+  <button class="on" onclick="go('inicio')">🏠 Inicio</button>
+  <button onclick="go('carga')">Nueva visita</button>
   <button onclick="go('resumen')">Resultados</button>
   <button onclick="go('historial')">Registros</button>
   <button onclick="go('extraccion')">🍯 Extracción</button>
@@ -221,8 +222,13 @@ textarea{resize:vertical;min-height:60px}
   <button onclick="cerrarSesion()" style="background:transparent;border:1.5px solid #554400;color:#aaa;border-radius:8px;padding:4px 8px;font-size:12px;cursor:pointer;font-family:inherit">🚪</button>
 </div>
 
+<!-- INICIO / DASHBOARD -->
+<div id="sec-inicio" class="sec on">
+  <div id="dashboard-content"></div>
+</div>
+
 <!-- NUEVA VISITA -->
-<div id="sec-carga" class="sec on">
+<div id="sec-carga" class="sec">
   <div class="card">
     <input type="hidden" id="op">
     <div class="fld"><label class="lbl">Fecha de visita</label><input type="date" id="fecha"></div>
@@ -904,7 +910,7 @@ function syncAll(){
   clearTimeout(tout);setSyncBadge(fbTieneData?'ok':'local');
   buildSelects();
   var secActiva=document.querySelector('.sec.on');
-  if(secActiva){if(secActiva.id==='sec-historial')renderHist();if(secActiva.id==='sec-resumen')renderResumen();if(secActiva.id==='sec-extraccion')renderExtraccion();if(secActiva.id==='sec-ventas')renderVentas();if(secActiva.id==='sec-colmenares'&&editandoColmIdModal===null)renderColmenares();}
+  if(secActiva){if(secActiva.id==='sec-inicio')renderDashboard();if(secActiva.id==='sec-historial')renderHist();if(secActiva.id==='sec-resumen')renderResumen();if(secActiva.id==='sec-extraccion')renderExtraccion();if(secActiva.id==='sec-ventas')renderVentas();if(secActiva.id==='sec-colmenares'&&editandoColmIdModal===null)renderColmenares();}
 }).catch(function(){
   clearTimeout(tout);setSyncBadge('local');
   var lr=lsLoad('registros');if(lr&&lr.length>0)registros=lr;
@@ -935,7 +941,7 @@ function initData(){
   if(luApp&&luApp.length>0&&fbTieneData){usuariosApp=luApp;}
   else if(!fbTieneData){usuariosApp=[];}
   else{usuariosApp=USUARIOS_DEFAULT.slice();}
-  cargarLoginSelect();renderUsuariosApp();
+  renderUsuariosApp();
   // Restaurar sesión Firebase Auth
   var storedAuth=localStorage.getItem('arl_authUser');
   if(storedAuth){
@@ -966,7 +972,7 @@ function initData(){
   syncAll().then(function(){
     // Actualizar usuarios desde Firebase si está disponible
     fbList('usuariosApp').then(function(users){
-      if(users.length>0){usuariosApp=users;lsSave('usuariosApp',usuariosApp);cargarLoginSelect();renderUsuariosApp();}
+      if(users.length>0){usuariosApp=users;lsSave('usuariosApp',usuariosApp);renderUsuariosApp();}
     }).catch(function(){});
     setInterval(syncAll,10000);
   }).catch(function(){setInterval(syncAll,30000);});
@@ -1410,6 +1416,151 @@ function exportarExcel(){
   var blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='Apiario_'+hoy().replace(/-/g,'')+'.csv';a.click();URL.revokeObjectURL(url);miniToast('Archivo descargado');
 }
 
+function renderDashboard(){
+  var el=document.getElementById('dashboard-content');if(!el)return;
+  var h=hoy(),ts=getTemporadaActual(),anio=parseInt(ts.start.split('-')[0]);
+  var data=calcSeasonData(anio);
+
+  // Visitas vencidas y próximas
+  var vencidas=[],urgentes=[],proximas=[];
+  colmenares.forEach(function(c){
+    var ult=registros.find(function(r){return parseInt(r.colId)===parseInt(c.id);});
+    if(!ult)return;
+    var pv=ult.proximaVisita;if(!pv)return;
+    var diff=diasEntre(h,pv);
+    if(diff<0)vencidas.push({c:c,diff:diff,ult:ult});
+    else if(diff<=5)urgentes.push({c:c,diff:diff,ult:ult});
+    else if(diff<=14)proximas.push({c:c,diff:diff,ult:ult});
+  });
+  vencidas.sort(function(a,b){return a.diff-b.diff;});
+  urgentes.sort(function(a,b){return a.diff-b.diff;});
+
+  // Alzas pendientes
+  var totalCosechadas=registros.reduce(function(s,r){return s+(r.coAlzas||0);},0);
+  var totalExtraidas=extracciones.reduce(function(s,e){return s+(e.alzasExtraidas||0);},0);
+  var alzasPendientes=Math.max(0,totalCosechadas-totalExtraidas);
+
+  // Tambores temporada
+  var tambTemp=tambores.filter(function(t){return t.fecha>=ts.start&&t.fecha<=ts.end;});
+  var kgTambores=tambTemp.reduce(function(s,t){return s+(t.peso||0);},0);
+
+  // Mortandad temporada
+  var seasRows=colmenares.map(function(c){return data[c.id];}).filter(function(d){return d.hasData;});
+  var totIni=0,totMuert=0,totIniNuc=0,totMuertNuc=0,totCosecha=0,totLitros=0,totCam=0,totNuc=0;
+  seasRows.forEach(function(d){totIni+=d.iniCam||0;totMuert+=d.mTot||0;totIniNuc+=d.iniNuc||0;totMuertNuc+=d.mNucleos||0;totCosecha+=d.cosecha||0;totLitros+=d.litrosTotal||0;totCam+=d.camConAbejas||0;totNuc+=d.nucleos||0;});
+  var pctMort=totIni>0?Math.round(totMuert/totIni*1000)/10:0;
+  var pctMortNuc=totIniNuc>0?Math.round(totMuertNuc/totIniNuc*1000)/10:0;
+
+  // Causas de muerte temporada
+  var causas=[
+    {label:'Hambre',     val:seasRows.reduce(function(s,d){return s+(d.mH||0);},0),  color:'#f59e0b'},
+    {label:'Loque am.',  val:seasRows.reduce(function(s,d){return s+(d.mLA||0);},0), color:'#ef4444'},
+    {label:'Zanganera',  val:seasRows.reduce(function(s,d){return s+(d.mZ||0);},0),  color:'#f97316'},
+    {label:'Pillaje',    val:seasRows.reduce(function(s,d){return s+(d.mPi||0);},0), color:'#8b5cf6'},
+    {label:'No se sabe', val:seasRows.reduce(function(s,d){return s+(d.mNS||0);},0), color:'#6b7280'}
+  ].filter(function(c){return c.val>0;});
+
+  if(causas.length){
+    var maxCausa=Math.max.apply(null,causas.map(function(c){return c.val;}));
+    html+='<div class="card" style="margin-bottom:1rem">'
+      +'<div style="font-size:12px;font-weight:700;color:var(--na);text-transform:uppercase;margin-bottom:10px">💀 Causas de muerte — temporada</div>'
+      +'<div style="display:flex;flex-direction:column;gap:8px">'
+      +causas.sort(function(a,b){return b.val-a.val;}).map(function(c){
+        var pct=totMuert>0?Math.round(c.val/totMuert*100):0;
+        var w=maxCausa>0?Math.round(c.val/maxCausa*100):0;
+        return'<div style="display:flex;align-items:center;gap:8px">'
+          +'<div style="font-size:12px;font-weight:600;color:var(--txt);width:90px;flex-shrink:0">'+c.label+'</div>'
+          +'<div style="flex:1;height:22px;background:var(--sua);border-radius:6px;overflow:hidden;position:relative">'
+            +'<div style="height:100%;width:'+w+'%;background:'+c.color+';border-radius:6px;transition:width .4s"></div>'
+            +'<span style="position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:11px;font-weight:700;color:#333">'+c.val+'</span>'
+          +'</div>'
+          +'<div style="font-size:12px;font-weight:700;color:'+c.color+';width:36px;text-align:right;flex-shrink:0">'+pct+'%</div>'
+          +'</div>';
+      }).join('')
+      +'</div>'
+      +'</div>';
+  }
+
+  function mortColor(p){return p>=20?'#c0392b':p>=10?'#e67e22':'#27ae60';}
+  function mortBg(p){return p>=20?'linear-gradient(135deg,#fee2e2,#fca5a5)':p>=10?'linear-gradient(135deg,#fff3cd,#fde68a)':'linear-gradient(135deg,#d4edda,#a7f3d0)';}
+  function mortBorder(p){return p>=20?'#f87171':p>=10?'#fbbf24':'#34d399';}
+
+  var html='';
+
+  // Header saludo
+  html+='<div style="background:linear-gradient(135deg,var(--neg),var(--neg2));border-radius:14px;padding:1rem 1.25rem;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between">'
+    +'<div><div style="font-size:22px;font-weight:700;color:var(--am)">🐝 Appicultura</div>'
+    +'<div style="font-size:12px;color:#888;margin-top:2px">'+h.split('-').reverse().join('/')+(usuarioActual?' · '+usuarioActual.nombre:'')+'</div></div>'
+    +'<button onclick="go(\'carga\')" style="background:var(--am);border:none;border-radius:10px;padding:10px 16px;font-size:13px;font-weight:700;cursor:pointer;color:var(--neg);font-family:inherit">+ Nueva visita</button>'
+    +'</div>';
+
+  // KPIs rápidos
+  html+='<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:1rem">'
+    +'<div class="kpi" style="background:linear-gradient(135deg,#FFF0A0,#F5C518);border:1.5px solid #E6B800"><div class="kpi-n">'+(totCam+totNuc)+'</div><div class="kpi-l">Total activas</div><div class="kpi-sub">🐝 '+totCam+' · núcl. '+totNuc+'</div></div>'
+    +'<div class="kpi kpi-cosecha"><div class="kpi-n">'+totCosecha+' kg</div><div class="kpi-l">Cosecha temporada</div></div>'
+    +'<div class="kpi" style="background:'+mortBg(pctMort)+';border:1.5px solid '+mortBorder(pctMort)+'"><div class="kpi-n" style="color:'+mortColor(pctMort)+'">'+pctMort+'%</div><div class="kpi-l">Mort. cámaras 🐝</div><div class="kpi-sub">'+totMuert+' muertas</div></div>'
+    +'<div class="kpi" style="background:'+mortBg(pctMortNuc)+';border:1.5px solid '+mortBorder(pctMortNuc)+'"><div class="kpi-n" style="color:'+mortColor(pctMortNuc)+'">'+pctMortNuc+'%</div><div class="kpi-l">Mort. núcleos 🔵</div><div class="kpi-sub">'+totMuertNuc+' muertos</div></div>'
+    +'</div>';
+
+  // Alzas y tambores
+  html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1rem">'
+    +'<div class="card" style="margin-bottom:0;cursor:pointer;border:1.5px solid '+(alzasPendientes>0?'var(--am)':'var(--bor)')+'" onclick="go(\'extraccion\')">'
+    +'<div style="font-size:11px;font-weight:700;color:var(--na);text-transform:uppercase;margin-bottom:6px">🍯 Alzas en sala</div>'
+    +'<div style="font-size:28px;font-weight:700;color:'+(alzasPendientes>0?'var(--na)':'#aaa')+'">'+alzasPendientes+'</div>'
+    +'<div style="font-size:11px;color:#888;margin-top:2px">de '+totalCosechadas+' cosechadas</div>'
+    +'</div>'
+    +'<div class="card" style="margin-bottom:0;cursor:pointer" onclick="go(\'extraccion\')">'
+    +'<div style="font-size:11px;font-weight:700;color:var(--na);text-transform:uppercase;margin-bottom:6px">🛢 Tambores</div>'
+    +'<div style="font-size:28px;font-weight:700;color:var(--neg)">'+tambTemp.length+'</div>'
+    +'<div style="font-size:11px;color:#888;margin-top:2px">'+(kgTambores>0?Math.round(kgTambores)+' kg esta temporada':'sin peso cargado')+'</div>'
+    +'</div>'
+    +'</div>';
+
+  // Visitas vencidas
+  if(vencidas.length){
+    html+='<div class="card" style="border:2px solid #ef4444;margin-bottom:1rem">'
+      +'<div style="font-size:12px;font-weight:700;color:#c0392b;text-transform:uppercase;margin-bottom:8px">🔴 Visitas vencidas ('+vencidas.length+')</div>'
+      +vencidas.map(function(x){return'<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--sua)">'
+        +'<div><div style="font-size:13px;font-weight:700">'+x.c.nombre+'</div><div style="font-size:11px;color:#aaa">Venció: '+fmtF(x.ult.proximaVisita)+'</div></div>'
+        +'<div style="display:flex;align-items:center;gap:8px"><span style="font-size:12px;font-weight:700;color:#c0392b">'+Math.abs(x.diff)+'d</span>'
+        +'<button onclick="selColmenar('+x.c.id+',\''+x.c.nombre.replace(/'/g,"\\'")+'\'  );go(\'carga\')" style="background:var(--am);border:none;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Visitar</button></div>'
+        +'</div>';}).join('')
+      +'</div>';
+  }
+
+  // Visitas urgentes (próximas 5 días)
+  if(urgentes.length){
+    html+='<div class="card" style="border:2px solid #fbbf24;margin-bottom:1rem">'
+      +'<div style="font-size:12px;font-weight:700;color:#d68910;text-transform:uppercase;margin-bottom:8px">🟡 Visitas urgentes ('+urgentes.length+')</div>'
+      +urgentes.map(function(x){return'<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--sua)">'
+        +'<div><div style="font-size:13px;font-weight:700">'+x.c.nombre+'</div><div style="font-size:11px;color:#aaa">Vence: '+fmtF(x.ult.proximaVisita)+(x.diff===0?' (hoy)':' (en '+x.diff+'d)')+'</div></div>'
+        +'<button onclick="selColmenar('+x.c.id+',\''+x.c.nombre.replace(/'/g,"\\'")+'\'  );go(\'carga\')" style="background:var(--am);border:none;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Visitar</button>'
+        +'</div>';}).join('')
+      +'</div>';
+  }
+
+  // Próximas visitas (6-14 días)
+  if(proximas.length){
+    html+='<div class="card" style="margin-bottom:1rem">'
+      +'<div style="font-size:12px;font-weight:700;color:var(--na);text-transform:uppercase;margin-bottom:8px">📅 Próximas visitas ('+proximas.length+')</div>'
+      +proximas.map(function(x){return'<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--sua)">'
+        +'<div><div style="font-size:13px;font-weight:700">'+x.c.nombre+'</div><div style="font-size:11px;color:#aaa">'+fmtF(x.ult.proximaVisita)+' (en '+x.diff+'d)</div></div>'
+        +'<span style="font-size:12px;font-weight:600;color:#888">'+x.diff+'d</span>'
+        +'</div>';}).join('')
+      +'</div>';
+  }
+
+  if(!vencidas.length&&!urgentes.length&&!causas.length){
+    html+='<div class="card" style="text-align:center;border:2px solid #34d399;background:linear-gradient(135deg,#d1fae5,#fff)">'
+      +'<div style="font-size:28px;margin-bottom:6px">✅</div>'
+      +'<div style="font-size:14px;font-weight:700;color:#065f46">Todo al día</div>'
+      +'<div style="font-size:12px;color:#aaa;margin-top:4px">No hay visitas vencidas ni alertas activas</div>'
+      +'</div>';
+  }
+
+  el.innerHTML=html;
+}
+window.renderDashboard=renderDashboard;
 function renderColmenares(){
   var esMarcos=authUser&&authUser.email&&authUser.email.indexOf('apiariolareinasas')>=0;
   var migCard=document.getElementById('card-migracion');
@@ -1420,7 +1571,7 @@ function renderColmenares(){
     var gps=c.lat&&c.lng?'<a href="https://www.google.com/maps?q='+c.lat+','+c.lng+'" target="_blank" style="font-size:11px;color:#1a5c2a;text-decoration:none;font-weight:700">📍</a>':'<span style="font-size:11px;color:#ccc">📍</span>';
     return'<div class="colm-item"><div class="colm-cod">'+c.id+'</div><div class="colm-name">'+c.nombre+' '+gps+'</div><button class="btn-sm" onclick="editarColmenar('+c.id+')">Editar</button><button class="btn-sm btn-danger" onclick="eliminarColmenar('+c.id+')">Eliminar</button></div>';
   }).join('');
-  document.getElementById('lista-operarios').innerHTML=operarios.map(function(o,i){return'<div class="colm-item"><div class="colm-cod" style="font-size:11px">'+(i+1)+'</div><div class="colm-name">'+o+'</div><button class="btn-sm btn-danger" onclick="eliminarOperario('+i+')">Eliminar</button></div>';}).join('');
+  var loEl=document.getElementById('lista-operarios');if(loEl)loEl.innerHTML=operarios.map(function(o,i){return'<div class="colm-item"><div class="colm-cod" style="font-size:11px">'+(i+1)+'</div><div class="colm-name">'+o+'</div><button class="btn-sm btn-danger" onclick="eliminarOperario('+i+')">Eliminar</button></div>';}).join('');
   renderCompradores();
   renderUsuariosApp();
 }
@@ -1574,9 +1725,11 @@ function updateNavVisibility(){
 }
 function go(s){
   if(s==='ventas'&&!(usuarioActual&&usuarioActual.admin)){miniToast('Solo el administrador puede ver Ventas');return;}
-  document.querySelectorAll('.nav button').forEach(function(b,i){b.classList.toggle('on',['carga','resumen','historial','extraccion','ventas','colmenares'][i]===s);});
+  var secs=['inicio','carga','resumen','historial','extraccion','ventas','colmenares'];
+  document.querySelectorAll('.nav button').forEach(function(b,i){b.classList.toggle('on',['inicio','carga','resumen','historial','extraccion','ventas','colmenares'][i]===s);});
   document.querySelectorAll('.sec').forEach(function(x){x.classList.remove('on');});
-  document.getElementById('sec-'+s).classList.add('on');
+  var sec=document.getElementById('sec-'+s);if(sec)sec.classList.add('on');
+  if(s==='inicio')renderDashboard();
   if(s==='resumen')renderResumen();if(s==='historial')renderHist();if(s==='extraccion')renderExtraccion();if(s==='ventas')renderVentas();if(s==='colmenares')renderColmenares();
 }
 function renderExtraccion(){
@@ -2042,6 +2195,5 @@ document.addEventListener('blur',function(e){if(e.target.type==='number'&&e.targ
 setInterval(function(){if(authUser&&authUser.refreshToken)refreshToken();},45*60*1000);
 initData();
 </script>
-<script src="dashboard-patch.js"></script>
 </body>
 </html>
