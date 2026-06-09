@@ -164,8 +164,9 @@
   var secCarga = document.getElementById('sec-carga');
   if (secCarga) {
     secCarga.parentNode.insertBefore(secInicio, secCarga);
-    // Quitar clase "on" de sec-carga para que empiece en inicio
+    // Quitar clase "on" de sec-carga y mostrar inicio
     secCarga.classList.remove('on');
+    secInicio.classList.add('on'); // ← FIX: inicio arranca visible
   }
 
   // ─── 4. Agregar botón "Inicio" en el nav ──────────────────────────────────
@@ -184,23 +185,33 @@
   }
 
   // ─── 5. Parchear go() para incluir sec-inicio ────────────────────────────
-  // Esperamos a que el DOM esté listo y go() esté definido
   window.addEventListener('load', function() {
     var originalGo = window.go;
     window.go = function(sec) {
-      // Activar/desactivar botón Inicio
-      var btnInicio = document.getElementById('nav-btn-inicio');
-      if (btnInicio) btnInicio.classList.toggle('on', sec === 'inicio');
-      // Mostrar/ocultar sección inicio
+      // Primero llamar al original para que oculte todas las secciones
+      // (incluso si es 'inicio', para ocultar cualquier sección abierta)
+      if (originalGo) originalGo(sec !== 'inicio' ? sec : 'carga');
+
+      // Manejar sección inicio
       var si = document.getElementById('sec-inicio');
-      if (si) si.classList.toggle('on', sec === 'inicio');
-      // Llamar al go original para las demás secciones
-      if (sec !== 'inicio' && originalGo) {
-        originalGo(sec);
-      }
-      // Renderizar dashboard cuando se activa
+      var btnInicio = document.getElementById('nav-btn-inicio');
+
       if (sec === 'inicio') {
+        // Ocultar todas las .sec y activar solo inicio
+        document.querySelectorAll('.sec').forEach(function(s) {
+          s.classList.remove('on');
+        });
+        if (si) si.classList.add('on');
+        // Quitar on de todos los nav buttons y activar el de inicio
+        document.querySelectorAll('.nav button').forEach(function(b) {
+          b.classList.remove('on');
+        });
+        if (btnInicio) btnInicio.classList.add('on');
         renderInicio();
+      } else {
+        // Ocultar inicio, el original ya activó la sección correcta
+        if (si) si.classList.remove('on');
+        if (btnInicio) btnInicio.classList.remove('on');
       }
     };
   });
@@ -448,20 +459,20 @@
   };
 
   // ─── 7. Hook a syncAll para re-renderizar el dashboard ───────────────────
-  // Esperar a que syncAll esté definido y parchear para llamar renderInicio
   var hookInterval = setInterval(function() {
     if (typeof window.syncAll === 'function') {
       clearInterval(hookInterval);
       var origSyncAll = window.syncAll;
       window.syncAll = function() {
-        return origSyncAll.apply(this, arguments).then
-          ? origSyncAll.apply(this, arguments).then(function(r) {
-              // Si la sección activa es inicio, re-renderizar
-              var si = document.getElementById('sec-inicio');
-              if (si && si.classList.contains('on')) renderInicio();
-              return r;
-            })
-          : origSyncAll.apply(this, arguments);
+        var result = origSyncAll.apply(this, arguments);
+        // FIX: no doble-llamada, solo chainear .then si existe
+        if (result && typeof result.then === 'function') {
+          result.then(function() {
+            var si = document.getElementById('sec-inicio');
+            if (si && si.classList.contains('on')) renderInicio();
+          });
+        }
+        return result;
       };
     }
   }, 200);
