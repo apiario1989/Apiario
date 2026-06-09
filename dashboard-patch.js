@@ -477,21 +477,21 @@
     }
   }, 200);
 
-  // ─── 8. Fallback: reintentar renderInicio cada segundo hasta que haya datos ──
+  // ─── 8. Fallback: apenas llega data, renderizar sin importar la sección activa ──
   var dataRetry = setInterval(function() {
-    var si = document.getElementById('sec-inicio');
-    if (!si) { clearInterval(dataRetry); return; }
     var hasData = (window.colmenares || []).length > 0 || (window.registros || []).length > 0;
-    if (hasData) {
-      clearInterval(dataRetry);
-      // Forzar sec-inicio visible si es la sección activa del nav
-      var btnInicio = document.getElementById('nav-btn-inicio');
-      if (btnInicio && btnInicio.classList.contains('on')) {
-        document.querySelectorAll('.sec').forEach(function(s) { s.classList.remove('on'); });
-        si.classList.add('on');
-        renderInicio();
-      }
+    if (!hasData) return;
+    clearInterval(dataRetry);
+
+    // Pre-renderizar el dashboard (aunque no sea la sección visible)
+    renderInicio();
+
+    // Si ninguna sección está activa, mostrar inicio
+    var secActiva = document.querySelector('.sec.on');
+    if (!secActiva) {
+      var si = document.getElementById('sec-inicio');
+      if (si) si.classList.add('on');
     }
-  }, 1000);
+  }, 800);
 
 })();
