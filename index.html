@@ -874,7 +874,8 @@ function authSubmit(){
     }
     localStorage.setItem('arl_authUser',JSON.stringify(authUser));
     document.getElementById('pantalla-login').style.display='none';
-    initData().then(function(){mostrarSelectorOperario();});
+    mostrarSelectorOperario();
+    initData();
     miniToast(authModo==='register'?'¡Cuenta creada! Bienvenido 🐝':'');
   })
   .catch(function(){
