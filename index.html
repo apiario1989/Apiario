@@ -1966,7 +1966,7 @@ function exportarTambores(){
   var enTemporada=tambores.filter(function(t){return t.fecha>=ts.start&&t.fecha<=ts.end;});
   if(!enTemporada.length){miniToast('No hay tambores en esta temporada');return;}
   // Formato exacto de la plantilla: Código de Tambor;precinto;peso
-  var cab='sep=;\r\nC\xF3digo de Tambor;precinto;peso';
+  var cab='sep=;\r\nCódigo de Tambor;precinto;peso';
   var filas=enTemporada.map(function(t){return(t.codigo||'')+';'+(t.precinto||'')+';'+(t.peso!=null?t.peso:'');});
   var csv=cab+'\r\n'+filas.join('\r\n');
   var blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
