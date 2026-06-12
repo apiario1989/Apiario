@@ -345,8 +345,12 @@ textarea{resize:vertical;min-height:60px}
 
     <div class="campo-cond" id="cond-alimentacion">
       <div class="stitle">Alimentación</div>
+      <div class="fld">
+        <label class="lbl">Tipo de alimento</label>
+        <select id="aTipo" onchange="onTipoAlimChange()" style="width:100%"></select>
+      </div>
       <div class="g2" style="align-items:center">
-        <div><label class="lbl">Litros por unidad</label>
+        <div><label class="lbl">Litros / Kg por unidad</label>
           <div style="display:flex;align-items:center;gap:8px">
             <button class="nbtn" onclick="adjAlim(-1)">−</button>
             <input class="ninput" type="number" id="aLc" value="0" min="0" step="0.5" oninput="recalcAlim()" style="width:70px">
@@ -511,6 +515,7 @@ textarea{resize:vertical;min-height:60px}
     <div class="section-block"><div class="section-block-title">Causas de muerte</div><div id="causas-visual"></div></div>
     <div class="section-block"><div class="section-block-title">Mortandad por colmenar</div><div id="mort-colm-cards"></div></div>
     <div class="section-block" id="section-nucleos" style="display:none"><div class="section-block-title">Núcleos</div><div id="nuc-cards"></div></div>
+    <div class="section-block" id="section-alimento" style="display:none"><div class="section-block-title">Alimentación por colmenar</div><div id="alimento-cards"></div></div>
     <div id="comparacion-wrapper" style="display:none"><div class="section-block"><div class="section-block-title" id="comp-title">Comparación temporada anterior</div><div id="comparacion-content"></div></div></div>
   </div>
 </div>
@@ -1124,7 +1129,41 @@ function setMuertasError(err){['mLA','mZ','mH','mPi','mNS'].forEach(function(id)
 function validarMuertas(){var camActual=nv('camConAbejas'),diff=camConAbejasPrev-camActual,total=totalMuertas();var aviso=document.getElementById('muertas-aviso');var secVacias=document.getElementById('muertas-vacias-section');if(diff<=0&&total===0){aviso.style.display='none';setMuertasError(false);if(secVacias)secVacias.style.display='none';return;}if(diff>0&&total===0){aviso.textContent='Hay '+diff+' cámara'+(diff>1?'s':'')+' menos. Indicá la causa.';aviso.className='muertas-aviso mav-error';aviso.style.display='block';setMuertasError(true);if(secVacias)secVacias.style.display='none';return;}if(diff>0&&total!==diff){aviso.textContent='Registraste '+total+' muertas, la diferencia es '+diff+'.';aviso.className='muertas-aviso mav-error';aviso.style.display='block';setMuertasError(true);if(secVacias)secVacias.style.display='none';return;}if(diff>0&&total===diff){aviso.textContent='✓ Correcto: '+total+' colmena'+(total!==1?'s':'')+' justificada'+(total!==1?'s':'')+'.';aviso.className='muertas-aviso mav-ok';aviso.style.display='block';setMuertasError(false);if(secVacias){secVacias.style.display='block';fillDmColmenarDest();}return;}if(diff<=0&&total>0){aviso.textContent='Registraste '+total+' muertas pero las cámaras no bajaron.';aviso.className='muertas-aviso mav-error';aviso.style.display='block';setMuertasError(true);if(secVacias)secVacias.style.display='none';return;}aviso.style.display='none';setMuertasError(false);if(secVacias)secVacias.style.display='none';}
 function adjM(id,d){var el=document.getElementById(id);el.value=Math.max(0,(parseInt(el.value)||0)+d);validarMuertas();updateAlertasMuertasTop();}
 function adjN(id,d){var el=document.getElementById(id);if(!el)return;el.value=Math.max(0,(parseInt(el.value)||0)+d);if(id==='camConAbejas'||id==='camSinAbejas'||id==='nucleosConteo')onCamChange();if(id==='nucleosConteo')onNucleoChange();if(id==='nuC'||id==='nuCria'||id==='nuMiel')updateNucleoRes();if(id==='trasCant')updateTrasladoPreview();if(id==='alzAdd')updateAlzasPreview();if(id==='enjambresCant')updateEnjambrePreview();if(id==='vaciasCant')updateVaciasPreview();}
-function recalcAlim(){var lc=nfv('aLc'),cam=nv('camConAbejas'),nuc=nv('nucleosConteo'),total=Math.round(lc*(cam+nuc)*10)/10;var tt=document.getElementById('alim-total-txt'),ft=document.getElementById('alim-formula-txt');if(tt)tt.textContent=total+' litros';if(ft)ft.textContent=lc+' L × ('+cam+' cám + '+nuc+' núcl)';}
+var TIPOS_ALIMENTO_DEFAULT=['Jarabe de maíz','Jarabe de azúcar','Torta proteica dulce','Torta proteica amarga'];
+function getTiposAlimento(){var t=lsLoad('tiposAlimento');return(t&&t.length)?t:TIPOS_ALIMENTO_DEFAULT.slice();}
+function unidadAlimento(tipo){return(tipo&&tipo.indexOf('Torta')===0)?'kg':'L';}
+function buildTiposAlimentoSelect(){
+  var sel=document.getElementById('aTipo');if(!sel)return;
+  var tipos=getTiposAlimento();
+  var prev=sel.value;
+  sel.innerHTML=tipos.map(function(t){return'<option value="'+t+'">'+t+'</option>';}).join('')+'<option value="__nuevo__">+ Agregar nuevo...</option>';
+  if(prev&&tipos.indexOf(prev)>=0)sel.value=prev;
+}
+function onTipoAlimChange(){
+  var sel=document.getElementById('aTipo');
+  if(sel.value==='__nuevo__'){
+    var nuevo=prompt('Nombre del nuevo alimento:');
+    if(nuevo&&nuevo.trim()){
+      var tipos=getTiposAlimento();
+      nuevo=nuevo.trim();
+      if(tipos.indexOf(nuevo)<0){tipos.push(nuevo);lsSave('tiposAlimento',tipos);}
+      buildTiposAlimentoSelect();
+      sel.value=nuevo;
+    }else{
+      sel.value=getTiposAlimento()[0];
+    }
+  }
+  recalcAlim();
+}
+window.onTipoAlimChange=onTipoAlimChange;
+function recalcAlim(){
+  var lc=nfv('aLc'),cam=nv('camConAbejas'),nuc=nv('nucleosConteo'),total=Math.round(lc*(cam+nuc)*10)/10;
+  var tipoSel=document.getElementById('aTipo'),tipo=tipoSel?tipoSel.value:TIPOS_ALIMENTO_DEFAULT[0];
+  var unidad=unidadAlimento(tipo);
+  var tt=document.getElementById('alim-total-txt'),ft=document.getElementById('alim-formula-txt');
+  if(tt)tt.textContent=total+' '+(unidad==='kg'?'kg':'litros');
+  if(ft)ft.textContent=lc+' '+unidad+' × ('+cam+' cám + '+nuc+' núcl)';
+}
 function adjAlim(d){var el=document.getElementById('aLc');el.value=Math.max(0,Math.round((parseFloat(el.value)||0)*2+d*2)/2);recalcAlim();}
 function adjCosecha(id,d){var el=document.getElementById(id);if(!el)return;var step=id==='coKgAlza'?0.5:1;el.value=Math.max(0,Math.round((parseFloat(el.value)||0)*2+d*step*2)/2);recalcCosecha();}
 function recalcCosecha(){var alzas=nv('coA'),kgAlza=nfv('coKgAlza'),total=Math.round(alzas*kgAlza*10)/10;var tt=document.getElementById('cosecha-total-txt'),ft=document.getElementById('cosecha-formula-txt');if(tt)tt.textContent=total+' kg';if(ft)ft.textContent=alzas+' alzas × '+kgAlza+' kg';}
@@ -1306,7 +1345,7 @@ try{
     nucleosConteo:nv('nucleosConteo'),alzas:alzActual,alzasSinAbejas:nv('alzV'),
     mLA:nv('mLA'),mZ:nv('mZ'),mH:nv('mH'),mPi:nv('mPi'),mNS:nv('mNS'),mNucleos:totalMuertasNucleos(),
     mNucLA:nv('mNucLA'),mNucZ:nv('mNucZ'),mNucH:nv('mNucH'),mNucPi:nv('mNucPi'),mNucNS:nv('mNucNS'),
-    aLc:lc,aLt:aLt,curas:{primavera:curasSel.primavera,verano:curasSel.verano,otono:curasSel.otono},
+    aLc:lc,aLt:aLt,tipoAlimento:tareasSel.has('alimentacion')?(document.getElementById('aTipo').value||TIPOS_ALIMENTO_DEFAULT[0]):'',curas:{primavera:curasSel.primavera,verano:curasSel.verano,otono:curasSel.otono},
     antiPrimera:antisSel.primera,antiSegunda:antisSel.segunda,
     coAlzas:coAlzas,coKgAlza:coKgAlza,coPeso:coPeso,
     nucCant:tareasSel.has('nucleos')?nv('nuC'):0,nucCria:tareasSel.has('nucleos')?nv('nuCria'):0,
@@ -1346,7 +1385,7 @@ try{
 function resetForm(){
   editandoId=null;
   ['camConAbejas','camSinAbejas','nucleosConteo','alz','alzV','mLA','mZ','mH','mPi','mNS','mNucLA','mNucZ','mNucH','mNucPi','mNucNS','coA','coKgAlza','nuC','alzAdd','trasCant','nucPasaCam','enjambresCant','vaciasCant'].forEach(function(id){setV(id,0);});
-  setV('aLc',0);setV('nuCria',4);setV('nuMiel',1);
+  setV('aLc',0);var aTipoR=document.getElementById('aTipo');if(aTipoR)aTipoR.value=TIPOS_ALIMENTO_DEFAULT[0];setV('nuCria',4);setV('nuMiel',1);
   document.getElementById('op').value='';document.getElementById('colmenar').value='';
   var cinp=document.getElementById('colmenar-input');cinp.value='';cinp.style.fontWeight='';
   document.getElementById('obs').value='';document.getElementById('retorno-dias').value=15;document.getElementById('fecha').value=hoy();
@@ -1396,7 +1435,7 @@ function abrirEdicion(idStr){
   var nucSec=document.getElementById('muertas-nucleos-section');if(nucSec)nucSec.style.display=hasMuertNuc?'block':'none';
   var card=document.getElementById('muertas-card');if(card)card.style.display=(hasMuertCam||hasMuertNuc)?'block':'none';
   (r.tareas||[]).forEach(function(id){toggleTarea(id);});
-  setV('aLc',r.aLc||0);recalcAlim();setV('coA',r.coAlzas||0);setV('coKgAlza',r.coKgAlza||0);recalcCosecha();
+  setV('aLc',r.aLc||0);var aTipoSel=document.getElementById('aTipo');if(aTipoSel&&r.tipoAlimento)aTipoSel.value=r.tipoAlimento;recalcAlim();setV('coA',r.coAlzas||0);setV('coKgAlza',r.coKgAlza||0);recalcCosecha();
   setV('nuC',r.nucCant||0);setV('nuCria',r.nucCria||4);setV('nuMiel',r.nucMiel||1);document.getElementById('nuDestino').value=r.nuDestino||'mismo';toggleNuDestinoColm();updateNucleoRes();
   setV('nucPasaCam',r.nucPasaCam||0);setV('enjambresCant',r.enjambresCant||0);setV('alzAdd',0);
   curasSel={primavera:false,verano:false,otono:false};if(r.curas&&r.curas.primavera)toggleCura('primavera');if(r.curas&&r.curas.verano)toggleCura('verano');if(r.curas&&r.curas.otono)toggleCura('otono');
@@ -1438,7 +1477,7 @@ function renderHist(){
     if(m>0){var det=[];if(r.mLA)det.push('LA:'+r.mLA);if(r.mZ)det.push('Zan:'+r.mZ);if(r.mH)det.push('Ham:'+r.mH);if(r.mPi)det.push('Pil:'+r.mPi);if(r.mNS)det.push('NS:'+r.mNS);tags.push(m+' muertas ('+det.join(', ')+')');}
     var mNucTot=(r.mNucLA||0)+(r.mNucZ||0)+(r.mNucH||0)+(r.mNucPi||0)+(r.mNucNS||0)||(r.mNucleos||0);
     if(mNucTot>0){var detN=[];if(r.mNucLA)detN.push('LA:'+r.mNucLA);if(r.mNucZ)detN.push('Zan:'+r.mNucZ);if(r.mNucH)detN.push('Ham:'+r.mNucH);if(r.mNucPi)detN.push('Pil:'+r.mNucPi);if(r.mNucNS)detN.push('NS:'+r.mNucNS);tags.push(mNucTot+' núcleos muertos'+(detN.length?' ('+detN.join(', ')+')':''));}
-    if(r.aLt)tags.push('Alim: '+r.aLt+' L');
+    if(r.aLt)tags.push((r.tipoAlimento?r.tipoAlimento+': ':'Alim: ')+r.aLt+' '+(unidadAlimento(r.tipoAlimento)));
     var cosechaReal=(r.coAlzas&&r.coKgAlza)?Math.round(r.coAlzas*r.coKgAlza*10)/10:(r.coPeso||0);
     if(cosechaReal)tags.push('Cosecha: '+(r.coAlzas||0)+' alzas × '+(r.coKgAlza||0)+' kg = '+cosechaReal+' kg');
     if(r.nucCant)tags.push('Núcleos: '+r.nucCant+' ('+(r.nucCria||0)+'c+'+(r.nucMiel||0)+'m)');if(r.nucPasaCam)tags.push(r.nucPasaCam+' núcleo→cámara');if(r.enjambresCant)tags.push(r.enjambresCant+' enjambre'+(r.enjambresCant>1?'s':''));
@@ -1454,8 +1493,8 @@ function renderHist(){
 
 function exportarExcel(){
   if(!registros.length){miniToast('No hay registros');return;}
-  var cab=['Fecha','Colmenar','Operario','Tareas','Cám.Con Abejas','Cám.Vacías','Núcleos','Alzas','M.Loque','M.Zanganera','M.Hambre','M.Pillaje','M.NS','Nuc.Muertos','Alim L/unidad','Alim L total','Anti.1ra','Anti.2da','Trat.Prim','Trat.Ver','Trat.Oto','Cosecha Alzas','Kg/Alza','Cosecha Kg','Nuc.Realizados','Cuadros Cría','Cuadros Miel','Nuc→Cám','Enjambres','Próxima','Días retorno','Observaciones'];
-  var filas=registros.map(function(r){return[fmtF(r.fecha),r.colNombre,r.operario,r.tarea||'',r.camConAbejas||0,r.camSinAbejas||0,r.nucleosConteo||0,r.alzas||0,r.mLA||0,r.mZ||0,r.mH||0,r.mPi||0,r.mNS||0,r.mNucleos||0,r.aLc||0,r.aLt||0,r.antiPrimera?'SI':'NO',r.antiSegunda?'SI':'NO',r.curas&&r.curas.primavera?'SI':'NO',r.curas&&r.curas.verano?'SI':'NO',r.curas&&r.curas.otono?'SI':'NO',r.coAlzas||0,r.coKgAlza||0,r.coPeso||0,r.nucCant||0,r.nucCria||0,r.nucMiel||0,r.nucPasaCam||0,r.enjambresCant||0,fmtF(r.proximaVisita),r.retornoDias||'',(r.obs||'').replace(/"/g,'""')];});
+  var cab=['Fecha','Colmenar','Operario','Tareas','Cám.Con Abejas','Cám.Vacías','Núcleos','Alzas','M.Loque','M.Zanganera','M.Hambre','M.Pillaje','M.NS','Nuc.Muertos','Tipo Alimento','Cant/unidad','Alim Total','Anti.1ra','Anti.2da','Trat.Prim','Trat.Ver','Trat.Oto','Cosecha Alzas','Kg/Alza','Cosecha Kg','Nuc.Realizados','Cuadros Cría','Cuadros Miel','Nuc→Cám','Enjambres','Próxima','Días retorno','Observaciones'];
+  var filas=registros.map(function(r){return[fmtF(r.fecha),r.colNombre,r.operario,r.tarea||'',r.camConAbejas||0,r.camSinAbejas||0,r.nucleosConteo||0,r.alzas||0,r.mLA||0,r.mZ||0,r.mH||0,r.mPi||0,r.mNS||0,r.mNucleos||0,r.tipoAlimento||'',r.aLc||0,r.aLt||0,r.antiPrimera?'SI':'NO',r.antiSegunda?'SI':'NO',r.curas&&r.curas.primavera?'SI':'NO',r.curas&&r.curas.verano?'SI':'NO',r.curas&&r.curas.otono?'SI':'NO',r.coAlzas||0,r.coKgAlza||0,r.coPeso||0,r.nucCant||0,r.nucCria||0,r.nucMiel||0,r.nucPasaCam||0,r.enjambresCant||0,fmtF(r.proximaVisita),r.retornoDias||'',(r.obs||'').replace(/"/g,'""')];});
   var csv='sep=;\r\n'+[cab].concat(filas).map(function(row){return row.join(';');}).join('\r\n');
   var blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='Apiario_'+hoy().replace(/-/g,'')+'.csv';a.click();URL.revokeObjectURL(url);miniToast('Archivo descargado');
 }
@@ -1715,7 +1754,7 @@ function switchTab(t){document.querySelectorAll('.res-tab').forEach(function(b,i
 function getTemporadas(){var anioActual=new Date().getFullYear(),mesActual=new Date().getMonth()+1,tempActualAnio=mesActual>=7?anioActual:anioActual-1;var temps=new Set([tempActualAnio-1,tempActualAnio]);registros.forEach(function(r){if(!r.fecha)return;var y=parseInt(r.fecha.split('-')[0]),m=parseInt(r.fecha.split('-')[1]);temps.add(m>=7?y:y-1);});return Array.from(temps).sort(function(a,b){return b-a;});}
 function buildTemporadaSelect(){var sel=document.getElementById('sel-temporada'),temps=getTemporadas();var currTemp=(new Date().getMonth()+1)>=7?new Date().getFullYear():new Date().getFullYear()-1;var prev=parseInt(sel.value)||currTemp;sel.innerHTML=temps.map(function(y){return'<option value="'+y+'"'+(y===prev?' selected':'')+'>'+(y)+'-'+(y+1)+'</option>';}).join('');}
 function getSeasonRange(y){return{start:y+'-07-01',end:(y+1)+'-06-30'};}
-function calcSeasonData(anio){var sr=getSeasonRange(anio),data={};colmenares.forEach(function(c){data[c.id]={nombre:c.nombre,ultima:null,proxima:null,camConAbejas:0,camSinAbejas:0,nucleos:0,alzas:0,cosecha:0,cP:false,cV:false,cO:false,iniCam:null,finCam:null,iniNuc:null,finNuc:null,mLA:0,mZ:0,mH:0,mPi:0,mNS:0,mTot:0,mNucleos:0,mNucLA:0,mNucZ:0,mNucH:0,mNucPi:0,mNucNS:0,litrosTotal:0,hasData:false};});var regEnTemp=registros.filter(function(r){return r.fecha>=sr.start&&r.fecha<=sr.end;}),regAntes=registros.filter(function(r){return r.fecha<sr.start;});colmenares.forEach(function(c){var d=data[c.id];var noAuto=function(r){return!r.tarea||r.tarea.indexOf('Recibe')!==0;};var ultAntes=regAntes.filter(function(r){return parseInt(r.colId)===parseInt(c.id)&&noAuto(r);}).sort(function(a,b){var fc=b.fecha.localeCompare(a.fecha);return fc!==0?fc:(b.id||'').localeCompare(a.id||'');})[0];var primEnTemp=regEnTemp.filter(function(r){return parseInt(r.colId)===parseInt(c.id)&&noAuto(r);}).sort(function(a,b){var fc=a.fecha.localeCompare(b.fecha);return fc!==0?fc:(a.id||'').localeCompare(b.id||'');})[0];if(ultAntes){d.iniCam=ultAntes.camConAbejas||0;d.iniNuc=ultAntes.nucleosConteo||0;}else if(primEnTemp){d.iniCam=primEnTemp.camConAbejas||0;d.iniNuc=primEnTemp.nucleosConteo||0;}});regEnTemp.forEach(function(r){var d=data[r.colId];if(!d)return;d.hasData=true;d.mLA+=r.mLA||0;d.mZ+=r.mZ||0;d.mH+=r.mH||0;d.mPi+=r.mPi||0;d.mNS+=r.mNS||0;d.mTot+=(r.mLA||0)+(r.mZ||0)+(r.mH||0)+(r.mPi||0)+(r.mNS||0);var nucDead=(r.mNucLA||0)+(r.mNucZ||0)+(r.mNucH||0)+(r.mNucPi||0)+(r.mNucNS||0)||(r.mNucleos||0);d.mNucleos+=nucDead;d.mNucLA+=r.mNucLA||0;d.mNucZ+=r.mNucZ||0;d.mNucH+=r.mNucH||0;d.mNucPi+=r.mNucPi||0;d.mNucNS+=r.mNucNS||0;d.litrosTotal+=r.aLt||0;var ck=(r.coAlzas&&r.coKgAlza)?Math.round(r.coAlzas*r.coKgAlza*10)/10:(r.coPeso||0);d.cosecha+=ck;if(r.curas){if(r.curas.primavera)d.cP=true;if(r.curas.verano)d.cV=true;if(r.curas.otono)d.cO=true;}});var allRegs=regAntes.concat(regEnTemp);allRegs.forEach(function(r){var d=data[r.colId];if(!d)return;if(!d.ultima||r.fecha>d.ultima||(r.fecha===d.ultima&&(r.id||'')>(d._lastId||''))){d.ultima=r.fecha;d.proxima=r.proximaVisita;d.camConAbejas=r.camConAbejas||0;d.camSinAbejas=r.camSinAbejas||0;d.nucleos=r.nucleosConteo||0;d.alzas=r.alzas||0;d.alzasSinAbejas=r.alzasSinAbejas||0;d._lastId=r.id||'';}});colmenares.forEach(function(c){var d=data[c.id];var ultEnTemp=regEnTemp.filter(function(r){return parseInt(r.colId)===parseInt(c.id);}).sort(function(a,b){var fc=b.fecha.localeCompare(a.fecha);return fc!==0?fc:(b.id||'').localeCompare(a.id||'');})[0];if(ultEnTemp){d.finCam=ultEnTemp.camConAbejas||0;d.finNuc=ultEnTemp.nucleosConteo||0;}else{d.finCam=d.iniCam;d.finNuc=d.iniNuc;}});return data;}
+function calcSeasonData(anio){var sr=getSeasonRange(anio),data={};colmenares.forEach(function(c){data[c.id]={nombre:c.nombre,ultima:null,proxima:null,camConAbejas:0,camSinAbejas:0,nucleos:0,alzas:0,cosecha:0,cP:false,cV:false,cO:false,iniCam:null,finCam:null,iniNuc:null,finNuc:null,mLA:0,mZ:0,mH:0,mPi:0,mNS:0,mTot:0,mNucleos:0,mNucLA:0,mNucZ:0,mNucH:0,mNucPi:0,mNucNS:0,litrosTotal:0,hasData:false};});var regEnTemp=registros.filter(function(r){return r.fecha>=sr.start&&r.fecha<=sr.end;}),regAntes=registros.filter(function(r){return r.fecha<sr.start;});colmenares.forEach(function(c){var d=data[c.id];var noAuto=function(r){return!r.tarea||r.tarea.indexOf('Recibe')!==0;};var ultAntes=regAntes.filter(function(r){return parseInt(r.colId)===parseInt(c.id)&&noAuto(r);}).sort(function(a,b){var fc=b.fecha.localeCompare(a.fecha);return fc!==0?fc:(b.id||'').localeCompare(a.id||'');})[0];var primEnTemp=regEnTemp.filter(function(r){return parseInt(r.colId)===parseInt(c.id)&&noAuto(r);}).sort(function(a,b){var fc=a.fecha.localeCompare(b.fecha);return fc!==0?fc:(a.id||'').localeCompare(b.id||'');})[0];if(ultAntes){d.iniCam=ultAntes.camConAbejas||0;d.iniNuc=ultAntes.nucleosConteo||0;}else if(primEnTemp){d.iniCam=primEnTemp.camConAbejas||0;d.iniNuc=primEnTemp.nucleosConteo||0;}});regEnTemp.forEach(function(r){var d=data[r.colId];if(!d)return;d.hasData=true;d.mLA+=r.mLA||0;d.mZ+=r.mZ||0;d.mH+=r.mH||0;d.mPi+=r.mPi||0;d.mNS+=r.mNS||0;d.mTot+=(r.mLA||0)+(r.mZ||0)+(r.mH||0)+(r.mPi||0)+(r.mNS||0);var nucDead=(r.mNucLA||0)+(r.mNucZ||0)+(r.mNucH||0)+(r.mNucPi||0)+(r.mNucNS||0)||(r.mNucleos||0);d.mNucleos+=nucDead;d.mNucLA+=r.mNucLA||0;d.mNucZ+=r.mNucZ||0;d.mNucH+=r.mNucH||0;d.mNucPi+=r.mNucPi||0;d.mNucNS+=r.mNucNS||0;d.litrosTotal+=r.aLt||0;if(r.aLt){var tipoR=r.tipoAlimento||'Jarabe de maíz';d.alimPorTipo=d.alimPorTipo||{};d.alimPorTipo[tipoR]=(d.alimPorTipo[tipoR]||0)+r.aLt;}var ck=(r.coAlzas&&r.coKgAlza)?Math.round(r.coAlzas*r.coKgAlza*10)/10:(r.coPeso||0);d.cosecha+=ck;if(r.curas){if(r.curas.primavera)d.cP=true;if(r.curas.verano)d.cV=true;if(r.curas.otono)d.cO=true;}});var allRegs=regAntes.concat(regEnTemp);allRegs.forEach(function(r){var d=data[r.colId];if(!d)return;if(!d.ultima||r.fecha>d.ultima||(r.fecha===d.ultima&&(r.id||'')>(d._lastId||''))){d.ultima=r.fecha;d.proxima=r.proximaVisita;d.camConAbejas=r.camConAbejas||0;d.camSinAbejas=r.camSinAbejas||0;d.nucleos=r.nucleosConteo||0;d.alzas=r.alzas||0;d.alzasSinAbejas=r.alzasSinAbejas||0;d._lastId=r.id||'';}});colmenares.forEach(function(c){var d=data[c.id];var ultEnTemp=regEnTemp.filter(function(r){return parseInt(r.colId)===parseInt(c.id);}).sort(function(a,b){var fc=b.fecha.localeCompare(a.fecha);return fc!==0?fc:(b.id||'').localeCompare(a.id||'');})[0];if(ultEnTemp){d.finCam=ultEnTemp.camConAbejas||0;d.finNuc=ultEnTemp.nucleosConteo||0;}else{d.finCam=d.iniCam;d.finNuc=d.iniNuc;}});return data;}
 
 function renderResumen(){
   buildTemporadaSelect();var anio=parseInt(document.getElementById('sel-temporada').value);var sr=getSeasonRange(anio),h=hoy(),temp=periodoCura(h),data=calcSeasonData(anio);
@@ -1756,6 +1795,23 @@ function renderResumen(){
   document.getElementById('mort-colm-cards').innerHTML=mortRows.length?'<div>'+mortRows.sort(function(a,b){return pct(b.mTot,b.iniCam||1)-pct(a.mTot,a.iniCam||1);}).map(function(r){var ini=r.iniCam||0,fin=r.finCam||0,mt=r.mTot||0,pmort=pct(mt,ini),col=pctColor(pmort);return'<div class="mort-colm-item"><div style="flex:1"><div style="font-size:13px;font-weight:700">'+r.nombre+'</div><div style="font-size:11px;color:#888;margin-top:1px">'+ini+' → '+fin+' cámaras · '+(mt?mt+' muertas':'sin muertas')+'</div><div class="mort-colm-bar"><div class="mort-colm-bar-fill" style="width:'+Math.min(100,pmort*2)+'%;background:'+col+'"></div></div></div><div style="font-size:15px;font-weight:700;color:'+col+';min-width:44px;text-align:right">'+(mt?pmort+'%':'0%')+'</div></div>';}).join('')+'</div>':'<div style="font-size:13px;color:#aaa;text-align:center;padding:1rem">Sin datos</div>';
   var nucRows=seasRows.filter(function(r){return(r.iniNuc||0)>0||r.mNucleos>0;}),secNuc=document.getElementById('section-nucleos');
   if(nucRows.length){secNuc.style.display='block';document.getElementById('nuc-cards').innerHTML='<div>'+nucRows.map(function(r){var ini=r.iniNuc||0,fin=r.finNuc||0,mn=r.mNucleos||0,pn=pct(mn,ini),col=pctColor(pn);return'<div class="mort-colm-item"><div style="flex:1"><div style="font-size:13px;font-weight:700">'+r.nombre+'</div><div style="font-size:11px;color:#888;margin-top:1px">'+ini+' → '+fin+' núcleos · '+(mn?mn+' muertos':'sin muertes')+'</div><div class="mort-colm-bar"><div class="mort-colm-bar-fill" style="width:'+Math.min(100,pn*2)+'%;background:'+col+'"></div></div></div><div style="font-size:15px;font-weight:700;color:'+col+';min-width:44px;text-align:right">'+(mn?pn+'%':'0%')+'</div></div>';}).join('')+'</div>';}else secNuc.style.display='none';
+  // Alimentación por colmenar y tipo
+  var alimRows=seasRows.filter(function(r){return r.alimPorTipo&&Object.keys(r.alimPorTipo).length>0;}),secAlim=document.getElementById('section-alimento');
+  if(alimRows.length){
+    secAlim.style.display='block';
+    // Totales por tipo (footer)
+    var totalesPorTipo={};
+    alimRows.forEach(function(r){for(var t in r.alimPorTipo)totalesPorTipo[t]=(totalesPorTipo[t]||0)+r.alimPorTipo[t];});
+    document.getElementById('alimento-cards').innerHTML='<div>'+
+      alimRows.map(function(r){
+        var detalle=Object.keys(r.alimPorTipo).map(function(t){var u=unidadAlimento(t);return'<span class="tag">'+t+': '+Math.round(r.alimPorTipo[t]*10)/10+' '+u+'</span>';}).join('');
+        return'<div style="padding:9px 0;border-bottom:1px solid var(--sua)"><div style="font-size:13px;font-weight:700;margin-bottom:5px">'+r.nombre+'</div><div class="tags">'+detalle+'</div></div>';
+      }).join('')
+      +'</div>'
+      +'<div style="margin-top:10px;padding-top:10px;border-top:2px solid var(--aml)"><div style="font-size:11px;font-weight:700;color:var(--na);text-transform:uppercase;margin-bottom:6px">Total general</div><div class="tags">'
+      +Object.keys(totalesPorTipo).map(function(t){var u=unidadAlimento(t);return'<span class="tag" style="font-weight:700">'+t+': '+Math.round(totalesPorTipo[t]*10)/10+' '+u+'</span>';}).join('')
+      +'</div></div>';
+  }else secAlim.style.display='none';
   var anioAnt=anio-1,dataAnt=calcSeasonData(anioAnt),srAnt=getSeasonRange(anioAnt),regAnt=registros.filter(function(r){return r.fecha>=srAnt.start&&r.fecha<=srAnt.end;}),compWrapper=document.getElementById('comparacion-wrapper');
   if(regAnt.length>0){compWrapper.style.display='block';document.getElementById('comp-title').textContent='Comparación con '+(anioAnt)+'-'+(anio);var ti2=0,tf2=0,tm2=0,tl2=0,th2=0,tc2=0;Object.keys(dataAnt).forEach(function(k){var d=dataAnt[k];ti2+=d.iniCam||0;tf2+=d.finCam||0;tm2+=d.mTot||0;tl2+=d.litrosTotal||0;th2+=d.mH||0;tc2+=d.cosecha||0;});var pm2=pct(tm2,ti2);function dTag(curr,prev,inv){if(curr===prev)return'<span class="comp-item-delta delta-neutral">= igual</span>';var diff=Math.round((curr-prev)*10)/10,mejor=inv?(curr<prev):(curr>prev);return'<span class="comp-item-delta '+(mejor?'delta-good':'delta-bad')+'">'+(diff>0?'+':'')+diff+'</span>';}document.getElementById('comparacion-content').innerHTML='<div><div class="comp-header-row"><span>Indicador</span><span style="text-align:center">'+(anioAnt)+'-'+(anio)+'</span><span style="text-align:center">'+(anio)+'-'+(anio+1)+'</span><span style="text-align:center">Δ</span></div><div class="comp-item"><span class="comp-item-label">Cámaras inicio</span><span class="comp-item-prev">'+ti2+'</span><span class="comp-item-curr">'+totIniCam+'</span>'+dTag(totIniCam,ti2,false)+'</div><div class="comp-item"><span class="comp-item-label">Cámaras fin</span><span class="comp-item-prev">'+tf2+'</span><span class="comp-item-curr">'+totFinCam+'</span>'+dTag(totFinCam,tf2,false)+'</div><div class="comp-item"><span class="comp-item-label">% mortandad</span><span class="comp-item-prev">'+pm2+'%</span><span class="comp-item-curr '+pctClass(pctMort)+'">'+pctMort+'%</span>'+dTag(pctMort,pm2,true)+'</div><div class="comp-item"><span class="comp-item-label">Muertas</span><span class="comp-item-prev">'+tm2+'</span><span class="comp-item-curr">'+totMuert+'</span>'+dTag(totMuert,tm2,true)+'</div><div class="comp-item"><span class="comp-item-label">Muertas por hambre</span><span class="comp-item-prev">'+th2+'</span><span class="comp-item-curr">'+totMH+'</span>'+dTag(totMH,th2,true)+'</div><div class="comp-item"><span class="comp-item-label">Total alimento</span><span class="comp-item-prev">'+Math.round(tl2*10)/10+' L</span><span class="comp-item-curr">'+Math.round(totLitros*10)/10+' L</span>'+dTag(Math.round(totLitros*10)/10,Math.round(tl2*10)/10,true)+'</div><div class="comp-item"><span class="comp-item-label">Cosecha</span><span class="comp-item-prev">'+tc2+' kg</span><span class="comp-item-curr">'+totCosecha+' kg</span>'+dTag(totCosecha,tc2,false)+'</div></div>';}else compWrapper.style.display='none';
 }
@@ -2230,7 +2286,7 @@ function miniToast(msg){var ex=document.getElementById('_mt');if(ex)ex.remove();
 
 window.escribirEnAppicultura=escribirEnAppicultura;window.seleccionarOperario=seleccionarOperario;window.confirmarOperario=confirmarOperario;window.cancelarOperario=cancelarOperario;window.cerrarSesionFirebase=cerrarSesionFirebase;window.migrarDatosLegacy=migrarDatosLegacy;window.reconectar=reconectar;window.entrarComoUsuario=entrarComoUsuario;window.beepScan=beepScan;window.setAuthMode=setAuthMode;window.authSubmit=authSubmit;window.parsearCoordenadas=parsearCoordenadas;window.onUbicacionInput=onUbicacionInput;window.verEnMapa=verEnMapa;window.selRankingMetrica=selRankingMetrica;window.renderRankingColmenares=renderRankingColmenares;window.updateMuertasCardVisibility=updateMuertasCardVisibility;window.adjMN=adjMN;window.onNuCChange=onNuCChange;window.onNucleoChange=onNucleoChange;window.exportarTambores=exportarTambores;window.abrirScanner=abrirScanner;window.cerrarScanner=cerrarScanner;window.usarCodigoManual=usarCodigoManual;window.cerrarModalTambor=cerrarModalTambor;window.guardarTambor=guardarTambor;window.eliminarTambor=eliminarTambor;window.renderVentas=renderVentas;window.abrirNuevaVenta=abrirNuevaVenta;window.cerrarNuevaVenta=cerrarNuevaVenta;window.agregarTamborAVenta=agregarTamborAVenta;window.quitarTamborDeVenta=quitarTamborDeVenta;window.actualizarResumenVenta=actualizarResumenVenta;window.confirmarVenta=confirmarVenta;window.eliminarVenta=eliminarVenta;window.abrirScannerVenta=abrirScannerVenta;window.renderCompradores=renderCompradores;window.agregarComprador=agregarComprador;window.eliminarComprador=eliminarComprador;window.abrirModalComprador=abrirModalComprador;window.renderExtraccion=renderExtraccion;window.abrirTurnoExtraccion=abrirTurnoExtraccion;window.cerrarTurnoExt=cerrarTurnoExt;window.guardarTurnoExt=guardarTurnoExt;window.eliminarTurnoExt=eliminarTurnoExt;window.exportarCosecha=exportarCosecha;window.go=go;window.toggleTarea=toggleTarea;window.toggleCura=toggleCura;window.toggleAnti=toggleAnti;window.adjN=adjN;window.adjM=adjM;window.adjAlim=adjAlim;window.adjCosecha=adjCosecha;window.adjP=adjP;window.setDias=setDias;window.filtrarColmenares=filtrarColmenares;window.colmenarKeydown=colmenarKeydown;window.selColmenar=selColmenar;window.cerrarDropdownColm=cerrarDropdownColm;window.toggleNuDestinoColm=toggleNuDestinoColm;window.updateTrasladoPreview=updateTrasladoPreview;window.updateVaciasPreview=updateVaciasPreview;window.updateEnjambrePreview=updateEnjambrePreview;window.updateDestinoMuertas=updateDestinoMuertas;window.fillDmColmenarDest=fillDmColmenarDest;window.guardar=guardar;window.cerrarOverlay=cerrarOverlay;window.cancelarEdicion=cancelarEdicion;window.abrirEdicion=abrirEdicion;window.eliminarRegistro=eliminarRegistro;window.editarColmenar=editarColmenar;window.eliminarColmenar=eliminarColmenar;window.agregarColmenar=agregarColmenar;window.eliminarOperario=eliminarOperario;window.agregarOperario=agregarOperario;window.renderHist=renderHist;window.exportarExcel=exportarExcel;window.switchTab=switchTab;window.renderResumen=renderResumen;window.cerrarModalColm=cerrarModalColm;window.guardarModalColm=guardarModalColm;window.syncAll=syncAll;window.cerrarSesion=cerrarSesion;window.agregarUsuarioApp=agregarUsuarioApp;window.eliminarUsuarioApp=eliminarUsuarioApp;window.cambiarPassUsuario=cambiarPassUsuario;window.guardarNuevaPass=guardarNuevaPass;window.resaltarDDItem=resaltarDDItem;
 
-buildSelects();buildTareas();recalcAlim();recalcCosecha();updateProxima();actualizarAviso();
+buildSelects();buildTareas();buildTiposAlimentoSelect();recalcAlim();recalcCosecha();updateProxima();actualizarAviso();
 document.getElementById('fecha').value=hoy();
 document.addEventListener('focus',function(e){if(e.target.type==='number'&&parseFloat(e.target.value)===0)e.target.value='';},true);
 document.addEventListener('blur',function(e){if(e.target.type==='number'&&e.target.value==='')e.target.value='0';},true);
