@@ -734,17 +734,11 @@ function mostrarSelectorOperario(){
   if(label)label.textContent='Cuenta: '+(authUser?authUser.email:'');
   var usuarios=usuariosApp.length?usuariosApp:[];
   if(!usuarios.length){
-    // No hay usuarios cargados aún — mostrar solo opción de admin
-    lista.innerHTML='<div style="color:#aaa;font-size:13px;text-align:center;padding:1rem">Cargando usuarios...</div>';
+    lista.innerHTML='<div style="color:#aaa;font-size:13px;text-align:center;padding:1rem 0">Cargando usuarios...</div>'
+      +'<button onclick="reintentarSelectorOperario()" style="padding:12px;border:1.5px solid var(--am);border-radius:10px;background:var(--aml);color:var(--neg);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">🔄 Reintentar</button>';
     panel.style.display='flex';
-    // Reintentar en 2 segundos
-    setTimeout(function(){
-      if(usuariosApp.length){
-        lista.innerHTML=usuariosApp.map(function(u){return'<button onclick="seleccionarOperario(\''+u.nombre+'\')" style="padding:12px;border:1.5px solid var(--bor);border-radius:10px;background:var(--neg);color:#fff;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;text-align:left">'+u.nombre+'</button>';}).join('');
-      }else{
-        lista.innerHTML='<button onclick="seleccionarOperario(\'Admin\')" style="padding:12px;border:1.5px solid var(--am);border-radius:10px;background:var(--am);color:var(--neg);font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;text-align:left">Entrar como administrador</button>';
-      }
-    },2000);
+    refreshToken().then(function(){syncAll();});
+    setTimeout(function(){if(usuariosApp.length)mostrarSelectorOperario();},1500);
   }else{
     lista.innerHTML=usuarios.map(function(u){return'<button onclick="seleccionarOperario(\''+u.nombre+'\')" style="padding:12px;border:1.5px solid var(--bor);border-radius:10px;background:var(--neg);color:#fff;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;text-align:left">'+u.nombre+'</button>';}).join('');
   }
@@ -752,6 +746,10 @@ function mostrarSelectorOperario(){
   document.getElementById('op-error').style.display='none';
   panel.style.display='flex';
 }
+function reintentarSelectorOperario(){
+  refreshToken().then(function(){return syncAll();}).then(function(){mostrarSelectorOperario();});
+}
+window.reintentarSelectorOperario=reintentarSelectorOperario;
 
 function seleccionarOperario(nombre){
   opSeleccionado=nombre;
