@@ -1898,9 +1898,9 @@ function onCodigoDetectado(codigo){
     '<div style="font-size:42px;font-weight:700;color:var(--neg);line-height:1" id="tambor-numero-txt"></div>'+
     '<div style="font-size:12px;color:#888;margin-top:2px" id="tambor-codigo-txt"></div>'+
     '</div>'+
-    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">'+
+    '<div style="margin-bottom:12px">'+
     '<div><label style="font-size:11px;font-weight:700;color:var(--txt);text-transform:uppercase;display:block;margin-bottom:4px">Fecha</label><input type="date" id="tambor-fecha" style="width:100%;font-size:15px;padding:8px;border:1.5px solid var(--bor);border-radius:8px;font-family:inherit;box-sizing:border-box"></div>'+
-    '<div><label style="font-size:11px;font-weight:700;color:var(--txt);text-transform:uppercase;display:block;margin-bottom:4px">Operario</label><select id="tambor-op" style="width:100%;font-size:15px;padding:8px;border:1.5px solid var(--bor);border-radius:8px;font-family:inherit;cursor:pointer"><option value="">Seleccionar...</option></select></div>'+
+    '<input type="hidden" id="tambor-op">'+
     '</div>'+
     '<div style="margin-bottom:12px"><label style="font-size:11px;font-weight:700;color:var(--txt);text-transform:uppercase;display:block;margin-bottom:4px">Precinto (opcional)</label>'+
     '<input type="text" id="tambor-precinto" placeholder="Nro de precinto..." style="width:100%;font-size:15px;padding:8px;border:1.5px solid var(--bor);border-radius:8px;font-family:inherit;box-sizing:border-box"></div>'+
@@ -1917,8 +1917,7 @@ function onCodigoDetectado(codigo){
   document.getElementById('tambor-fecha').value=hoy();
   document.getElementById('tambor-peso').value='';
   document.getElementById('tambor-precinto').value='';
-  var opSel=document.getElementById('tambor-op');
-  opSel.innerHTML='<option value="">Seleccionar...</option>'+operarios.map(function(o){return'<option'+(usuarioActual&&usuarioActual.nombre===o?' selected':'')+'>'+o+'</option>';}).join('');
+  document.getElementById('tambor-op').value=usuarioActual?usuarioActual.nombre:'Sin nombre';
   m.style.display='flex';
 }
 function cerrarModalTambor(){var m=document.getElementById('modal-tambor');if(m)m.style.display='none';}
@@ -1931,7 +1930,7 @@ function guardarTambor(){
   var pesoVal=(document.getElementById('tambor-peso').value||'').trim();
   var peso=pesoVal!==''?parseFloat(pesoVal):null;
   var precinto=(document.getElementById('tambor-precinto').value||'').trim();
-  if(!op){miniToast('Seleccioná el operario');return;}
+  if(!op)op=usuarioActual?usuarioActual.nombre:'Sin nombre';
   var t={id:'tamb_'+String(Date.now()),codigo:codigo,numero:numero,fecha:fecha,operario:op,peso:peso,precinto:precinto};
   tambores.unshift(t);
   tambores.sort(function(a,b){var fc=(b.fecha||'').localeCompare(a.fecha||'');return fc!==0?fc:(b.id||'').localeCompare(a.id||'');});
