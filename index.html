@@ -810,7 +810,14 @@ function cerrarSesionFirebase(){
 }
 function entrarComoUsuario(){
   var storedAuth=localStorage.getItem('arl_authUser');
-  if(!storedAuth){miniToast('El dueño de la cuenta debe configurar este dispositivo primero');return;}
+  if(!storedAuth){
+    var msg=document.getElementById('auth-error');
+    msg.textContent='Este dispositivo es nuevo. El dueño debe ingresar su email y contraseña UNA VEZ para configurarlo. Después de eso, los operarios podrán entrar solo con su nombre y contraseña desde este botón.';
+    msg.style.display='block';
+    msg.style.color='#1a5c2a';
+    document.getElementById('auth-email').focus();
+    return;
+  }
   try{
     authUser=JSON.parse(storedAuth);
     document.getElementById('pantalla-login').style.display='none';
@@ -967,7 +974,7 @@ function initData(){
       document.getElementById('pantalla-login').style.display='none';
     }catch(e){authUser=null;localStorage.removeItem('arl_authUser');}
   }
-  if(btnOpContainer)btnOpContainer.style.display=storedAuth?'block':'none';
+  if(btnOpContainer)btnOpContainer.style.display='block';
   setSyncBadge('wait');
   // Cargar localStorage primero para que la app funcione de inmediato
   var lr=lsLoad('registros');if(lr&&lr.length>0)registros=lr;
@@ -1005,7 +1012,7 @@ function initData(){
     }catch(e){authUser=null;localStorage.removeItem('arl_authUser');}
   }
   buildSelects();
-  refreshToken().then(function(){
+  return refreshToken().then(function(){
   syncAll().then(function(){
     // Actualizar usuarios desde Firebase si está disponible
     fbList('usuariosApp').then(function(users){
