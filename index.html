@@ -145,32 +145,51 @@ textarea{resize:vertical;min-height:60px}
 </head>
 <body>
 
-<div id="pantalla-login" style="position:fixed;inset:0;background:var(--neg);z-index:99999;display:flex;align-items:center;justify-content:center">
-  <div style="background:#fff;border-radius:20px;padding:2rem;width:90%;max-width:360px;border:3px solid var(--am);text-align:center">
+<div id="pantalla-login" style="position:fixed;inset:0;background:var(--neg);z-index:99999;display:flex;align-items:center;justify-content:center;overflow-y:auto">
+  <div style="background:#fff;border-radius:20px;padding:2rem;width:90%;max-width:360px;border:3px solid var(--am);text-align:center;margin:1rem 0">
     <div style="margin-bottom:6px"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 220" width="72" height="72"><polygon points="80,18 114,37 114,75 80,94 46,75 46,37" fill="#111" stroke="#FF7A00" stroke-width="9" stroke-linejoin="round"/><polygon points="146,18 180,37 180,75 146,94 112,75 112,37" fill="#111" stroke="#FF7A00" stroke-width="9" stroke-linejoin="round"/><polygon points="47,75 81,94 81,132 47,151 13,132 13,94" fill="#111" stroke="#FF7A00" stroke-width="9" stroke-linejoin="round"/><polygon points="113,75 147,94 147,132 113,151 79,132 79,94" fill="#111" stroke="#FF7A00" stroke-width="9" stroke-linejoin="round"/><polygon points="179,75 213,94 213,132 179,151 145,132 145,94" fill="#111" stroke="#FF7A00" stroke-width="9" stroke-linejoin="round"/><polygon points="80,132 114,151 114,189 80,208 46,189 46,151" fill="#111" stroke="#FF7A00" stroke-width="9" stroke-linejoin="round"/><polygon points="146,132 180,151 180,189 146,208 112,189 112,151" fill="#111" stroke="#FF7A00" stroke-width="9" stroke-linejoin="round"/></svg></div>
     <div style="font-size:22px;font-weight:700;margin-bottom:2px;color:var(--neg)">Appicultura</div>
     <div style="font-size:12px;color:#aaa;margin-bottom:1.5rem;letter-spacing:.04em">GESTIÓN DE APIARIOS</div>
-    <div style="display:flex;background:var(--sua);border-radius:10px;padding:3px;margin-bottom:1.25rem">
-      <button id="auth-tab-login" onclick="setAuthMode('login')" style="flex:1;padding:8px;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;background:var(--am);color:var(--neg)">Iniciar sesión</button>
-      <button id="auth-tab-register" onclick="setAuthMode('register')" style="flex:1;padding:8px;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;background:transparent;color:#888">Crear cuenta</button>
+
+    <!-- MODO OPERARIO (simple, sin email) -->
+    <div id="login-op-panel">
+      <div style="margin-bottom:12px;text-align:left">
+        <label style="font-size:11px;font-weight:700;color:var(--txt);text-transform:uppercase;display:block;margin-bottom:5px">Tu nombre</label>
+        <input type="text" id="auth-op-nombre" placeholder="Ej: Brian" onkeydown="if(event.key==='Enter')loginOperario()" style="width:100%;font-size:15px;font-family:inherit;border:1.5px solid var(--bor);border-radius:9px;padding:8px 10px;color:var(--neg)">
+      </div>
+      <div style="margin-bottom:12px;text-align:left">
+        <label style="font-size:11px;font-weight:700;color:var(--txt);text-transform:uppercase;display:block;margin-bottom:5px">Tu contraseña</label>
+        <input type="password" id="auth-op-pass" placeholder="••••••" onkeydown="if(event.key==='Enter')loginOperario()" style="width:100%;font-size:15px;font-family:inherit;border:1.5px solid var(--bor);border-radius:9px;padding:8px 10px;color:var(--neg)">
+      </div>
+      <div id="auth-error" style="color:#c0392b;font-size:13px;margin-bottom:12px;display:none;text-align:left"></div>
+      <button id="auth-submit-btn" onclick="loginOperario()" style="width:100%;padding:14px;background:var(--am);border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;color:var(--neg);font-family:inherit">Entrar</button>
+      <div id="auth-loading" style="display:none;color:#888;font-size:13px;margin-top:10px">Verificando...</div>
+      <div style="margin-top:14px"><a href="#" onclick="mostrarPanelAdmin();return false;" style="font-size:12px;color:#aaa;text-decoration:underline">Configurar este dispositivo / Soy el administrador</a></div>
     </div>
-    <div style="margin-bottom:12px;text-align:left">
-      <label style="font-size:11px;font-weight:700;color:var(--txt);text-transform:uppercase;display:block;margin-bottom:5px">Email</label>
-      <input type="email" id="auth-email" placeholder="tu@email.com" onkeydown="if(event.key==='Enter')authSubmit()" style="width:100%;font-size:15px;font-family:inherit;border:1.5px solid var(--bor);border-radius:9px;padding:8px 10px;color:var(--neg)">
-    </div>
-    <div style="margin-bottom:12px;text-align:left">
-      <label style="font-size:11px;font-weight:700;color:var(--txt);text-transform:uppercase;display:block;margin-bottom:5px">Contraseña</label>
-      <input type="password" id="auth-pass" placeholder="••••••" onkeydown="if(event.key==='Enter')authSubmit()" style="width:100%;font-size:15px;font-family:inherit;border:1.5px solid var(--bor);border-radius:9px;padding:8px 10px;color:var(--neg)">
-    </div>
-    <div id="auth-confirm-row" style="display:none;margin-bottom:12px;text-align:left">
-      <label style="font-size:11px;font-weight:700;color:var(--txt);text-transform:uppercase;display:block;margin-bottom:5px">Confirmar contraseña</label>
-      <input type="password" id="auth-pass2" placeholder="••••••" onkeydown="if(event.key==='Enter')authSubmit()" style="width:100%;font-size:15px;font-family:inherit;border:1.5px solid var(--bor);border-radius:9px;padding:8px 10px;color:var(--neg)">
-    </div>
-    <div id="auth-error" style="color:#c0392b;font-size:13px;margin-bottom:12px;display:none;text-align:left"></div>
-    <button id="auth-submit-btn" onclick="authSubmit()" style="width:100%;padding:14px;background:var(--am);border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;color:var(--neg);font-family:inherit">Entrar</button>
-    <div id="auth-loading" style="display:none;color:#888;font-size:13px;margin-top:10px">Verificando...</div>
-    <div id="btn-operario-container" style="display:none;margin-top:12px">
-      <button onclick="entrarComoUsuario()" style="width:100%;padding:12px;background:transparent;border:1.5px solid var(--bor);border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;color:var(--txt);font-family:inherit">👤 Entrar como operario</button>
+
+    <!-- MODO ADMIN (configurar dispositivo, una sola vez) -->
+    <div id="login-admin-panel" style="display:none">
+      <div style="display:flex;background:var(--sua);border-radius:10px;padding:3px;margin-bottom:1.25rem">
+        <button id="auth-tab-login" onclick="setAuthMode('login')" style="flex:1;padding:8px;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;background:var(--am);color:var(--neg)">Iniciar sesión</button>
+        <button id="auth-tab-register" onclick="setAuthMode('register')" style="flex:1;padding:8px;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;background:transparent;color:#888">Crear cuenta</button>
+      </div>
+      <div style="margin-bottom:12px;text-align:left">
+        <label style="font-size:11px;font-weight:700;color:var(--txt);text-transform:uppercase;display:block;margin-bottom:5px">Email</label>
+        <input type="email" id="auth-email" placeholder="tu@email.com" onkeydown="if(event.key==='Enter')authSubmit()" style="width:100%;font-size:15px;font-family:inherit;border:1.5px solid var(--bor);border-radius:9px;padding:8px 10px;color:var(--neg)">
+      </div>
+      <div style="margin-bottom:12px;text-align:left">
+        <label style="font-size:11px;font-weight:700;color:var(--txt);text-transform:uppercase;display:block;margin-bottom:5px">Contraseña</label>
+        <input type="password" id="auth-pass" placeholder="••••••" onkeydown="if(event.key==='Enter')authSubmit()" style="width:100%;font-size:15px;font-family:inherit;border:1.5px solid var(--bor);border-radius:9px;padding:8px 10px;color:var(--neg)">
+      </div>
+      <div id="auth-confirm-row" style="display:none;margin-bottom:12px;text-align:left">
+        <label style="font-size:11px;font-weight:700;color:var(--txt);text-transform:uppercase;display:block;margin-bottom:5px">Confirmar contraseña</label>
+        <input type="password" id="auth-pass2" placeholder="••••••" onkeydown="if(event.key==='Enter')authSubmit()" style="width:100%;font-size:15px;font-family:inherit;border:1.5px solid var(--bor);border-radius:9px;padding:8px 10px;color:var(--neg)">
+      </div>
+      <div id="auth-error-admin" style="color:#c0392b;font-size:13px;margin-bottom:12px;display:none;text-align:left"></div>
+      <button id="auth-submit-btn-admin" onclick="authSubmit()" style="width:100%;padding:14px;background:var(--am);border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;color:var(--neg);font-family:inherit">Entrar como administrador</button>
+      <div id="auth-loading-admin" style="display:none;color:#888;font-size:13px;margin-top:10px">Verificando...</div>
+      <div style="font-size:11px;color:#aaa;margin-top:10px">Esto se hace una sola vez por dispositivo. Después, los operarios entran solo con su nombre y contraseña.</div>
+      <div style="margin-top:10px"><a href="#" onclick="mostrarPanelOperario();return false;" style="font-size:12px;color:#aaa;text-decoration:underline">← Volver</a></div>
     </div>
   </div>
 </div>
@@ -744,8 +763,23 @@ function mostrarSelectorOperario(){
   }
   document.getElementById('op-pass-row').style.display='none';
   document.getElementById('op-error').style.display='none';
+  var btnAdmin=document.getElementById('btn-entrar-admin');
+  if(!btnAdmin){
+    btnAdmin=document.createElement('button');
+    btnAdmin.id='btn-entrar-admin';
+    btnAdmin.textContent='👑 Entrar como administrador';
+    btnAdmin.style.cssText='margin-top:6px;padding:11px;border:1.5px dashed var(--am);border-radius:10px;background:transparent;color:var(--txt);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;width:100%';
+    btnAdmin.onclick=entrarComoAdmin;
+    lista.parentNode.insertBefore(btnAdmin,lista.nextSibling);
+  }
   panel.style.display='flex';
 }
+function entrarComoAdmin(){
+  if(!authUser){miniToast('Sesión no válida');return;}
+  var nombre=authUser.email.split('@')[0];
+  entrarComoOperario({nombre:nombre,pass:'',admin:true});
+}
+window.entrarComoAdmin=entrarComoAdmin;
 function reintentarSelectorOperario(){
   refreshToken().then(function(){return syncAll();}).then(function(){mostrarSelectorOperario();});
 }
@@ -798,31 +832,71 @@ function cerrarSesionFirebase(){
   authUser=null;usuarioActual=null;
   registros=[];colmenares=[];operarios=[];extracciones=[];tambores=[];compradores=[];ventas=[];usuariosApp=[];
   ['authUser','operario','registros','colmenares','operarios','extracciones','tambores','compradores','ventas','usuariosApp'].forEach(function(k){localStorage.removeItem('arl_'+k);});
-  document.getElementById('pantalla-operario').style.display='none';
   document.getElementById('usuario-badge').textContent='';
   document.getElementById('auth-email').value='';
   document.getElementById('auth-pass').value='';
+  document.getElementById('auth-op-nombre').value='';
+  document.getElementById('auth-op-pass').value='';
   document.getElementById('auth-error').style.display='none';
+  document.getElementById('auth-error-admin').style.display='none';
+  mostrarPanelOperario();
   document.getElementById('pantalla-login').style.display='flex';
   updateNavVisibility();
 }
-function entrarComoUsuario(){
+function mostrarPanelAdmin(){
+  document.getElementById('login-op-panel').style.display='none';
+  document.getElementById('login-admin-panel').style.display='block';
+}
+function mostrarPanelOperario(){
+  document.getElementById('login-admin-panel').style.display='none';
+  document.getElementById('login-op-panel').style.display='block';
+}
+window.mostrarPanelAdmin=mostrarPanelAdmin;window.mostrarPanelOperario=mostrarPanelOperario;
+
+function loginOperario(){
   var storedAuth=localStorage.getItem('arl_authUser');
+  var errEl=document.getElementById('auth-error');
+  errEl.style.display='none';
   if(!storedAuth){
-    var msg=document.getElementById('auth-error');
-    msg.textContent='Este dispositivo es nuevo. El dueño debe ingresar su email y contraseña UNA VEZ para configurarlo. Después de eso, los operarios podrán entrar solo con su nombre y contraseña desde este botón.';
-    msg.style.display='block';
-    msg.style.color='#1a5c2a';
-    document.getElementById('auth-email').focus();
+    errEl.textContent='Este dispositivo no está configurado. Pedile al administrador que toque "Configurar este dispositivo" e ingrese una vez con su email y contraseña.';
+    errEl.style.display='block';
     return;
   }
-  try{
-    authUser=JSON.parse(storedAuth);
+  var opNombre=(document.getElementById('auth-op-nombre').value||'').trim();
+  var opPass=document.getElementById('auth-op-pass').value||'';
+  if(!opNombre){errEl.textContent='Ingresá tu nombre';errEl.style.display='block';return;}
+  try{authUser=JSON.parse(storedAuth);}catch(e){
+    localStorage.removeItem('arl_authUser');
+    errEl.textContent='La configuración del dispositivo expiró. Pedile al administrador que vuelva a configurarlo.';
+    errEl.style.display='block';
+    return;
+  }
+  document.getElementById('auth-loading').style.display='block';
+  document.getElementById('auth-submit-btn').disabled=true;
+  refreshToken().then(function(){return fbList('usuariosApp');}).then(function(uApp){
+    document.getElementById('auth-loading').style.display='none';
+    document.getElementById('auth-submit-btn').disabled=false;
+    if(uApp.length>0){usuariosApp=uApp;lsSave('usuariosApp',usuariosApp);}
+    else{var luApp=lsLoad('usuariosApp');if(luApp&&luApp.length>0)usuariosApp=luApp;}
+    var u=usuariosApp.find(function(x){return x.nombre.toLowerCase()===opNombre.toLowerCase();});
+    if(!u){errEl.textContent='No existe un operario llamado "'+opNombre+'". Pedile al administrador que te cree el usuario en Colmenares.';errEl.style.display='block';return;}
+    if(u.pass&&u.pass!==opPass){errEl.textContent='Contraseña incorrecta para '+u.nombre;errEl.style.display='block';return;}
+    usuarioActual=u;
+    localStorage.setItem('arl_operario',JSON.stringify({nombre:usuarioActual.nombre,pass:usuarioActual.pass||'',admin:usuarioActual.admin||false}));
     document.getElementById('pantalla-login').style.display='none';
-    mostrarSelectorOperario();
-    refreshToken().then(function(){syncAll();});
-  }catch(e){miniToast('Error al recuperar la sesión — volvé a loguearte');}
+    document.getElementById('usuario-badge').textContent=usuarioActual.nombre;
+    var opEl=document.getElementById('op');if(opEl)opEl.value=usuarioActual.nombre;
+    updateNavVisibility();
+    initData();
+    miniToast('Bienvenido, '+usuarioActual.nombre+'!');
+  }).catch(function(){
+    document.getElementById('auth-loading').style.display='none';
+    document.getElementById('auth-submit-btn').disabled=false;
+    errEl.textContent='Sin conexión, no se pudo verificar el usuario. Intentá de nuevo.';errEl.style.display='block';
+  });
 }
+window.loginOperario=loginOperario;
+
 function setAuthMode(modo){
   authModo=modo;
   var isReg=modo==='register';
@@ -831,13 +905,13 @@ function setAuthMode(modo){
   document.getElementById('auth-tab-register').style.background=isReg?'var(--am)':'transparent';
   document.getElementById('auth-tab-register').style.color=isReg?'var(--neg)':'#888';
   document.getElementById('auth-confirm-row').style.display=isReg?'block':'none';
-  document.getElementById('auth-submit-btn').textContent=isReg?'Crear cuenta':'Entrar';
-  document.getElementById('auth-error').style.display='none';
+  document.getElementById('auth-submit-btn-admin').textContent=isReg?'Crear cuenta':'Entrar como administrador';
+  document.getElementById('auth-error-admin').style.display='none';
 }
 function authSubmit(){
   var email=(document.getElementById('auth-email').value||'').trim();
   var pass=document.getElementById('auth-pass').value||'';
-  var errEl=document.getElementById('auth-error');
+  var errEl=document.getElementById('auth-error-admin');
   if(!email||!pass){errEl.textContent='Completá email y contraseña';errEl.style.display='block';return;}
   if(authModo==='register'){
     var pass2=document.getElementById('auth-pass2').value||'';
@@ -845,40 +919,44 @@ function authSubmit(){
     if(pass.length<6){errEl.textContent='La contraseña debe tener al menos 6 caracteres';errEl.style.display='block';return;}
   }
   errEl.style.display='none';
-  document.getElementById('auth-loading').style.display='block';
-  document.getElementById('auth-submit-btn').disabled=true;
+  document.getElementById('auth-loading-admin').style.display='block';
+  document.getElementById('auth-submit-btn-admin').disabled=true;
   var endpoint=authModo==='register'?'signUp':'signInWithPassword';
   fetch(FB_AUTH_URL+endpoint+'?key='+FB_KEY,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,password:pass,returnSecureToken:true})})
   .then(function(r){return r.json();})
   .then(function(data){
-    document.getElementById('auth-loading').style.display='none';
-    document.getElementById('auth-submit-btn').disabled=false;
+    document.getElementById('auth-loading-admin').style.display='none';
+    document.getElementById('auth-submit-btn-admin').disabled=false;
     if(data.error){
       var msgs={'EMAIL_EXISTS':'Ese email ya tiene una cuenta. Iniciá sesión.','EMAIL_NOT_FOUND':'Email no encontrado. ¿Ya tenés cuenta?','INVALID_PASSWORD':'Contraseña incorrecta.','INVALID_EMAIL':'Email inválido.','WEAK_PASSWORD : Password should be at least 6 characters':'La contraseña debe tener al menos 6 caracteres.','TOO_MANY_ATTEMPTS_TRY_LATER':'Demasiados intentos. Esperá unos minutos.'};
       errEl.textContent=msgs[data.error.message]||'Error: '+data.error.message;errEl.style.display='block';return;
     }
     authUser={uid:data.localId,email:data.email,idToken:data.idToken,refreshToken:data.refreshToken,expiresAt:Date.now()+3500000};
-    // Solo limpiar caché si cambió el usuario
     var prevAuth=localStorage.getItem('arl_authUser');
     var dataKeys=['registros','colmenares','operarios','extracciones','tambores','compradores','ventas','usuariosApp'];
     var debeReset=false;
     if(prevAuth){try{var prev=JSON.parse(prevAuth);if(prev.uid!==data.localId)debeReset=true;}catch(e){debeReset=true;}}
     else{debeReset=true;}
     if(debeReset){
-      // Limpiar localStorage Y arrays en memoria
       dataKeys.forEach(function(k){localStorage.removeItem('arl_'+k);});
       localStorage.removeItem('arl_operario');
       registros=[];colmenares=[];operarios=[];extracciones=[];tambores=[];compradores=[];ventas=[];usuariosApp=[];
     }
     localStorage.setItem('arl_authUser',JSON.stringify(authUser));
+
+    // Entra directo como administrador
+    usuarioActual={nombre:email.split('@')[0],pass:'',admin:true};
+    localStorage.setItem('arl_operario',JSON.stringify(usuarioActual));
     document.getElementById('pantalla-login').style.display='none';
-    mostrarSelectorOperario();
+    document.getElementById('usuario-badge').textContent=usuarioActual.nombre;
+    var opEl0=document.getElementById('op');if(opEl0)opEl0.value=usuarioActual.nombre;
+    updateNavVisibility();
     initData();
-    miniToast(authModo==='register'?'¡Cuenta creada! Bienvenido 🐝':'');
+    miniToast(authModo==='register'?'¡Cuenta creada! Bienvenido 🐝':'Dispositivo configurado · Bienvenido '+usuarioActual.nombre+'!');
   })
   .catch(function(){
-    document.getElementById('auth-loading').style.display='none';
-    document.getElementById('auth-submit-btn').disabled=false;
+    document.getElementById('auth-loading-admin').style.display='none';
+    document.getElementById('auth-submit-btn-admin').disabled=false;
     errEl.textContent='Sin conexión. Verificá tu internet.';errEl.style.display='block';
   });
 }
@@ -887,7 +965,12 @@ function cerrarSesion(){
   localStorage.removeItem('arl_operario');
   document.getElementById('usuario-badge').textContent='';
   updateNavVisibility();
-  mostrarSelectorOperario();
+  // Volver a la pantalla de login en modo operario
+  mostrarPanelOperario();
+  document.getElementById('auth-op-nombre').value='';
+  document.getElementById('auth-op-pass').value='';
+  document.getElementById('auth-error').style.display='none';
+  document.getElementById('pantalla-login').style.display='flex';
 }
 function renderUsuariosApp(){var el=document.getElementById('lista-usuarios-app');if(!el)return;el.innerHTML=usuariosApp.map(function(u){return'<div class="colm-item"><div class="colm-cod" style="font-size:16px">'+(u.admin?'👑':'👤')+'</div><div class="colm-name">'+u.nombre+'</div><button class="btn-sm" onclick="cambiarPassUsuario(\''+u.nombre+'\')">Cambiar pass</button>'+(!u.admin?'<button class="btn-sm btn-danger" onclick="eliminarUsuarioApp(\''+u.nombre+'\')">Eliminar</button>':'')+'</div>';}).join('');}
 function agregarUsuarioApp(){
@@ -1462,8 +1545,10 @@ function eliminarRegistro(idStr){
 }
 
 function puedeEditarRegistro(r){
-  // Obtener timestamp de creación del registro
-  var ts=parseInt(r.id);
+  // Obtener timestamp de creación, sirve para ids puros o con prefijo (ext_123, tamb_123)
+  var idStr=String(r.id||'');
+  var num=idStr.match(/(\d{10,})/);
+  var ts=num?parseInt(num[1]):0;
   var creado=ts>1000000000000?ts:new Date((r.fecha||hoy())+'T23:59:59').getTime();
   var horasTranscurridas=(Date.now()-creado)/3600000;
   var esAdmin=usuarioActual&&usuarioActual.admin;
@@ -1848,7 +1933,7 @@ function renderExtraccion(){
   var tEl=document.getElementById('ext-turnos');
   if(!tEl)return;
   if(extracciones.length===0){tEl.innerHTML='<div class="card"><div class="empty">Sin turnos registrados todavía</div></div>';}
-  else{tEl.innerHTML='<div class="card">'+extracciones.map(function(e){return'<div class="hist-item"><div class="hist-head"><div><div class="hist-title">'+fmtF(e.fecha)+' <span style="font-weight:400;color:#888">— '+(e.operario||'')+'</span></div><div class="hist-sub"><strong>'+e.alzasExtraidas+' alzas extraídas</strong>'+(e.kgObtenidos?' · '+e.kgObtenidos+' kg obtenidos':'')+'</div></div><button class="btn-sm btn-danger" onclick="eliminarTurnoExt(\''+e.id+'\')">Eliminar</button></div></div>';}).join('')+'</div>';}
+  else{tEl.innerHTML='<div class="card">'+extracciones.map(function(e){var pe=puedeEditarRegistro(e);return'<div class="hist-item"><div class="hist-head"><div><div class="hist-title">'+fmtF(e.fecha)+' <span style="font-weight:400;color:#888">— '+(e.operario||'')+'</span></div><div class="hist-sub"><strong>'+e.alzasExtraidas+' alzas extraídas</strong>'+(e.kgObtenidos?' · '+e.kgObtenidos+' kg obtenidos':'')+'</div></div>'+(pe?'<button class="btn-sm btn-danger" onclick="eliminarTurnoExt(\''+e.id+'\')">Eliminar</button>':'<span style="font-size:10px;color:#ccc">🔒 '+(usuarioActual&&usuarioActual.admin?'7 días':'24 hs')+'</span>')+'</div></div>';}).join('')+'</div>';}
   renderTambores();
 }
 
@@ -2020,7 +2105,7 @@ function renderTambores(){
   // Lista agrupada por fecha
   var porFecha={};tambores.forEach(function(t){var f=t.fecha||'?';if(!porFecha[f])porFecha[f]=[];porFecha[f].push(t);});
   var fechas=Object.keys(porFecha).sort(function(a,b){return b.localeCompare(a);});
-  el.innerHTML=resumen+fechas.map(function(f){var list=porFecha[f];var kgDia=list.reduce(function(s,t){return s+(t.peso||0);},0);return'<div class="card" style="margin-bottom:.75rem"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding-bottom:6px;border-bottom:2px solid var(--aml)"><div style="font-size:12px;font-weight:700;color:var(--na);text-transform:uppercase">'+fmtF(f)+'</div><div style="font-size:12px;color:#888">'+list.length+' tambor'+(list.length!==1?'es':'')+(kgDia?' · '+Math.round(kgDia*10)/10+' kg':'')+'</div></div>'+list.map(function(t){return'<div class="colm-item" style="padding:8px 0"><div style="width:42px;height:42px;border-radius:10px;background:var(--am);display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0"><div style="font-size:9px;font-weight:700;color:var(--neg);text-transform:uppercase;line-height:1">Tamb.</div><div style="font-size:16px;font-weight:700;color:var(--neg);line-height:1">'+(t.numero||'?')+'</div></div><div class="colm-name"><div style="font-size:14px;font-weight:700">#'+(t.numero||'?')+' — <span style="font-weight:400;color:#888">'+t.codigo+'</span></div><div style="font-size:11px;color:#aaa">'+(t.operario||'')+(t.precinto?' · Precinto: '+t.precinto:'')+(t.peso?' · '+t.peso+' kg':'')+'</div></div><button class="btn-sm btn-danger" onclick="eliminarTambor(\''+t.id+'\')">✕</button></div>';}).join('')+'</div>';}).join('');
+  el.innerHTML=resumen+fechas.map(function(f){var list=porFecha[f];var kgDia=list.reduce(function(s,t){return s+(t.peso||0);},0);return'<div class="card" style="margin-bottom:.75rem"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding-bottom:6px;border-bottom:2px solid var(--aml)"><div style="font-size:12px;font-weight:700;color:var(--na);text-transform:uppercase">'+fmtF(f)+'</div><div style="font-size:12px;color:#888">'+list.length+' tambor'+(list.length!==1?'es':'')+(kgDia?' · '+Math.round(kgDia*10)/10+' kg':'')+'</div></div>'+list.map(function(t){var pe=puedeEditarRegistro(t);return'<div class="colm-item" style="padding:8px 0"><div style="width:42px;height:42px;border-radius:10px;background:var(--am);display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0"><div style="font-size:9px;font-weight:700;color:var(--neg);text-transform:uppercase;line-height:1">Tamb.</div><div style="font-size:16px;font-weight:700;color:var(--neg);line-height:1">'+(t.numero||'?')+'</div></div><div class="colm-name"><div style="font-size:14px;font-weight:700">#'+(t.numero||'?')+' — <span style="font-weight:400;color:#888">'+t.codigo+'</span></div><div style="font-size:11px;color:#aaa">'+(t.operario||'')+(t.precinto?' · Precinto: '+t.precinto:'')+(t.peso?' · '+t.peso+' kg':'')+'</div></div>'+(pe?'<button class="btn-sm btn-danger" onclick="eliminarTambor(\''+t.id+'\')">✕</button>':'<span style="font-size:10px;color:#ccc">🔒</span>')+'</div>';}).join('')+'</div>';}).join('');
 }
 
 function exportarTambores(){
