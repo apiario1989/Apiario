@@ -209,23 +209,6 @@ textarea{resize:vertical;min-height:60px}
   <button onclick="cancelarEdicion()" style="background:transparent;border:1.5px solid #554400;color:#aaa;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">✕ Cancelar</button>
 </div>
 
-<div id="pantalla-operario" style="position:fixed;inset:0;background:var(--neg);z-index:99998;display:none;align-items:center;justify-content:center">
-  <div style="background:#fff;border-radius:20px;padding:2rem;width:90%;max-width:360px;border:3px solid var(--am);text-align:center">
-    <div style="font-size:32px;margin-bottom:6px">👤</div>
-    <div style="font-size:18px;font-weight:700;margin-bottom:4px;color:var(--neg)">¿Quién sos?</div>
-    <div style="font-size:12px;color:#aaa;margin-bottom:1.5rem" id="op-cuenta-label"></div>
-    <div id="op-lista" style="display:flex;flex-direction:column;gap:8px;margin-bottom:1rem"></div>
-    <div id="op-pass-row" style="display:none;margin-top:8px">
-      <input type="password" id="op-pass" placeholder="Contraseña..." onkeydown="if(event.key==='Enter')confirmarOperario()" style="width:100%;font-size:15px;font-family:inherit;border:1.5px solid var(--bor);border-radius:9px;padding:8px 10px;margin-bottom:8px">
-      <div id="op-error" style="color:#c0392b;font-size:12px;margin-bottom:8px;display:none">Contraseña incorrecta</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-        <button onclick="cancelarOperario()" style="padding:10px;border:1.5px solid #ccc;border-radius:8px;background:#f5f5f5;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Volver</button>
-        <button onclick="confirmarOperario()" style="padding:10px;border:none;border-radius:8px;background:var(--am);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">Entrar</button>
-      </div>
-    </div>
-    <button onclick="cerrarSesionFirebase()" style="margin-top:1rem;background:transparent;border:none;font-size:12px;color:#aaa;cursor:pointer;font-family:inherit">Cerrar sesión completa</button>
-  </div>
-</div>
 <div id="banner-migracion" style="display:none;background:#F5C518;color:#1A1200;padding:10px 16px;text-align:center;font-size:13px;font-weight:700;cursor:pointer;position:sticky;top:0;z-index:100" onclick="migrarDatosLegacy()">📦 Tenés datos del sistema anterior — tocá aquí para migrarlos</div>
 <div class="nav">
   <button class="on" onclick="go('inicio')">🏠 Inicio</button>
@@ -744,90 +727,6 @@ var usuarioActual=null;
 
 function setSyncBadge(e){var el=document.getElementById('sync-indicator');if(!el)return;if(e==='ok'){el.textContent='🟢';el.className='sync-ok';modoLocal=false;}else if(e==='local'){el.textContent='🟡';el.className='sync-wait';modoLocal=true;}else if(e==='off'){el.textContent='🔴';el.className='sync-off';}else{el.textContent='⏳';el.className='sync-wait';}}
 
-var opSeleccionado=null;
-
-function mostrarSelectorOperario(){
-  var panel=document.getElementById('pantalla-operario');
-  var label=document.getElementById('op-cuenta-label');
-  var lista=document.getElementById('op-lista');
-  if(label)label.textContent='Cuenta: '+(authUser?authUser.email:'');
-  var usuarios=usuariosApp.length?usuariosApp:[];
-  if(!usuarios.length){
-    lista.innerHTML='<div style="color:#aaa;font-size:13px;text-align:center;padding:1rem 0">Cargando usuarios...</div>'
-      +'<button onclick="reintentarSelectorOperario()" style="padding:12px;border:1.5px solid var(--am);border-radius:10px;background:var(--aml);color:var(--neg);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">🔄 Reintentar</button>';
-    panel.style.display='flex';
-    refreshToken().then(function(){syncAll();});
-    setTimeout(function(){if(usuariosApp.length)mostrarSelectorOperario();},1500);
-  }else{
-    lista.innerHTML=usuarios.map(function(u){return'<button onclick="seleccionarOperario(\''+u.nombre+'\')" style="padding:12px;border:1.5px solid var(--bor);border-radius:10px;background:var(--neg);color:#fff;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;text-align:left">'+u.nombre+'</button>';}).join('');
-  }
-  document.getElementById('op-pass-row').style.display='none';
-  document.getElementById('op-error').style.display='none';
-  var btnAdmin=document.getElementById('btn-entrar-admin');
-  if(!btnAdmin){
-    btnAdmin=document.createElement('button');
-    btnAdmin.id='btn-entrar-admin';
-    btnAdmin.textContent='👑 Entrar como administrador';
-    btnAdmin.style.cssText='margin-top:6px;padding:11px;border:1.5px dashed var(--am);border-radius:10px;background:transparent;color:var(--txt);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;width:100%';
-    btnAdmin.onclick=entrarComoAdmin;
-    lista.parentNode.insertBefore(btnAdmin,lista.nextSibling);
-  }
-  panel.style.display='flex';
-}
-function entrarComoAdmin(){
-  if(!authUser){miniToast('Sesión no válida');return;}
-  var nombre=authUser.email.split('@')[0];
-  entrarComoOperario({nombre:nombre,pass:'',admin:true});
-}
-window.entrarComoAdmin=entrarComoAdmin;
-function reintentarSelectorOperario(){
-  refreshToken().then(function(){return syncAll();}).then(function(){mostrarSelectorOperario();});
-}
-window.reintentarSelectorOperario=reintentarSelectorOperario;
-
-function seleccionarOperario(nombre){
-  opSeleccionado=nombre;
-  var u=usuariosApp.find(function(x){return x.nombre===nombre;});
-  // Si es admin o no tiene contraseña, entra directo
-  if(!u||!u.pass||u.admin){entrarComoOperario(u||{nombre:nombre,pass:'',admin:false});return;}
-  document.querySelectorAll('#op-lista button').forEach(function(b){
-    b.style.background=b.textContent.trim()===nombre?'var(--am)':'var(--neg)';
-    b.style.color=b.textContent.trim()===nombre?'var(--neg)':'#fff';
-  });
-  document.getElementById('op-pass-row').style.display='block';
-  document.getElementById('op-pass').value='';
-  document.getElementById('op-error').style.display='none';
-  setTimeout(function(){document.getElementById('op-pass').focus();},100);
-}
-
-function confirmarOperario(){
-  var pass=document.getElementById('op-pass').value;
-  var u=usuariosApp.find(function(x){return x.nombre===opSeleccionado;});
-  if(!u){return;}
-  if(u.pass&&u.pass!==pass){
-    document.getElementById('op-error').style.display='block';return;
-  }
-  entrarComoOperario(u);
-}
-
-function cancelarOperario(){
-  opSeleccionado=null;
-  document.getElementById('op-pass-row').style.display='none';
-  document.getElementById('op-error').style.display='none';
-  document.querySelectorAll('#op-lista button').forEach(function(b){b.style.background='var(--neg)';b.style.color='#fff';});
-}
-
-function entrarComoOperario(u){
-  usuarioActual=u;
-  localStorage.setItem('arl_operario',JSON.stringify({nombre:u.nombre,pass:u.pass||''}));
-  document.getElementById('pantalla-operario').style.display='none';
-  document.getElementById('usuario-badge').textContent=u.nombre;
-  var opEl=document.getElementById('op');if(opEl)opEl.value=u.nombre;
-  var opDisplay=document.getElementById('op-display');if(opDisplay)opDisplay.textContent=u.nombre;
-  updateNavVisibility();
-  miniToast('Bienvenido, '+u.nombre+'!');
-}
-
 function cerrarSesionFirebase(){
   authUser=null;usuarioActual=null;
   registros=[];colmenares=[];operarios=[];extracciones=[];tambores=[];compradores=[];ventas=[];usuariosApp=[];
@@ -1021,8 +920,6 @@ function syncAll(){
   else if(cols.length===0){colmenares=[];lsSave('colmenares',[]);}
   if(uAppFinal.length>0){
     usuariosApp=uAppFinal;lsSave('usuariosApp',usuariosApp);renderUsuariosApp();
-    var panel=document.getElementById('pantalla-operario');
-    if(panel&&panel.style.display==='flex'){mostrarSelectorOperario();}
   }
   else{usuariosApp=[];}
   if(extrs.length>0){extracciones=extrs.sort(function(a,b){return(b.fechaCosecha||'').localeCompare(a.fechaCosecha||'');});lsSave('extracciones',extracciones);}
@@ -1047,52 +944,45 @@ function syncAll(){
 });}
 
 function initData(){
-  var btnOpContainer=document.getElementById('btn-operario-container');
-  // Si ya hay sesión guardada, ir directo al selector sin mostrar login
-  var storedAuth=localStorage.getItem('arl_authUser');
-  if(storedAuth){
-    try{
-      authUser=JSON.parse(storedAuth);
-      document.getElementById('pantalla-login').style.display='none';
-    }catch(e){authUser=null;localStorage.removeItem('arl_authUser');}
-  }
-  if(btnOpContainer)btnOpContainer.style.display='block';
   setSyncBadge('wait');
   // Cargar localStorage primero para que la app funcione de inmediato
   var lr=lsLoad('registros');if(lr&&lr.length>0)registros=lr;
   var lc=lsLoad('colmenares');if(lc&&lc.length>0)colmenares=lc;
   var lo=lsLoad('operarios');if(lo&&lo.length>0)operarios=lo;
-  var le=lsLoad('extracciones');if(le&&le.length>0)extracciones=le;var lt=lsLoad('tambores');if(lt&&lt.length>0)tambores=lt;var lcomp=lsLoad('compradores');if(lcomp&&lcomp.length>0)compradores=lcomp;var lv=lsLoad('ventas');if(lv&&lv.length>0)ventas=lv;var lcomp=lsLoad('compradores');if(lcomp&&lcomp.length>0)compradores=lcomp;var lv=lsLoad('ventas');if(lv&&lv.length>0)ventas=lv;
-  var luApp=lsLoad('usuariosApp');
-  if(luApp&&luApp.length>0&&fbTieneData){usuariosApp=luApp;}
-  else if(!fbTieneData){usuariosApp=[];}
-  else{usuariosApp=USUARIOS_DEFAULT.slice();}
+  var le=lsLoad('extracciones');if(le&&le.length>0)extracciones=le;var lt=lsLoad('tambores');if(lt&&lt.length>0)tambores=lt;var lcomp=lsLoad('compradores');if(lcomp&&lcomp.length>0)compradores=lcomp;var lv=lsLoad('ventas');if(lv&&lv.length>0)ventas=lv;
+  var luApp=lsLoad('usuariosApp');if(luApp&&luApp.length>0)usuariosApp=luApp;
   renderUsuariosApp();
+
   // Restaurar sesión Firebase Auth
   var storedAuth=localStorage.getItem('arl_authUser');
   if(storedAuth){
-    try{
-      authUser=JSON.parse(storedAuth);
-      document.getElementById('pantalla-login').style.display='none';
-      var storedOp=localStorage.getItem('arl_operario');
-      if(storedOp){
-        try{
-          var op=JSON.parse(storedOp);
-          if(op&&op.nombre){
-            usuarioActual={nombre:op.nombre,pass:op.pass||'',admin:op.admin||false};
-            document.getElementById('usuario-badge').textContent=op.nombre;
-            var opEl=document.getElementById('op');if(opEl)opEl.value=op.nombre;
-            updateNavVisibility();
-          }else{
-            refreshToken().then(function(){syncAll().then(function(){mostrarSelectorOperario();});});return;
-          }
-        }catch(e){refreshToken().then(function(){syncAll().then(function(){mostrarSelectorOperario();});});return;}
-      }else{
-        refreshToken().then(function(){syncAll().then(function(){mostrarSelectorOperario();});});
-        return;
-      }
-    }catch(e){authUser=null;localStorage.removeItem('arl_authUser');}
+    try{authUser=JSON.parse(storedAuth);}catch(e){authUser=null;localStorage.removeItem('arl_authUser');}
   }
+
+  // Restaurar operario (si no hay, mostrar login y no continuar)
+  var storedOp=localStorage.getItem('arl_operario');
+  if(authUser&&storedOp){
+    try{
+      var op=JSON.parse(storedOp);
+      if(op&&op.nombre){
+        usuarioActual={nombre:op.nombre,pass:op.pass||'',admin:op.admin||false};
+        document.getElementById('usuario-badge').textContent=op.nombre;
+        var opEl=document.getElementById('op');if(opEl)opEl.value=op.nombre;
+        document.getElementById('pantalla-login').style.display='none';
+        updateNavVisibility();
+      }else{
+        document.getElementById('pantalla-login').style.display='flex';
+        return Promise.resolve();
+      }
+    }catch(e){
+      document.getElementById('pantalla-login').style.display='flex';
+      return Promise.resolve();
+    }
+  }else{
+    document.getElementById('pantalla-login').style.display='flex';
+    return Promise.resolve();
+  }
+
   buildSelects();
   return refreshToken().then(function(){
   syncAll().then(function(){
@@ -2375,7 +2265,7 @@ function migrarDatosLegacy(){
 }
 function miniToast(msg){var ex=document.getElementById('_mt');if(ex)ex.remove();var t=document.createElement('div');t.id='_mt';t.textContent=msg;t.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;font-weight:500;z-index:9999;white-space:nowrap;max-width:90vw;text-align:center';document.body.appendChild(t);clearTimeout(window._mtt);window._mtt=setTimeout(function(){t.remove();},3000);}
 
-window.escribirEnAppicultura=escribirEnAppicultura;window.seleccionarOperario=seleccionarOperario;window.confirmarOperario=confirmarOperario;window.cancelarOperario=cancelarOperario;window.cerrarSesionFirebase=cerrarSesionFirebase;window.migrarDatosLegacy=migrarDatosLegacy;window.reconectar=reconectar;window.entrarComoUsuario=entrarComoUsuario;window.beepScan=beepScan;window.setAuthMode=setAuthMode;window.authSubmit=authSubmit;window.parsearCoordenadas=parsearCoordenadas;window.onUbicacionInput=onUbicacionInput;window.verEnMapa=verEnMapa;window.selRankingMetrica=selRankingMetrica;window.renderRankingColmenares=renderRankingColmenares;window.updateMuertasCardVisibility=updateMuertasCardVisibility;window.adjMN=adjMN;window.onNuCChange=onNuCChange;window.onNucleoChange=onNucleoChange;window.exportarTambores=exportarTambores;window.abrirScanner=abrirScanner;window.cerrarScanner=cerrarScanner;window.usarCodigoManual=usarCodigoManual;window.cerrarModalTambor=cerrarModalTambor;window.guardarTambor=guardarTambor;window.eliminarTambor=eliminarTambor;window.renderVentas=renderVentas;window.abrirNuevaVenta=abrirNuevaVenta;window.cerrarNuevaVenta=cerrarNuevaVenta;window.agregarTamborAVenta=agregarTamborAVenta;window.quitarTamborDeVenta=quitarTamborDeVenta;window.actualizarResumenVenta=actualizarResumenVenta;window.confirmarVenta=confirmarVenta;window.eliminarVenta=eliminarVenta;window.abrirScannerVenta=abrirScannerVenta;window.renderCompradores=renderCompradores;window.agregarComprador=agregarComprador;window.eliminarComprador=eliminarComprador;window.abrirModalComprador=abrirModalComprador;window.renderExtraccion=renderExtraccion;window.abrirTurnoExtraccion=abrirTurnoExtraccion;window.cerrarTurnoExt=cerrarTurnoExt;window.guardarTurnoExt=guardarTurnoExt;window.eliminarTurnoExt=eliminarTurnoExt;window.exportarCosecha=exportarCosecha;window.go=go;window.toggleTarea=toggleTarea;window.toggleCura=toggleCura;window.toggleAnti=toggleAnti;window.adjN=adjN;window.adjM=adjM;window.adjAlim=adjAlim;window.adjCosecha=adjCosecha;window.adjP=adjP;window.setDias=setDias;window.filtrarColmenares=filtrarColmenares;window.colmenarKeydown=colmenarKeydown;window.selColmenar=selColmenar;window.cerrarDropdownColm=cerrarDropdownColm;window.toggleNuDestinoColm=toggleNuDestinoColm;window.updateTrasladoPreview=updateTrasladoPreview;window.updateVaciasPreview=updateVaciasPreview;window.updateEnjambrePreview=updateEnjambrePreview;window.updateDestinoMuertas=updateDestinoMuertas;window.fillDmColmenarDest=fillDmColmenarDest;window.guardar=guardar;window.cerrarOverlay=cerrarOverlay;window.cancelarEdicion=cancelarEdicion;window.abrirEdicion=abrirEdicion;window.eliminarRegistro=eliminarRegistro;window.editarColmenar=editarColmenar;window.eliminarColmenar=eliminarColmenar;window.agregarColmenar=agregarColmenar;window.eliminarOperario=eliminarOperario;window.agregarOperario=agregarOperario;window.renderHist=renderHist;window.exportarExcel=exportarExcel;window.switchTab=switchTab;window.renderResumen=renderResumen;window.cerrarModalColm=cerrarModalColm;window.guardarModalColm=guardarModalColm;window.syncAll=syncAll;window.cerrarSesion=cerrarSesion;window.agregarUsuarioApp=agregarUsuarioApp;window.eliminarUsuarioApp=eliminarUsuarioApp;window.cambiarPassUsuario=cambiarPassUsuario;window.guardarNuevaPass=guardarNuevaPass;window.resaltarDDItem=resaltarDDItem;
+window.escribirEnAppicultura=escribirEnAppicultura;window.cerrarSesionFirebase=cerrarSesionFirebase;window.migrarDatosLegacy=migrarDatosLegacy;window.reconectar=reconectar;window.beepScan=beepScan;window.setAuthMode=setAuthMode;window.authSubmit=authSubmit;window.parsearCoordenadas=parsearCoordenadas;window.onUbicacionInput=onUbicacionInput;window.verEnMapa=verEnMapa;window.selRankingMetrica=selRankingMetrica;window.renderRankingColmenares=renderRankingColmenares;window.updateMuertasCardVisibility=updateMuertasCardVisibility;window.adjMN=adjMN;window.onNuCChange=onNuCChange;window.onNucleoChange=onNucleoChange;window.exportarTambores=exportarTambores;window.abrirScanner=abrirScanner;window.cerrarScanner=cerrarScanner;window.usarCodigoManual=usarCodigoManual;window.cerrarModalTambor=cerrarModalTambor;window.guardarTambor=guardarTambor;window.eliminarTambor=eliminarTambor;window.renderVentas=renderVentas;window.abrirNuevaVenta=abrirNuevaVenta;window.cerrarNuevaVenta=cerrarNuevaVenta;window.agregarTamborAVenta=agregarTamborAVenta;window.quitarTamborDeVenta=quitarTamborDeVenta;window.actualizarResumenVenta=actualizarResumenVenta;window.confirmarVenta=confirmarVenta;window.eliminarVenta=eliminarVenta;window.abrirScannerVenta=abrirScannerVenta;window.renderCompradores=renderCompradores;window.agregarComprador=agregarComprador;window.eliminarComprador=eliminarComprador;window.abrirModalComprador=abrirModalComprador;window.renderExtraccion=renderExtraccion;window.abrirTurnoExtraccion=abrirTurnoExtraccion;window.cerrarTurnoExt=cerrarTurnoExt;window.guardarTurnoExt=guardarTurnoExt;window.eliminarTurnoExt=eliminarTurnoExt;window.exportarCosecha=exportarCosecha;window.go=go;window.toggleTarea=toggleTarea;window.toggleCura=toggleCura;window.toggleAnti=toggleAnti;window.adjN=adjN;window.adjM=adjM;window.adjAlim=adjAlim;window.adjCosecha=adjCosecha;window.adjP=adjP;window.setDias=setDias;window.filtrarColmenares=filtrarColmenares;window.colmenarKeydown=colmenarKeydown;window.selColmenar=selColmenar;window.cerrarDropdownColm=cerrarDropdownColm;window.toggleNuDestinoColm=toggleNuDestinoColm;window.updateTrasladoPreview=updateTrasladoPreview;window.updateVaciasPreview=updateVaciasPreview;window.updateEnjambrePreview=updateEnjambrePreview;window.updateDestinoMuertas=updateDestinoMuertas;window.fillDmColmenarDest=fillDmColmenarDest;window.guardar=guardar;window.cerrarOverlay=cerrarOverlay;window.cancelarEdicion=cancelarEdicion;window.abrirEdicion=abrirEdicion;window.eliminarRegistro=eliminarRegistro;window.editarColmenar=editarColmenar;window.eliminarColmenar=eliminarColmenar;window.agregarColmenar=agregarColmenar;window.eliminarOperario=eliminarOperario;window.agregarOperario=agregarOperario;window.renderHist=renderHist;window.exportarExcel=exportarExcel;window.switchTab=switchTab;window.renderResumen=renderResumen;window.cerrarModalColm=cerrarModalColm;window.guardarModalColm=guardarModalColm;window.syncAll=syncAll;window.cerrarSesion=cerrarSesion;window.agregarUsuarioApp=agregarUsuarioApp;window.eliminarUsuarioApp=eliminarUsuarioApp;window.cambiarPassUsuario=cambiarPassUsuario;window.guardarNuevaPass=guardarNuevaPass;window.resaltarDDItem=resaltarDDItem;
 
 buildSelects();buildTareas();buildTiposAlimentoSelect();recalcAlim();recalcCosecha();updateProxima();actualizarAviso();
 document.getElementById('fecha').value=hoy();
