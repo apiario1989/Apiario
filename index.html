@@ -1518,19 +1518,22 @@ function renderDashboard(){
   var data=calcSeasonData(anio);
 
   // Visitas vencidas y próximas
-  var vencidas=[],urgentes=[],proximas=[];
+  var vencidas=[],urgentes=[],proximas=[],alDia=[],sinPlanif=[];
   colmenares.forEach(function(c){
     var ult=registros.find(function(r){return parseInt(r.colId)===parseInt(c.id);});
     if(!ult)return;
     if((ult.camConAbejas||0)<=0&&(ult.nucleosConteo||0)<=0)return;
-    var pv=ult.proximaVisita;if(!pv)return;
+    var pv=ult.proximaVisita;
+    if(!pv){sinPlanif.push({c:c,ult:ult});return;}
     var diff=diasEntre(h,pv);
     if(diff<0)vencidas.push({c:c,diff:diff,ult:ult});
     else if(diff<=5)urgentes.push({c:c,diff:diff,ult:ult});
     else if(diff<=14)proximas.push({c:c,diff:diff,ult:ult});
+    else alDia.push({c:c,diff:diff,ult:ult});
   });
   vencidas.sort(function(a,b){return a.diff-b.diff;});
   urgentes.sort(function(a,b){return a.diff-b.diff;});
+  alDia.sort(function(a,b){return a.diff-b.diff;});
 
   // Alzas pendientes
   var totalCosechadas=registros.reduce(function(s,r){return s+(r.coAlzas||0);},0);
@@ -1647,11 +1650,33 @@ function renderDashboard(){
       +'</div>';
   }
 
-  if(!vencidas.length&&!urgentes.length&&!causas.length){
+  // Colmenares al día (verde) — más de 14 días hasta la próxima visita
+  if(alDia.length){
+    html+='<div class="card" style="border:2px solid #34d399;margin-bottom:1rem">'
+      +'<div style="font-size:12px;font-weight:700;color:#065f46;text-transform:uppercase;margin-bottom:8px">🟢 Al día ('+alDia.length+')</div>'
+      +alDia.map(function(x){return'<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--sua)">'
+        +'<div><div style="font-size:13px;font-weight:700">'+x.c.nombre+'</div><div style="font-size:11px;color:#aaa">Próxima: '+fmtF(x.ult.proximaVisita)+' (en '+x.diff+'d)</div></div>'
+        +'<span style="font-size:12px;font-weight:600;color:#1a5c2a">'+x.diff+'d</span>'
+        +'</div>';}).join('')
+      +'</div>';
+  }
+
+  // Colmenares con colmenas pero sin próxima visita definida
+  if(sinPlanif.length){
+    html+='<div class="card" style="margin-bottom:1rem">'
+      +'<div style="font-size:12px;font-weight:700;color:var(--txt);text-transform:uppercase;margin-bottom:8px">⚪ Sin próxima visita definida ('+sinPlanif.length+')</div>'
+      +sinPlanif.map(function(x){return'<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--sua)">'
+        +'<div><div style="font-size:13px;font-weight:700">'+x.c.nombre+'</div><div style="font-size:11px;color:#aaa">Última visita: '+fmtF(x.ult.fecha)+'</div></div>'
+        +'<button onclick="selColmenar('+x.c.id+',\''+x.c.nombre.replace(/'/g,"\\'")+'\'  );go(\'carga\')" style="background:var(--am);border:none;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Visitar</button>'
+        +'</div>';}).join('')
+      +'</div>';
+  }
+
+  if(!vencidas.length&&!urgentes.length&&!proximas.length&&!alDia.length&&!sinPlanif.length){
     html+='<div class="card" style="text-align:center;border:2px solid #34d399;background:linear-gradient(135deg,#d1fae5,#fff)">'
       +'<div style="font-size:28px;margin-bottom:6px">✅</div>'
       +'<div style="font-size:14px;font-weight:700;color:#065f46">Todo al día</div>'
-      +'<div style="font-size:12px;color:#aaa;margin-top:4px">No hay visitas vencidas ni alertas activas</div>'
+      +'<div style="font-size:12px;color:#aaa;margin-top:4px">No hay colmenares con colmenas activas para mostrar</div>'
       +'</div>';
   }
 
