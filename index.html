@@ -1522,6 +1522,7 @@ function renderDashboard(){
   colmenares.forEach(function(c){
     var ult=registros.find(function(r){return parseInt(r.colId)===parseInt(c.id);});
     if(!ult)return;
+    if((ult.camConAbejas||0)<=0&&(ult.nucleosConteo||0)<=0)return;
     var pv=ult.proximaVisita;if(!pv)return;
     var diff=diasEntre(h,pv);
     if(diff<0)vencidas.push({c:c,diff:diff,ult:ult});
@@ -2368,4 +2369,3 @@ initData();
 </script>
 </body>
 </html>
-  
