@@ -2284,8 +2284,9 @@ function renderRankingColmenares(seasRows){
   var met=RANKING_METRICAS.find(function(m){return m.id===rankingMetrica;})||RANKING_METRICAS[0];
   // Calcular valor para cada fila
   var withVal=seasRows.map(function(r){return{r:r,v:met.val(r)};});
-  // Ordenar: cosecha y alimento tienen lógica diferente — cosecha mayor=mejor, alimento menor=mejor
-  withVal.sort(function(a,b){return met.mejor==='mayor'?b.v-a.v:a.v-b.v;});
+  // Siempre ordenado de mayor a menor, así lo que necesita más atención
+  // (mortandad alta, alimento alto) queda arriba y es fácil de leer.
+  withVal.sort(function(a,b){return b.v-a.v;});
   var max=withVal.length?Math.max.apply(null,withVal.map(function(x){return x.v;})):1;
   // Otras métricas para mostrar como secundarias
   var otras=RANKING_METRICAS.filter(function(m){return m.id!==rankingMetrica;});
@@ -2293,13 +2294,16 @@ function renderRankingColmenares(seasRows){
     '<div style="display:flex;flex-direction:column;gap:8px">'+
     withVal.map(function(item,i){
       var r=item.r,v=item.v;
-      var isTop=i<3,isBot=i>=withVal.length-3&&withVal.length>5;
+      // Si "mejor" es mayor (ej. cosecha), los primeros de la lista (valor alto) son los buenos.
+      // Si "mejor" es menor (ej. mortandad, alimento), los primeros (valor alto) son los que necesitan atención.
+      var esBueno=met.mejor==='mayor'?i<3:(i>=withVal.length-3&&withVal.length>5);
+      var esMalo=met.mejor==='mayor'?(i>=withVal.length-3&&withVal.length>5):i<3;
       var barW=max>0?Math.round(v/max*100):0;
-      var badgeCol=isTop?'#7A3F00':isBot?'#5C3A00':'#7A5C00';
-      var badgeBg=isTop?'#F5C518':isBot?'#F28500':'#FFF0A0';
-      var barCol=isTop?'#F5C518':isBot?'#F28500':'#FFBB33';
-      var cardBg=isTop?'linear-gradient(135deg,#FFF8DC,#FFF0A0)':isBot?'linear-gradient(135deg,#FFF0DC,#FFD9A0)':'var(--card)';
-      var cardBorder=isTop?'#E6B800':isBot?'#E67300':'var(--bor)';
+      var badgeCol=esBueno?'#7A3F00':esMalo?'#5C3A00':'#7A5C00';
+      var badgeBg=esBueno?'#F5C518':esMalo?'#F28500':'#FFF0A0';
+      var barCol=esBueno?'#F5C518':esMalo?'#F28500':'#FFBB33';
+      var cardBg=esBueno?'linear-gradient(135deg,#FFF8DC,#FFF0A0)':esMalo?'linear-gradient(135deg,#FFF0DC,#FFD9A0)':'var(--card)';
+      var cardBorder=esBueno?'#E6B800':esMalo?'#E67300':'var(--bor)';
       return'<div style="background:'+cardBg+';border:1.5px solid '+cardBorder+';border-radius:12px;padding:10px 14px">'+
         '<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">'+
           '<span style="width:24px;height:24px;border-radius:50%;background:'+badgeBg+';color:'+badgeCol+';font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">'+(i+1)+'</span>'+
