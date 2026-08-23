@@ -1621,7 +1621,7 @@ function renderDashboard(){
     html+='<div class="card" style="border:2px solid #ef4444;margin-bottom:1rem">'
       +'<div style="font-size:12px;font-weight:700;color:#c0392b;text-transform:uppercase;margin-bottom:8px">🔴 Visitas vencidas ('+vencidas.length+')</div>'
       +vencidas.map(function(x){return'<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--sua)">'
-        +'<div><div style="font-size:13px;font-weight:700">'+x.c.nombre+'</div><div style="font-size:11px;color:#aaa">Venció: '+fmtF(x.ult.proximaVisita)+'</div></div>'
+        +'<div><div style="font-size:13px;font-weight:700">'+x.c.nombre+'</div><div style="font-size:11px;color:#aaa">Venció: '+fmtF(x.ult.proximaVisita)+' · Última visita: '+fmtF(x.ult.fecha)+'</div></div>'
         +'<div style="display:flex;align-items:center;gap:8px"><span style="font-size:12px;font-weight:700;color:#c0392b">'+Math.abs(x.diff)+'d</span>'
         +'<button onclick="selColmenar('+x.c.id+',\''+x.c.nombre.replace(/'/g,"\\'")+'\'  );go(\'carga\')" style="background:var(--am);border:none;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Visitar</button></div>'
         +'</div>';}).join('')
@@ -1633,7 +1633,7 @@ function renderDashboard(){
     html+='<div class="card" style="border:2px solid #fbbf24;margin-bottom:1rem">'
       +'<div style="font-size:12px;font-weight:700;color:#d68910;text-transform:uppercase;margin-bottom:8px">🟡 Visitas urgentes ('+urgentes.length+')</div>'
       +urgentes.map(function(x){return'<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--sua)">'
-        +'<div><div style="font-size:13px;font-weight:700">'+x.c.nombre+'</div><div style="font-size:11px;color:#aaa">Vence: '+fmtF(x.ult.proximaVisita)+(x.diff===0?' (hoy)':' (en '+x.diff+'d)')+'</div></div>'
+        +'<div><div style="font-size:13px;font-weight:700">'+x.c.nombre+'</div><div style="font-size:11px;color:#aaa">Vence: '+fmtF(x.ult.proximaVisita)+(x.diff===0?' (hoy)':' (en '+x.diff+'d)')+' · Última visita: '+fmtF(x.ult.fecha)+'</div></div>'
         +'<button onclick="selColmenar('+x.c.id+',\''+x.c.nombre.replace(/'/g,"\\'")+'\'  );go(\'carga\')" style="background:var(--am);border:none;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit">Visitar</button>'
         +'</div>';}).join('')
       +'</div>';
@@ -1644,7 +1644,7 @@ function renderDashboard(){
     html+='<div class="card" style="margin-bottom:1rem">'
       +'<div style="font-size:12px;font-weight:700;color:var(--na);text-transform:uppercase;margin-bottom:8px">📅 Próximas visitas ('+proximas.length+')</div>'
       +proximas.map(function(x){return'<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--sua)">'
-        +'<div><div style="font-size:13px;font-weight:700">'+x.c.nombre+'</div><div style="font-size:11px;color:#aaa">'+fmtF(x.ult.proximaVisita)+' (en '+x.diff+'d)</div></div>'
+        +'<div><div style="font-size:13px;font-weight:700">'+x.c.nombre+'</div><div style="font-size:11px;color:#aaa">'+fmtF(x.ult.proximaVisita)+' (en '+x.diff+'d) · Última visita: '+fmtF(x.ult.fecha)+'</div></div>'
         +'<span style="font-size:12px;font-weight:600;color:#888">'+x.diff+'d</span>'
         +'</div>';}).join('')
       +'</div>';
@@ -1655,7 +1655,7 @@ function renderDashboard(){
     html+='<div class="card" style="border:2px solid #34d399;margin-bottom:1rem">'
       +'<div style="font-size:12px;font-weight:700;color:#065f46;text-transform:uppercase;margin-bottom:8px">🟢 Al día ('+alDia.length+')</div>'
       +alDia.map(function(x){return'<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--sua)">'
-        +'<div><div style="font-size:13px;font-weight:700">'+x.c.nombre+'</div><div style="font-size:11px;color:#aaa">Próxima: '+fmtF(x.ult.proximaVisita)+' (en '+x.diff+'d)</div></div>'
+        +'<div><div style="font-size:13px;font-weight:700">'+x.c.nombre+'</div><div style="font-size:11px;color:#aaa">Próxima: '+fmtF(x.ult.proximaVisita)+' (en '+x.diff+'d) · Última visita: '+fmtF(x.ult.fecha)+'</div></div>'
         +'<span style="font-size:12px;font-weight:600;color:#1a5c2a">'+x.diff+'d</span>'
         +'</div>';}).join('')
       +'</div>';
