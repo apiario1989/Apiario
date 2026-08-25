@@ -529,12 +529,12 @@ textarea{resize:vertical;min-height:60px}
       <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px" id="ranking-btns"></div>
       <div id="ranking-content"></div>
     </div>
+    <div id="comparacion-wrapper" style="display:none"><div class="section-block"><div class="section-block-title" id="comp-title">Comparación temporada anterior</div><div id="comparacion-content"></div></div></div>
     <div class="section-block"><div class="section-block-title">Causas de muerte</div><div id="causas-visual"></div></div>
     <div class="section-block"><div class="section-block-title">Mortandad por colmenar</div><div id="mort-colm-cards"></div></div>
     <div class="section-block" id="section-nucleos" style="display:none"><div class="section-block-title">Núcleos</div><div id="nuc-cards"></div></div>
     <div class="section-block" id="section-alimento" style="display:none"><div class="section-block-title">Alimentación por colmenar</div><div id="alimento-cards"></div></div>
     <div class="section-block" id="section-fuerza" style="display:none"><div class="section-block-title">Fuerza de colmenas</div><div id="fuerza-cards"></div></div>
-    <div id="comparacion-wrapper" style="display:none"><div class="section-block"><div class="section-block-title" id="comp-title">Comparación temporada anterior</div><div id="comparacion-content"></div></div></div>
   </div>
 </div>
 
@@ -2253,18 +2253,22 @@ function abrirScannerVenta(){
 }
 
 // ---- RANKING COLMENARES ----
-var rankingMetrica='cosecha';
+var rankingMetrica=null;
 var RANKING_METRICAS=[
-  {id:'cosecha',  label:'Cosecha kg/colmena', desc:'kg miel por colmena al final de la temporada', mejor:'mayor',
+  {id:'cosecha',  label:'Cosecha kg/colmena', shortLabel:'Cosecha', desc:'kg miel por colmena al final de la temporada', mejor:'mayor',
+   tieneDatos:function(r){return(r.cosecha||0)>0;},
    val:function(r){return r.finCam>0?Math.round(r.cosecha/r.finCam*10)/10:0;},
    fmt:function(v){return v+' kg';}},
-  {id:'mortCam',  label:'Mortandad cámaras %', desc:'porcentaje de cámaras muertas sobre el inicio', mejor:'menor',
+  {id:'mortCam',  label:'Mortandad cámaras %', shortLabel:'Mort. cám.', desc:'porcentaje de cámaras muertas sobre el inicio', mejor:'menor',
+   tieneDatos:function(r){return(r.iniCam||0)>0;},
    val:function(r){var d=r.iniCam||r.finCam+r.mTot||1;return d>0?Math.round(r.mTot/d*1000)/10:0;},
    fmt:function(v){return v+'%';}},
-  {id:'mortNuc',  label:'Mortandad núcleos %', desc:'porcentaje de núcleos muertos sobre el inicio', mejor:'menor',
+  {id:'mortNuc',  label:'Mortandad núcleos %', shortLabel:'Mort. núcl.', desc:'porcentaje de núcleos muertos sobre el inicio', mejor:'menor',
+   tieneDatos:function(r){return(r.iniNuc||0)>0||(r.finNuc||0)>0||(r.mNucleos||0)>0;},
    val:function(r){var d=(r.iniNuc||0)>0?r.iniNuc:(r.finNuc||0)+(r.mNucleos||0)||1;return d>0?Math.round((r.mNucleos||0)/d*1000)/10:0;},
    fmt:function(v){return v+'%';}},
-  {id:'alimento', label:'Alimento L/colmena', desc:'litros de alimento suministrados por colmena · valor alto indica colmenas débiles', mejor:'menor',
+  {id:'alimento', label:'Alimento L/colmena', shortLabel:'Alimento', desc:'litros de alimento suministrados por colmena · valor alto indica colmenas débiles', mejor:'menor',
+   tieneDatos:function(r){return(r.litrosTotal||0)>0;},
    val:function(r){return r.finCam>0?Math.round(r.litrosTotal/r.finCam*10)/10:0;},
    fmt:function(v){return v+' L';}}
 ];
@@ -2280,10 +2284,12 @@ function renderRankingColmenares(seasRows){
     var on=m.id===rankingMetrica;
     return'<button onclick="selRankingMetrica(\''+m.id+'\')" style="padding:7px 13px;border-radius:99px;border:2px solid '+(on?'#E6B800':'#C8A800')+';background:'+(on?'#F5C518':'#FFF0A0')+';color:#5C3A00;font-size:12px;font-weight:'+(on?'700':'500')+';cursor:pointer;font-family:inherit;white-space:nowrap">'+m.label+'</button>';
   }).join('');
+  if(!rankingMetrica){cEl.innerHTML='<div class="empty" style="padding:1.5rem;color:#aaa;font-size:13px">Tocá una métrica arriba para ver el ranking</div>';return;}
   if(!seasRows||seasRows.length===0){cEl.innerHTML='<div class="empty" style="padding:1rem">Sin datos de temporada</div>';return;}
   var met=RANKING_METRICAS.find(function(m){return m.id===rankingMetrica;})||RANKING_METRICAS[0];
-  // Calcular valor para cada fila
-  var withVal=seasRows.map(function(r){return{r:r,v:met.val(r)};});
+  // Calcular valor para cada fila, omitiendo los colmenares sin datos relevantes para esta métrica
+  var withVal=seasRows.filter(function(r){return met.tieneDatos(r);}).map(function(r){return{r:r,v:met.val(r)};});
+  if(!withVal.length){cEl.innerHTML='<div class="empty" style="padding:1.5rem;color:#aaa;font-size:13px">Ningún colmenar tiene datos de "'+met.label+'" todavía</div>';return;}
   // Siempre ordenado de mayor a menor, así lo que necesita más atención
   // (mortandad alta, alimento alto) queda arriba y es fácil de leer.
   withVal.sort(function(a,b){return b.v-a.v;});
@@ -2314,7 +2320,7 @@ function renderRankingColmenares(seasRows){
           '<div style="height:100%;width:'+barW+'%;background:'+barCol+';border-radius:3px;transition:width .4s"></div>'+
         '</div>'+
         '<div style="display:flex;gap:12px;flex-wrap:wrap">'+
-        otras.map(function(om){var ov=om.val(r);return'<span style="font-size:11px;color:#888">'+om.label.split(' ')[0]+': <strong style="color:var(--txt)">'+om.fmt(ov)+'</strong></span>';}).join('')+
+        otras.map(function(om){var ov=om.val(r);return'<span style="font-size:11px;color:#888">'+om.shortLabel+': <strong style="color:var(--txt)">'+om.fmt(ov)+'</strong></span>';}).join('')+
         '</div>'+
       '</div>';
     }).join('')+
