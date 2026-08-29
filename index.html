@@ -384,6 +384,13 @@ textarea{resize:vertical;min-height:60px}
 
     <div class="campo-cond" id="cond-cosecha">
       <div class="stitle">Cosecha</div>
+      <div class="fld"><label class="lbl">Tamaño de alza</label>
+        <select id="coATamano" onchange="onAlzaTamanoChange('coATamano')">
+          <option value="1/2 alza">1/2 alza</option>
+          <option value="3/4 alza">3/4 alza</option>
+          <option value="Alza std">Alza std</option>
+        </select>
+      </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
         <div class="num-col"><div class="lbl-top">Cant. alzas</div>
           <button class="nbtn" onclick="adjCosecha('coA',1)">+</button><input class="ninput" type="number" id="coA" value="0" min="0" oninput="recalcCosecha()">
@@ -438,6 +445,13 @@ textarea{resize:vertical;min-height:60px}
 
     <div class="campo-cond" id="cond-alzas">
       <div class="stitle">Alzas a agregar</div>
+      <div class="fld"><label class="lbl">Tamaño de alza</label>
+        <select id="alzAddTamano" onchange="onAlzaTamanoChange('alzAddTamano');updateAlzasPreview()">
+          <option value="1/2 alza">1/2 alza</option>
+          <option value="3/4 alza">3/4 alza</option>
+          <option value="Alza std">Alza std</option>
+        </select>
+      </div>
       <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
         <div class="num-col"><div class="lbl-top">Cantidad</div><button class="nbtn" onclick="adjN('alzAdd',1)">+</button><input class="ninput" type="number" id="alzAdd" value="0" min="0" oninput="updateAlzasPreview()"><button class="nbtn" onclick="adjN('alzAdd',-1)">−</button></div>
         <div id="alzas-preview" style="font-size:13px;color:#555;background:#f5f5f3;border-radius:8px;padding:8px 12px;flex:1"></div>
@@ -1062,7 +1076,11 @@ function toggleNuDestinoColm(){
 
 function updateTrasladoPreview(){var colId=parseInt(document.getElementById('colmenar').value)||0;var destino=parseInt(document.getElementById('traslado-destino').value)||0;var cant=nv('trasCant');var cantVac=nv('trasVaciasCant');var prev=document.getElementById('traslado-preview');if(!colId||!destino||(!cant&&!cantVac)){prev.style.display='none';return;}var co=colmenares.find(function(c){return parseInt(c.id)===colId;});var cd=colmenares.find(function(c){return parseInt(c.id)===destino;});var ultO=registros.find(function(r){return parseInt(r.colId)===colId;});var ultD=registros.find(function(r){return parseInt(r.colId)===destino;});var html='<strong>'+(co?co.nombre:'?')+'</strong>: '+(ultO?ultO.camConAbejas||0:0)+' cám🐝 → <strong>'+((ultO?ultO.camConAbejas||0:0)-cant)+'</strong>';if(cantVac)html+=' · '+(ultO?ultO.camSinAbejas||0:0)+' cám□ → <strong>'+Math.max(0,(ultO?ultO.camSinAbejas||0:0)-cantVac)+'</strong>';html+='<br><strong>'+(cd?cd.nombre:'?')+'</strong>: '+(ultD?ultD.camConAbejas||0:0)+' cám🐝 → <strong>'+((ultD?ultD.camConAbejas||0:0)+cant)+'</strong>';if(cantVac)html+=' · '+(ultD?ultD.camSinAbejas||0:0)+' cám□ → <strong>'+((ultD?ultD.camSinAbejas||0:0)+cantVac)+'</strong>';prev.innerHTML=html;prev.style.display='block';}
 function updateVaciasPreview(){var origen=parseInt(document.getElementById('vacias-origen').value)||0,destino=parseInt(document.getElementById('vacias-destino').value)||0,cant=nv('vaciasCant');var prev=document.getElementById('vacias-preview');if(!origen||!destino||!cant){prev.style.display='none';return;}var co=colmenares.find(function(c){return parseInt(c.id)===origen;}),cd=colmenares.find(function(c){return parseInt(c.id)===destino;});var ultO=registros.find(function(r){return parseInt(r.colId)===origen;}),ultD=registros.find(function(r){return parseInt(r.colId)===destino;});var vacO=ultO?ultO.camSinAbejas||0:0,vacD=ultD?ultD.camSinAbejas||0:0;prev.innerHTML='<strong>'+(co?co.nombre:'?')+'</strong>: '+vacO+' → <strong>'+Math.max(0,vacO-cant)+'</strong> vacías<br><strong>'+(cd?cd.nombre:'?')+'</strong>: '+vacD+' → <strong>'+(vacD+cant)+'</strong> vacías';prev.style.display='block';}
-function updateAlzasPreview(){var cant=nv('alzAdd'),prev=document.getElementById('alzas-preview');if(prev)prev.textContent=cant>0?'Alzas: '+alzasPrev+' → '+(alzasPrev+cant):alzasPrev>0?'Alzas actuales: '+alzasPrev:'';}
+var ALZA_TAMANOS=['1/2 alza','3/4 alza','Alza std'];
+function getUltimoTamanoAlza(){var t=lsLoad('ultimoTamanoAlza');return(t&&ALZA_TAMANOS.indexOf(t)>=0)?t:'Alza std';}
+function initAlzaTamanoSelects(){var v=getUltimoTamanoAlza();['coATamano','alzAddTamano'].forEach(function(id){var el=document.getElementById(id);if(el)el.value=v;});}
+function onAlzaTamanoChange(id){var el=document.getElementById(id);if(!el)return;lsSave('ultimoTamanoAlza',el.value);['coATamano','alzAddTamano'].forEach(function(oid){if(oid!==id){var o=document.getElementById(oid);if(o)o.value=el.value;}});}
+function updateAlzasPreview(){var cant=nv('alzAdd'),tam=document.getElementById('alzAddTamano')?document.getElementById('alzAddTamano').value:'';var prev=document.getElementById('alzas-preview');if(prev)prev.textContent=cant>0?'Alzas: '+alzasPrev+' → '+(alzasPrev+cant)+(tam?' ('+cant+' de '+tam+')':''):alzasPrev>0?'Alzas actuales: '+alzasPrev:'';}
 function updateEnjambrePreview(){var cant=nv('enjambresCant'),prev=document.getElementById('enjambre-preview');if(!prev)return;if(cant>0){var vac=nv('camSinAbejas'),cam=nv('camConAbejas');prev.textContent=cant+' cámara'+(cant>1?'s':'')+' vacía'+(cant>1?'s':'')+' → con abejas. Vacías: '+vac+' → '+Math.max(0,vac-cant)+' · Con abejas: '+cam+' → '+(cam+cant);prev.style.display='block';}else prev.style.display='none';}
 
 function onColmenarChange(){updateProxima();var colId=parseInt(document.getElementById('colmenar').value);var prev=document.getElementById('prev-caja');camConAbejasPrev=0;camSinAbejasPrev=0;nucleosPrev=0;alzasPrev=0;if(!colId){if(prev)prev.style.display='none';document.getElementById('conteo-resumen').style.display='none';return;}var ult=registros.find(function(r){return parseInt(r.colId)===colId;});if(!ult){prev.textContent='Sin registros anteriores para este colmenar.';prev.style.display='block';return;}camConAbejasPrev=ult.camConAbejas||0;camSinAbejasPrev=ult.camSinAbejas||0;nucleosPrev=ult.nucleosConteo||0;alzasPrev=ult.alzas||0;var alzasVaciasPrev=ult.alzasSinAbejas||0;prev.innerHTML='Última visita <strong>'+fmtF(ult.fecha)+'</strong>: <strong>'+camConAbejasPrev+' cám.🐝</strong> · '+camSinAbejasPrev+' cám.□ · '+nucleosPrev+' núcleos · '+alzasPrev+' alzas🍯'+(alzasVaciasPrev?' · '+alzasVaciasPrev+' alzas□':'');prev.style.display='block';setV('camConAbejas',camConAbejasPrev);setV('camSinAbejas',camSinAbejasPrev);setV('nucleosConteo',nucleosPrev);setV('alz',alzasPrev);setV('alzV',alzasVaciasPrev);recalcAlim();validarMuertas();updateConteoResumen();if(tareasSel.has('traslado'))fillTrasladoSelects();if(tareasSel.has('agregar-alzas'))updateAlzasPreview();if(tareasSel.has('nucleos'))fillNuDestinoSel();if(tareasSel.has('mover-vacias'))fillVaciasSelects();if(tareasSel.has('cura'))actualizarEstadoCuras(colId);if(tareasSel.has('antibioticos'))actualizarEstadoAntibioticos(colId,true);}
@@ -1188,7 +1206,7 @@ function recalcAlim(){
 }
 function adjAlim(d){var el=document.getElementById('aLc');el.value=Math.max(0,Math.round((parseFloat(el.value)||0)*2+d*2)/2);recalcAlim();}
 function adjCosecha(id,d){var el=document.getElementById(id);if(!el)return;var step=id==='coKgAlza'?0.5:1;el.value=Math.max(0,Math.round((parseFloat(el.value)||0)*2+d*step*2)/2);recalcCosecha();}
-function recalcCosecha(){var alzas=nv('coA'),kgAlza=nfv('coKgAlza'),total=Math.round(alzas*kgAlza*10)/10;var tt=document.getElementById('cosecha-total-txt'),ft=document.getElementById('cosecha-formula-txt');if(tt)tt.textContent=total+' kg';if(ft)ft.textContent=alzas+' alzas × '+kgAlza+' kg';}
+function recalcCosecha(){var alzas=nv('coA'),kgAlza=nfv('coKgAlza'),total=Math.round(alzas*kgAlza*10)/10;var tam=document.getElementById('coATamano')?document.getElementById('coATamano').value:'';var tt=document.getElementById('cosecha-total-txt'),ft=document.getElementById('cosecha-formula-txt');if(tt)tt.textContent=total+' kg';if(ft)ft.textContent=alzas+' alzas'+(tam?' ('+tam+')':'')+' × '+kgAlza+' kg';}
 function updateNucleoRes(){var cant=nv('nuC'),cria=nv('nuCria'),miel=nv('nuMiel'),r=document.getElementById('nucleo-res');if(r)r.textContent=cant>0?cant+' núcleo'+(cant>1?'s':'')+': '+cria+' cuadros cría + '+miel+' miel c/u':'';}
 function adjP(d){var el=document.getElementById('retorno-dias');el.value=Math.max(1,(parseInt(el.value)||15)+d);updateProxima();}
 function setDias(d){document.getElementById('retorno-dias').value=d;updateProxima();}
@@ -1392,10 +1410,11 @@ try{
     mNucLA:nv('mNucLA'),mNucZ:nv('mNucZ'),mNucH:nv('mNucH'),mNucPi:nv('mNucPi'),mNucNS:nv('mNucNS'),
     aLc:lc,aLt:aLt,tipoAlimento:tareasSel.has('alimentacion')?(document.getElementById('aTipo').value||TIPOS_ALIMENTO_DEFAULT[0]):'',curas:{primavera:curasSel.primavera,verano:curasSel.verano,otono:curasSel.otono},
     antiPrimera:antisSel.primera,antiSegunda:antisSel.segunda,
-    coAlzas:coAlzas,coKgAlza:coKgAlza,coPeso:coPeso,
+    coAlzas:coAlzas,coKgAlza:coKgAlza,coPeso:coPeso,coATamano:tareasSel.has('cosecha')?(document.getElementById('coATamano').value||'Alza std'):'',
     nucCant:tareasSel.has('nucleos')?nv('nuC'):0,nucCria:tareasSel.has('nucleos')?nv('nuCria'):0,
     nucMiel:tareasSel.has('nucleos')?nv('nuMiel'):0,nuDestino:nuDestinoVal,nuDestinoColmId:nuDestinoColmId,
     nucPasaCam:tareasSel.has('nucleo-camara')?nv('nucPasaCam'):0,enjambresCant:enjCant,vaciasCant:0,
+    alzAddCant:tareasSel.has('agregar-alzas')?nv('alzAdd'):0,alzAddTamano:tareasSel.has('agregar-alzas')?(document.getElementById('alzAddTamano').value||'Alza std'):'',
     fuerzaDebil:fzDebil,fuerzaMedia:fzMedia,fuerzaFuerte:fzFuerte,
     obs:document.getElementById('obs').value
   };
@@ -1431,7 +1450,7 @@ try{
 function resetForm(){
   editandoId=null;
   ['camConAbejas','camSinAbejas','nucleosConteo','alz','alzV','mLA','mZ','mH','mPi','mNS','mNucLA','mNucZ','mNucH','mNucPi','mNucNS','coA','coKgAlza','nuC','alzAdd','trasCant','trasVaciasCant','nucPasaCam','enjambresCant','vaciasCant','fzDebil','fzMedia','fzFuerte'].forEach(function(id){setV(id,0);});
-  setV('aLc',0);var aTipoR=document.getElementById('aTipo');if(aTipoR)aTipoR.value=TIPOS_ALIMENTO_DEFAULT[0];setV('nuCria',4);setV('nuMiel',1);
+  setV('aLc',0);var aTipoR=document.getElementById('aTipo');if(aTipoR)aTipoR.value=TIPOS_ALIMENTO_DEFAULT[0];setV('nuCria',4);setV('nuMiel',1);initAlzaTamanoSelects();
   document.getElementById('op').value='';document.getElementById('colmenar').value='';
   var cinp=document.getElementById('colmenar-input');cinp.value='';cinp.style.fontWeight='';
   document.getElementById('obs').value='';document.getElementById('retorno-dias').value=15;document.getElementById('fecha').value=hoy();
@@ -1483,7 +1502,8 @@ function abrirEdicion(idStr){
   var nucSec=document.getElementById('muertas-nucleos-section');if(nucSec)nucSec.style.display=hasMuertNuc?'block':'none';
   var card=document.getElementById('muertas-card');if(card)card.style.display=(hasMuertCam||hasMuertNuc)?'block':'none';
   (r.tareas||[]).forEach(function(id){toggleTarea(id);});
-  setV('aLc',r.aLc||0);var aTipoSel=document.getElementById('aTipo');if(aTipoSel&&r.tipoAlimento)aTipoSel.value=r.tipoAlimento;recalcAlim();setV('coA',r.coAlzas||0);setV('coKgAlza',r.coKgAlza||0);recalcCosecha();
+  setV('aLc',r.aLc||0);var aTipoSel=document.getElementById('aTipo');if(aTipoSel&&r.tipoAlimento)aTipoSel.value=r.tipoAlimento;recalcAlim();setV('coA',r.coAlzas||0);setV('coKgAlza',r.coKgAlza||0);var coATamSel=document.getElementById('coATamano');if(coATamSel)coATamSel.value=r.coATamano||getUltimoTamanoAlza();recalcCosecha();
+  var alzAddTamSel=document.getElementById('alzAddTamano');if(alzAddTamSel)alzAddTamSel.value=r.alzAddTamano||getUltimoTamanoAlza();
   setV('nuC',r.nucCant||0);setV('nuCria',r.nucCria||4);setV('nuMiel',r.nucMiel||1);document.getElementById('nuDestino').value=r.nuDestino||'mismo';toggleNuDestinoColm();updateNucleoRes();
   setV('nucPasaCam',r.nucPasaCam||0);setV('enjambresCant',r.enjambresCant||0);setV('alzAdd',0);
   curasSel={primavera:false,verano:false,otono:false};if(r.curas&&r.curas.primavera)toggleCura('primavera');if(r.curas&&r.curas.verano)toggleCura('verano');if(r.curas&&r.curas.otono)toggleCura('otono');
@@ -1530,8 +1550,9 @@ function renderHist(){
     if(mNucTot>0){var detN=[];if(r.mNucLA)detN.push('LA:'+r.mNucLA);if(r.mNucZ)detN.push('Zan:'+r.mNucZ);if(r.mNucH)detN.push('Ham:'+r.mNucH);if(r.mNucPi)detN.push('Pil:'+r.mNucPi);if(r.mNucNS)detN.push('NS:'+r.mNucNS);tags.push(mNucTot+' núcleos muertos'+(detN.length?' ('+detN.join(', ')+')':''));}
     if(r.aLt)tags.push((r.tipoAlimento?r.tipoAlimento+': ':'Alim: ')+r.aLt+' '+(unidadAlimento(r.tipoAlimento)));
     var cosechaReal=(r.coAlzas&&r.coKgAlza)?Math.round(r.coAlzas*r.coKgAlza*10)/10:(r.coPeso||0);
-    if(cosechaReal)tags.push('Cosecha: '+(r.coAlzas||0)+' alzas × '+(r.coKgAlza||0)+' kg = '+cosechaReal+' kg');
+    if(cosechaReal)tags.push('Cosecha: '+(r.coAlzas||0)+' alzas'+(r.coATamano?' ('+r.coATamano+')':'')+' × '+(r.coKgAlza||0)+' kg = '+cosechaReal+' kg');
     if(r.nucCant)tags.push('Núcleos: '+r.nucCant+' ('+(r.nucCria||0)+'c+'+(r.nucMiel||0)+'m)');if(r.nucPasaCam)tags.push(r.nucPasaCam+' núcleo→cámara');if(r.enjambresCant)tags.push(r.enjambresCant+' enjambre'+(r.enjambresCant>1?'s':''));
+    if(r.alzAddCant)tags.push('+'+r.alzAddCant+' alza'+(r.alzAddCant>1?'s':'')+(r.alzAddTamano?' ('+r.alzAddTamano+')':''));
     var curas=r.curas?[r.curas.primavera&&'Prim.',r.curas.verano&&'Ver.',r.curas.otono&&'Oto.'].filter(Boolean):[];if(curas.length)tags.push('Tratamiento: '+curas.join('/'));
     if(r.antiPrimera||r.antiSegunda){var av=[];if(r.antiPrimera)av.push('1ra vuelta');if(r.antiSegunda)av.push('2da vuelta');tags.push('Antibióticos: '+av.join(' + '));}
     var vencida=r.proximaVisita&&diasEntre(hoy(),r.proximaVisita)<0;
@@ -2436,7 +2457,7 @@ function miniToast(msg){var ex=document.getElementById('_mt');if(ex)ex.remove();
 
 window.escribirEnAppicultura=escribirEnAppicultura;window.cerrarSesionFirebase=cerrarSesionFirebase;window.migrarDatosLegacy=migrarDatosLegacy;window.reconectar=reconectar;window.beepScan=beepScan;window.setAuthMode=setAuthMode;window.authSubmit=authSubmit;window.parsearCoordenadas=parsearCoordenadas;window.onUbicacionInput=onUbicacionInput;window.verEnMapa=verEnMapa;window.selRankingMetrica=selRankingMetrica;window.renderRankingColmenares=renderRankingColmenares;window.updateMuertasCardVisibility=updateMuertasCardVisibility;window.adjMN=adjMN;window.onNuCChange=onNuCChange;window.onNucleoChange=onNucleoChange;window.exportarTambores=exportarTambores;window.abrirScanner=abrirScanner;window.cerrarScanner=cerrarScanner;window.usarCodigoManual=usarCodigoManual;window.cerrarModalTambor=cerrarModalTambor;window.guardarTambor=guardarTambor;window.eliminarTambor=eliminarTambor;window.renderVentas=renderVentas;window.abrirNuevaVenta=abrirNuevaVenta;window.cerrarNuevaVenta=cerrarNuevaVenta;window.agregarTamborAVenta=agregarTamborAVenta;window.quitarTamborDeVenta=quitarTamborDeVenta;window.actualizarResumenVenta=actualizarResumenVenta;window.confirmarVenta=confirmarVenta;window.eliminarVenta=eliminarVenta;window.abrirScannerVenta=abrirScannerVenta;window.renderCompradores=renderCompradores;window.agregarComprador=agregarComprador;window.eliminarComprador=eliminarComprador;window.abrirModalComprador=abrirModalComprador;window.renderExtraccion=renderExtraccion;window.abrirTurnoExtraccion=abrirTurnoExtraccion;window.cerrarTurnoExt=cerrarTurnoExt;window.guardarTurnoExt=guardarTurnoExt;window.eliminarTurnoExt=eliminarTurnoExt;window.exportarCosecha=exportarCosecha;window.go=go;window.toggleTarea=toggleTarea;window.toggleCura=toggleCura;window.toggleAnti=toggleAnti;window.adjN=adjN;window.adjM=adjM;window.adjAlim=adjAlim;window.adjCosecha=adjCosecha;window.adjP=adjP;window.setDias=setDias;window.filtrarColmenares=filtrarColmenares;window.colmenarKeydown=colmenarKeydown;window.selColmenar=selColmenar;window.cerrarDropdownColm=cerrarDropdownColm;window.toggleNuDestinoColm=toggleNuDestinoColm;window.updateTrasladoPreview=updateTrasladoPreview;window.updateVaciasPreview=updateVaciasPreview;window.updateEnjambrePreview=updateEnjambrePreview;window.updateDestinoMuertas=updateDestinoMuertas;window.fillDmColmenarDest=fillDmColmenarDest;window.guardar=guardar;window.cerrarOverlay=cerrarOverlay;window.cancelarEdicion=cancelarEdicion;window.abrirEdicion=abrirEdicion;window.eliminarRegistro=eliminarRegistro;window.editarColmenar=editarColmenar;window.eliminarColmenar=eliminarColmenar;window.agregarColmenar=agregarColmenar;window.eliminarOperario=eliminarOperario;window.agregarOperario=agregarOperario;window.renderHist=renderHist;window.exportarExcel=exportarExcel;window.switchTab=switchTab;window.renderResumen=renderResumen;window.cerrarModalColm=cerrarModalColm;window.guardarModalColm=guardarModalColm;window.syncAll=syncAll;window.cerrarSesion=cerrarSesion;window.agregarUsuarioApp=agregarUsuarioApp;window.eliminarUsuarioApp=eliminarUsuarioApp;window.cambiarPassUsuario=cambiarPassUsuario;window.guardarNuevaPass=guardarNuevaPass;window.resaltarDDItem=resaltarDDItem;window.validarFuerza=validarFuerza;
 
-buildSelects();buildTareas();buildTiposAlimentoSelect();recalcAlim();recalcCosecha();updateProxima();actualizarAviso();
+buildSelects();buildTareas();buildTiposAlimentoSelect();initAlzaTamanoSelects();recalcAlim();recalcCosecha();updateProxima();actualizarAviso();
 document.getElementById('fecha').value=hoy();
 document.addEventListener('focus',function(e){if(e.target.type==='number'&&parseFloat(e.target.value)===0)e.target.value='';},true);
 document.addEventListener('blur',function(e){if(e.target.type==='number'&&e.target.value==='')e.target.value='0';},true);
