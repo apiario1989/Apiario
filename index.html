@@ -465,11 +465,18 @@ textarea{resize:vertical;min-height:60px}
       <div class="fld"><label class="lbl">Destino</label>
         <select id="traslado-destino" onchange="updateTrasladoPreview()"><option value="">Seleccionar...</option></select>
       </div>
-      <div class="fld"><label class="lbl">Cámaras a trasladar</label>
+      <div class="fld"><label class="lbl">Cámaras con abejas a trasladar</label>
         <div style="display:flex;align-items:center;gap:8px">
           <button class="nbtn" onclick="adjN('trasCant',-1)">−</button>
           <input class="ninput" type="number" id="trasCant" value="0" min="0" oninput="updateTrasladoPreview()" style="width:70px">
           <button class="nbtn" onclick="adjN('trasCant',1)">+</button>
+        </div>
+      </div>
+      <div class="fld"><label class="lbl">Cámaras vacías a trasladar</label>
+        <div style="display:flex;align-items:center;gap:8px">
+          <button class="nbtn" onclick="adjN('trasVaciasCant',-1)">−</button>
+          <input class="ninput" type="number" id="trasVaciasCant" value="0" min="0" oninput="updateTrasladoPreview()" style="width:70px">
+          <button class="nbtn" onclick="adjN('trasVaciasCant',1)">+</button>
         </div>
       </div>
       <div id="traslado-preview" style="font-size:13px;color:#555;background:#f5f5f3;border-radius:8px;padding:8px 12px;display:none;line-height:1.6"></div>
@@ -1053,7 +1060,7 @@ function toggleNuDestinoColm(){
   else{setV('nucleosConteo',nucleosPrev||0);onNucleoChange();}
 }
 
-function updateTrasladoPreview(){var colId=parseInt(document.getElementById('colmenar').value)||0;var destino=parseInt(document.getElementById('traslado-destino').value)||0;var cant=nv('trasCant');var prev=document.getElementById('traslado-preview');if(!colId||!destino||!cant){prev.style.display='none';return;}var co=colmenares.find(function(c){return parseInt(c.id)===colId;});var cd=colmenares.find(function(c){return parseInt(c.id)===destino;});var ultO=registros.find(function(r){return parseInt(r.colId)===colId;});var ultD=registros.find(function(r){return parseInt(r.colId)===destino;});prev.innerHTML='<strong>'+(co?co.nombre:'?')+'</strong>: '+(ultO?ultO.camConAbejas||0:0)+' → <strong>'+((ultO?ultO.camConAbejas||0:0)-cant)+'</strong><br><strong>'+(cd?cd.nombre:'?')+'</strong>: '+(ultD?ultD.camConAbejas||0:0)+' → <strong>'+((ultD?ultD.camConAbejas||0:0)+cant)+'</strong>';prev.style.display='block';}
+function updateTrasladoPreview(){var colId=parseInt(document.getElementById('colmenar').value)||0;var destino=parseInt(document.getElementById('traslado-destino').value)||0;var cant=nv('trasCant');var cantVac=nv('trasVaciasCant');var prev=document.getElementById('traslado-preview');if(!colId||!destino||(!cant&&!cantVac)){prev.style.display='none';return;}var co=colmenares.find(function(c){return parseInt(c.id)===colId;});var cd=colmenares.find(function(c){return parseInt(c.id)===destino;});var ultO=registros.find(function(r){return parseInt(r.colId)===colId;});var ultD=registros.find(function(r){return parseInt(r.colId)===destino;});var html='<strong>'+(co?co.nombre:'?')+'</strong>: '+(ultO?ultO.camConAbejas||0:0)+' cám🐝 → <strong>'+((ultO?ultO.camConAbejas||0:0)-cant)+'</strong>';if(cantVac)html+=' · '+(ultO?ultO.camSinAbejas||0:0)+' cám□ → <strong>'+Math.max(0,(ultO?ultO.camSinAbejas||0:0)-cantVac)+'</strong>';html+='<br><strong>'+(cd?cd.nombre:'?')+'</strong>: '+(ultD?ultD.camConAbejas||0:0)+' cám🐝 → <strong>'+((ultD?ultD.camConAbejas||0:0)+cant)+'</strong>';if(cantVac)html+=' · '+(ultD?ultD.camSinAbejas||0:0)+' cám□ → <strong>'+((ultD?ultD.camSinAbejas||0:0)+cantVac)+'</strong>';prev.innerHTML=html;prev.style.display='block';}
 function updateVaciasPreview(){var origen=parseInt(document.getElementById('vacias-origen').value)||0,destino=parseInt(document.getElementById('vacias-destino').value)||0,cant=nv('vaciasCant');var prev=document.getElementById('vacias-preview');if(!origen||!destino||!cant){prev.style.display='none';return;}var co=colmenares.find(function(c){return parseInt(c.id)===origen;}),cd=colmenares.find(function(c){return parseInt(c.id)===destino;});var ultO=registros.find(function(r){return parseInt(r.colId)===origen;}),ultD=registros.find(function(r){return parseInt(r.colId)===destino;});var vacO=ultO?ultO.camSinAbejas||0:0,vacD=ultD?ultD.camSinAbejas||0:0;prev.innerHTML='<strong>'+(co?co.nombre:'?')+'</strong>: '+vacO+' → <strong>'+Math.max(0,vacO-cant)+'</strong> vacías<br><strong>'+(cd?cd.nombre:'?')+'</strong>: '+vacD+' → <strong>'+(vacD+cant)+'</strong> vacías';prev.style.display='block';}
 function updateAlzasPreview(){var cant=nv('alzAdd'),prev=document.getElementById('alzas-preview');if(prev)prev.textContent=cant>0?'Alzas: '+alzasPrev+' → '+(alzasPrev+cant):alzasPrev>0?'Alzas actuales: '+alzasPrev:'';}
 function updateEnjambrePreview(){var cant=nv('enjambresCant'),prev=document.getElementById('enjambre-preview');if(!prev)return;if(cant>0){var vac=nv('camSinAbejas'),cam=nv('camConAbejas');prev.textContent=cant+' cámara'+(cant>1?'s':'')+' vacía'+(cant>1?'s':'')+' → con abejas. Vacías: '+vac+' → '+Math.max(0,vac-cant)+' · Con abejas: '+cam+' → '+(cam+cant);prev.style.display='block';}else prev.style.display='none';}
@@ -1123,7 +1130,7 @@ function totalMuertas(){return nv('mLA')+nv('mZ')+nv('mH')+nv('mPi')+nv('mNS');}
 function setMuertasError(err){['mLA','mZ','mH','mPi','mNS'].forEach(function(id){var el=document.getElementById(id);if(el)el.classList.toggle('error',err);});}
 function validarMuertas(){var camActual=nv('camConAbejas'),diff=camConAbejasPrev-camActual,total=totalMuertas();var aviso=document.getElementById('muertas-aviso');var secVacias=document.getElementById('muertas-vacias-section');if(diff<=0&&total===0){aviso.style.display='none';setMuertasError(false);if(secVacias)secVacias.style.display='none';return;}if(diff>0&&total===0){aviso.textContent='Hay '+diff+' cámara'+(diff>1?'s':'')+' menos. Indicá la causa.';aviso.className='muertas-aviso mav-error';aviso.style.display='block';setMuertasError(true);if(secVacias)secVacias.style.display='none';return;}if(diff>0&&total!==diff){aviso.textContent='Registraste '+total+' muertas, la diferencia es '+diff+'.';aviso.className='muertas-aviso mav-error';aviso.style.display='block';setMuertasError(true);if(secVacias)secVacias.style.display='none';return;}if(diff>0&&total===diff){aviso.textContent='✓ Correcto: '+total+' colmena'+(total!==1?'s':'')+' justificada'+(total!==1?'s':'')+'.';aviso.className='muertas-aviso mav-ok';aviso.style.display='block';setMuertasError(false);if(secVacias){secVacias.style.display='block';fillDmColmenarDest();}return;}if(diff<=0&&total>0){aviso.textContent='Registraste '+total+' muertas pero las cámaras no bajaron.';aviso.className='muertas-aviso mav-error';aviso.style.display='block';setMuertasError(true);if(secVacias)secVacias.style.display='none';return;}aviso.style.display='none';setMuertasError(false);if(secVacias)secVacias.style.display='none';}
 function adjM(id,d){var el=document.getElementById(id);el.value=Math.max(0,(parseInt(el.value)||0)+d);validarMuertas();updateAlertasMuertasTop();}
-function adjN(id,d){var el=document.getElementById(id);if(!el)return;el.value=Math.max(0,(parseInt(el.value)||0)+d);if(id==='camConAbejas'||id==='camSinAbejas'||id==='nucleosConteo')onCamChange();if(id==='nucleosConteo')onNucleoChange();if(id==='nuC'||id==='nuCria'||id==='nuMiel')updateNucleoRes();if(id==='trasCant')updateTrasladoPreview();if(id==='alzAdd')updateAlzasPreview();if(id==='enjambresCant')updateEnjambrePreview();if(id==='vaciasCant')updateVaciasPreview();}
+function adjN(id,d){var el=document.getElementById(id);if(!el)return;el.value=Math.max(0,(parseInt(el.value)||0)+d);if(id==='camConAbejas'||id==='camSinAbejas'||id==='nucleosConteo')onCamChange();if(id==='nucleosConteo')onNucleoChange();if(id==='nuC'||id==='nuCria'||id==='nuMiel')updateNucleoRes();if(id==='trasCant'||id==='trasVaciasCant')updateTrasladoPreview();if(id==='alzAdd')updateAlzasPreview();if(id==='enjambresCant')updateEnjambrePreview();if(id==='vaciasCant')updateVaciasPreview();}
 var TIPOS_ALIMENTO_DEFAULT=['Jarabe de maíz','Jarabe de azúcar','Torta proteica dulce','Torta proteica amarga'];
 function getTiposAlimento(){var t=lsLoad('tiposAlimento');return(t&&t.length)?t:TIPOS_ALIMENTO_DEFAULT.slice();}
 function unidadAlimento(tipo){return(tipo&&tipo.indexOf('Torta')===0)?'kg':'L';}
@@ -1335,14 +1342,25 @@ try{
   }
 
   if(tareasSel.has('traslado')){
-    var tDestino=parseInt(document.getElementById('traslado-destino').value)||0,tCant=nv('trasCant');
-    if(!tDestino){miniToast('Seleccioná el colmenar destino');return;}if(!tCant){miniToast('Indicá la cantidad');return;}if(colId===tDestino){miniToast('Origen y destino no pueden ser el mismo');return;}
+    var tDestino=parseInt(document.getElementById('traslado-destino').value)||0,tCant=nv('trasCant'),tCantVacias=nv('trasVaciasCant');
+    if(!tDestino){miniToast('Seleccioná el colmenar destino');return;}if(!tCant&&!tCantVacias){miniToast('Indicá la cantidad de cámaras (con o sin abejas)');return;}if(colId===tDestino){miniToast('Origen y destino no pueden ser el mismo');return;}
     var tCdNom=colmenares.find(function(c){return parseInt(c.id)===tDestino;})||{nombre:'?'};
     var tUltO=registros.find(function(r){return parseInt(r.colId)===colId;});var tUltD=registros.find(function(r){return parseInt(r.colId)===tDestino;});
-    var tBase={operario:op,fecha:fecha,retornoDias:dias,proximaVisita:proxima,tareas:['traslado'],mLA:0,mZ:0,mH:0,mPi:0,mNS:0,mNucleos:0,aLc:0,aLt:0,curas:{primavera:false,verano:false,otono:false},antiPrimera:false,antiSegunda:false,coAlzas:0,coPeso:0,coKgAlza:0,nucCant:0,nucCria:0,nucMiel:0,nuDestino:'mismo',nucPasaCam:0,enjambresCant:0,vaciasCant:0};
+    // Heredar el estado de tratamiento de esta temporada del colmenar de origen,
+    // así las colmenas trasladadas no aparecen como "sin tratar" en el destino.
+    var tsTr=getTemporadaActual();
+    var origRegsTr=registros.filter(function(rr){return parseInt(rr.colId)===colId&&rr.fecha>=tsTr.start&&rr.fecha<=tsTr.end;});
+    var origHizoPrim=origRegsTr.some(function(rr){return rr.curas&&rr.curas.primavera;});
+    var origHizoVer=origRegsTr.some(function(rr){return rr.curas&&rr.curas.verano;});
+    var origHizoOto=origRegsTr.some(function(rr){return rr.curas&&rr.curas.otono;});
+    var origAntiPrimera=origRegsTr.some(function(rr){return rr.antiPrimera;});
+    var origAntiSegunda=origRegsTr.some(function(rr){return rr.antiSegunda;});
+    var tBase={operario:op,fecha:fecha,retornoDias:dias,proximaVisita:proxima,tareas:['traslado'],mLA:0,mZ:0,mH:0,mPi:0,mNS:0,mNucleos:0,aLc:0,aLt:0,curas:{primavera:origHizoPrim,verano:origHizoVer,otono:origHizoOto},antiPrimera:origAntiPrimera,antiSegunda:origAntiSegunda,coAlzas:0,coPeso:0,coKgAlza:0,nucCant:0,nucCria:0,nucMiel:0,nuDestino:'mismo',nucPasaCam:0,enjambresCant:0,vaciasCant:0};
     var tid1=String(Date.now()+1),tid2=String(Date.now()+2);
-    var rt1=Object.assign({},tBase,{id:tid1,colId:colId,colNombre:col?col.nombre:'',tarea:'Traslado (salida)',camConAbejas:(tUltO?tUltO.camConAbejas||0:0)-tCant,camSinAbejas:tUltO?tUltO.camSinAbejas||0:0,nucleosConteo:tUltO?tUltO.nucleosConteo||0:0,alzas:tUltO?tUltO.alzas||0:0,obs:'Traslado de '+tCant+' cám. a '+tCdNom.nombre});
-    var rt2=Object.assign({},tBase,{id:tid2,colId:tDestino,colNombre:tCdNom.nombre,tarea:'Traslado (entrada)',camConAbejas:(tUltD?tUltD.camConAbejas||0:0)+tCant,camSinAbejas:tUltD?tUltD.camSinAbejas||0:0,nucleosConteo:tUltD?tUltD.nucleosConteo||0:0,alzas:tUltD?tUltD.alzas||0:0,obs:'Traslado de '+tCant+' cám. desde '+(col?col.nombre:'?')});
+    var obsO='Traslado a '+tCdNom.nombre+(tCant?': '+tCant+' cám🐝':'')+(tCantVacias?' · '+tCantVacias+' cám□':'');
+    var obsD='Traslado desde '+(col?col.nombre:'?')+(tCant?': '+tCant+' cám🐝':'')+(tCantVacias?' · '+tCantVacias+' cám□':'');
+    var rt1=Object.assign({},tBase,{id:tid1,colId:colId,colNombre:col?col.nombre:'',tarea:'Traslado (salida)',camConAbejas:(tUltO?tUltO.camConAbejas||0:0)-tCant,camSinAbejas:Math.max(0,(tUltO?tUltO.camSinAbejas||0:0)-tCantVacias),nucleosConteo:tUltO?tUltO.nucleosConteo||0:0,alzas:tUltO?tUltO.alzas||0:0,obs:obsO});
+    var rt2=Object.assign({},tBase,{id:tid2,colId:tDestino,colNombre:tCdNom.nombre,tarea:'Traslado (entrada)',camConAbejas:(tUltD?tUltD.camConAbejas||0:0)+tCant,camSinAbejas:(tUltD?tUltD.camSinAbejas||0:0)+tCantVacias,nucleosConteo:tUltD?tUltD.nucleosConteo||0:0,alzas:tUltD?tUltD.alzas||0:0,obs:obsD});
     fbSet('registros',tid1,rt1);fbSet('registros',tid2,rt2);
     [rt1,rt2].forEach(function(rr){registros.unshift(rr);});
     registros.sort(function(a,b){var fc=(b.fecha||'').localeCompare(a.fecha||'');return fc!==0?fc:(b.id||'').localeCompare(a.id||'');});
@@ -1412,7 +1430,7 @@ try{
 
 function resetForm(){
   editandoId=null;
-  ['camConAbejas','camSinAbejas','nucleosConteo','alz','alzV','mLA','mZ','mH','mPi','mNS','mNucLA','mNucZ','mNucH','mNucPi','mNucNS','coA','coKgAlza','nuC','alzAdd','trasCant','nucPasaCam','enjambresCant','vaciasCant','fzDebil','fzMedia','fzFuerte'].forEach(function(id){setV(id,0);});
+  ['camConAbejas','camSinAbejas','nucleosConteo','alz','alzV','mLA','mZ','mH','mPi','mNS','mNucLA','mNucZ','mNucH','mNucPi','mNucNS','coA','coKgAlza','nuC','alzAdd','trasCant','trasVaciasCant','nucPasaCam','enjambresCant','vaciasCant','fzDebil','fzMedia','fzFuerte'].forEach(function(id){setV(id,0);});
   setV('aLc',0);var aTipoR=document.getElementById('aTipo');if(aTipoR)aTipoR.value=TIPOS_ALIMENTO_DEFAULT[0];setV('nuCria',4);setV('nuMiel',1);
   document.getElementById('op').value='';document.getElementById('colmenar').value='';
   var cinp=document.getElementById('colmenar-input');cinp.value='';cinp.style.fontWeight='';
