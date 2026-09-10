@@ -555,7 +555,22 @@ textarea{resize:vertical;min-height:60px}
   <div id="rtab-estado" class="rtab on">
     <div class="kpi-grid" id="stats-top"></div>
     <div id="alertas-colm-zona"></div>
-    <div style="display:flex;gap:8px;margin:.75rem 0"><button class="btn-export" onclick="exportarResumenEstado()" style="margin-bottom:0">⬇ Excel — Estado actual</button></div>
+    <div style="display:flex;gap:8px;margin:.75rem 0;flex-wrap:wrap;align-items:center">
+      <input type="text" id="res-filtro-txt" placeholder="🔍 Buscar colmenar..." oninput="renderResumenTabla()" style="flex:1;min-width:140px;padding:9px 12px;border:1.5px solid var(--bor);border-radius:8px;font-size:13px;font-family:inherit">
+      <select id="res-filtro-cura" onchange="renderResumenTabla()" style="padding:9px 10px;border:1.5px solid var(--bor);border-radius:8px;font-size:13px;font-family:inherit">
+        <option value="">Cura: todos</option>
+        <option value="falta-primavera">Falta cura primavera</option>
+        <option value="falta-verano">Falta cura verano</option>
+        <option value="falta-otono">Falta cura otoño</option>
+        <option value="al-dia">Curas al día</option>
+      </select>
+      <button class="btn-export" onclick="toggleSeleccionTodosRes()" style="margin-bottom:0;background:#fff;border-color:var(--bor);color:var(--txt)">☑ Todos / Ninguno</button>
+    </div>
+    <div id="res-seleccion-resumen" style="display:none;background:var(--sua);border:1.5px solid var(--aml);border-radius:10px;padding:10px 14px;margin-bottom:.75rem;font-size:13px"></div>
+    <div style="display:flex;gap:8px;margin-bottom:.75rem;flex-wrap:wrap">
+      <button class="btn-export" onclick="exportarResumenEstado()" style="margin-bottom:0;flex:1">⬇ Excel</button>
+      <button class="btn-export" onclick="exportarResumenPDF()" style="margin-bottom:0;flex:1;background:#fff;border-color:var(--bor);color:var(--txt)">🖨️ PDF / Imprimir</button>
+    </div>
     <div id="colm-cards-grid"></div>
   </div>
   <div id="rtab-temporada" class="rtab">
@@ -782,7 +797,8 @@ var antisSel={primera:false,segunda:false};
 var camConAbejasPrev=0,camSinAbejasPrev=0,nucleosPrev=0,alzasPrev=0;
 var tareasSel=new Set(),editandoId=null,colmenarDDIdx=-1,ultimoEditColm=0,editandoColmIdModal=null;
 var lastColmenaresSig='',lastRegistrosSig='';
-var ultimoResumenSorted=[],ultimoResumenTotales={};
+var ultimoResumenSorted=[],ultimoResumenTotales={},ultimoResumenTemp={},ultimoResumenFiltrado=[];
+var resSeleccionados=new Set();
 function registrosSig(){return registros.length+'|'+registros.reduce(function(s,r){return s+(r.camConAbejas||0)+(r.camSinAbejas||0)+(r.nucleosConteo||0)+(r.alzas||0)+(r.coAlzas||0);},0);}
 var usuarioActual=null;
 
@@ -1623,13 +1639,26 @@ function renderHist(){
 }
 
 function exportarResumenEstado(){
-  if(!ultimoResumenSorted.length){miniToast('No hay datos para exportar');return;}
+  var base=resSeleccionados.size>0?ultimoResumenSorted.filter(function(r){return resSeleccionados.has(String(r.cod));}):ultimoResumenFiltrado;
+  if(!base.length){miniToast('No hay datos para exportar');return;}
   var cab=['Colmenar','Última visita','Total','Cám. con abejas','Núcleos','Cám. vacías','Alzas','Alzas vacías','Próxima visita'];
-  var filas=ultimoResumenSorted.map(function(r){return[r.nombre,fmtF(r.ultima),(r.camConAbejas||0)+(r.nucleos||0),r.camConAbejas||0,r.nucleos||0,r.camSinAbejas||0,r.alzas||0,r.alzasSinAbejas||0,fmtF(r.proxima)];});
-  var t=ultimoResumenTotales;
-  filas.push(['TOTAL ('+ultimoResumenSorted.length+' colmenares)','',(t.totalCam||0)+(t.totalNuc||0),t.totalCam||0,t.totalNuc||0,t.totalVac||0,t.totalAlzas||0,t.totalAlzasVac||0,'']);
+  var filas=base.map(function(r){return[r.nombre,fmtF(r.ultima),(r.camConAbejas||0)+(r.nucleos||0),r.camConAbejas||0,r.nucleos||0,r.camSinAbejas||0,r.alzas||0,r.alzasSinAbejas||0,fmtF(r.proxima)];});
+  var tc=0,tv=0,tn=0,ta=0,tav=0;base.forEach(function(r){tc+=r.camConAbejas||0;tv+=r.camSinAbejas||0;tn+=r.nucleos||0;ta+=r.alzas||0;tav+=r.alzasSinAbejas||0;});
+  filas.push(['TOTAL ('+base.length+' colmenares)','',tc+tn,tc,tn,tv,ta,tav,'']);
   var csv='sep=;\r\n'+[cab].concat(filas).map(function(row){return row.join(';');}).join('\r\n');
   var blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='Resultados_'+hoy().replace(/-/g,'')+'.csv';a.click();URL.revokeObjectURL(url);miniToast('Archivo descargado');
+}
+function exportarResumenPDF(){
+  var base=resSeleccionados.size>0?ultimoResumenSorted.filter(function(r){return resSeleccionados.has(String(r.cod));}):ultimoResumenFiltrado;
+  if(!base.length){miniToast('No hay datos para exportar');return;}
+  var tc=0,tv=0,tn=0,ta=0,tav=0;base.forEach(function(r){tc+=r.camConAbejas||0;tv+=r.camSinAbejas||0;tn+=r.nucleos||0;ta+=r.alzas||0;tav+=r.alzasSinAbejas||0;});
+  var filtroTxt=document.getElementById('res-filtro-txt').value,filtroCura=document.getElementById('res-filtro-cura');
+  var subt='Estado actual'+(filtroTxt?' · Búsqueda: "'+filtroTxt+'"':'')+(filtroCura.value?' · '+filtroCura.options[filtroCura.selectedIndex].text:'')+(resSeleccionados.size>0?' · Selección manual':'');
+  var filas=base.map(function(r){return'<tr><td>'+r.nombre+'</td><td>'+fmtF(r.ultima)+'</td><td>'+((r.camConAbejas||0)+(r.nucleos||0))+'</td><td>'+(r.camConAbejas||0)+'</td><td>'+(r.nucleos||0)+'</td><td>'+(r.camSinAbejas||0)+'</td><td>'+(r.alzas||0)+'</td><td>'+(r.alzasSinAbejas||0)+'</td><td>'+fmtF(r.proxima)+'</td></tr>';}).join('');
+  var w=window.open('','_blank');
+  w.document.write('<html><head><meta charset="utf-8"><title>Resultados '+hoy()+'</title><style>body{font-family:Arial,sans-serif;padding:20px;color:#222}h1{font-size:18px;margin-bottom:2px}p{font-size:12px;color:#666;margin-top:0}table{width:100%;border-collapse:collapse;font-size:12px;margin-top:14px}th,td{border:1px solid #ccc;padding:6px 8px;text-align:center}th{background:#F5C518;text-transform:uppercase;font-size:10px}td:first-child,th:first-child{text-align:left}tfoot td{font-weight:700;background:#FFF6D5}@media print{body{padding:0}}</style></head><body><h1>🐝 Apiario La Reina — Resultados</h1><p>'+subt+' · Generado el '+fmtF(hoy())+'</p><table><thead><tr><th>Colmenar</th><th>Últ. visita</th><th>Total</th><th>Cám.</th><th>Núcl.</th><th>Vac.</th><th>Alzas</th><th>Alzas□</th><th>Próxima</th></tr></thead><tbody>'+filas+'</tbody><tfoot><tr><td>TOTAL ('+base.length+' colmenares)</td><td></td><td>'+(tc+tn)+'</td><td>'+tc+'</td><td>'+tn+'</td><td>'+tv+'</td><td>'+ta+'</td><td>'+tav+'</td><td></td></tr></tfoot></table></body></html>');
+  w.document.close();
+  setTimeout(function(){w.print();},400);
 }
 function exportarExcel(){
   if(!registros.length){miniToast('No hay registros');return;}
@@ -1971,6 +2000,30 @@ function calcSeasonData(anio){
   return data;
 }
 
+function visitaBadge(r){if(!r.proxima)return'<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;background:#fee2e2;color:#7c1a1a">Sin planif.</span>';if(r.dp<0)return'<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;background:#fee2e2;color:#7c1a1a">'+Math.abs(r.dp)+'d vencida</span>';if(r.dp<=5)return'<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;background:#fff3cd;color:#7d5a00">en '+r.dp+'d</span>';return'<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;background:#d4edda;color:#1a5c2a">en '+r.dp+'d</span>';}
+function curaBadge(r){var temp=ultimoResumenTemp;var done=[],pend=[];if(r.cP)done.push('Prim.');else if(temp.primavera)pend.push('Prim.');if(r.cV)done.push('Ver.');else if(temp.verano)pend.push('Ver.');if(r.cO)done.push('Oto.');else if(temp.otono)pend.push('Oto.');var parts=[];if(done.length)parts.push('<span style="font-size:11px;color:#1a5c2a;font-weight:600">✓ '+done.join(' ')+'</span>');if(pend.length)parts.push('<span style="font-size:11px;color:#c0392b;font-weight:700">⚠ '+pend.join(' ')+'</span>');return parts.length?parts.join('<br>'):'<span style="font-size:11px;color:#aaa">—</span>';}
+function filaCumpleCura(r,filtro){var temp=ultimoResumenTemp;if(!filtro)return true;if(filtro==='falta-primavera')return temp.primavera&&!r.cP;if(filtro==='falta-verano')return temp.verano&&!r.cV;if(filtro==='falta-otono')return temp.otono&&!r.cO;if(filtro==='al-dia')return!(temp.primavera&&!r.cP)&&!(temp.verano&&!r.cV)&&!(temp.otono&&!r.cO);return true;}
+function toggleSeleccionRes(id){id=String(id);if(resSeleccionados.has(id))resSeleccionados.delete(id);else resSeleccionados.add(id);renderResumenTabla();}
+function toggleSeleccionTodosRes(){var visibles=ultimoResumenFiltrado.map(function(r){return String(r.cod);});var todasMarcadas=visibles.length>0&&visibles.every(function(id){return resSeleccionados.has(id);});if(todasMarcadas){visibles.forEach(function(id){resSeleccionados.delete(id);});}else{visibles.forEach(function(id){resSeleccionados.add(id);});}renderResumenTabla();}
+function renderResumenTabla(){
+  var txt=sinTildes((document.getElementById('res-filtro-txt').value||'').toLowerCase());
+  var filtroCura=document.getElementById('res-filtro-cura').value;
+  var filtrado=ultimoResumenSorted.filter(function(r){
+    if(txt&&!sinTildes((r.nombre||'').toLowerCase()).includes(txt))return false;
+    if(!filaCumpleCura(r,filtroCura))return false;
+    return true;
+  });
+  ultimoResumenFiltrado=filtrado;
+  var tc=0,tv=0,tn=0,ta=0,tav=0;filtrado.forEach(function(r){tc+=r.camConAbejas||0;tv+=r.camSinAbejas||0;tn+=r.nucleos||0;ta+=r.alzas||0;tav+=r.alzasSinAbejas||0;});
+  document.getElementById('colm-cards-grid').innerHTML='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:var(--sua);border-bottom:2px solid var(--aml)"><th style="padding:8px 6px"></th><th style="text-align:left;padding:8px 10px;font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase">Colmenar</th><th style="text-align:center;padding:8px 6px;font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase">Total</th><th style="text-align:center;padding:8px 6px;font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase">🐝 Cám.</th><th style="text-align:center;padding:8px 6px;font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase">Núcl.</th><th style="text-align:center;padding:8px 6px;font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase">□ Vac.</th><th style="text-align:center;padding:8px 6px;font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase">Alzas🍯</th><th style="text-align:center;padding:8px 6px;font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase">Alzas□</th><th style="text-align:center;padding:8px 6px;font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase">Próxima</th><th style="text-align:center;padding:8px 6px;font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase">Trat.</th></tr></thead><tbody>'+filtrado.map(function(r,i){var sel=resSeleccionados.has(String(r.cod));return'<tr style="border-bottom:1px solid var(--sua);background:'+(sel?'#FFF6D5':(i%2===0?'#fff':'#fafaf5'))+'"><td style="text-align:center;padding:9px 4px"><input type="checkbox" '+(sel?'checked':'')+' onchange="toggleSeleccionRes(\''+r.cod+'\')" style="width:16px;height:16px"></td><td style="padding:9px 10px;font-weight:700">'+r.nombre+'<div style="font-size:11px;font-weight:400;color:#aaa;margin-top:1px">'+fmtF(r.ultima)+'</div></td><td style="text-align:center;padding:9px 6px;font-weight:700;font-size:15px;color:var(--na)">'+(((r.camConAbejas||0)+(r.nucleos||0))||'—')+'</td><td style="text-align:center;padding:9px 6px;font-weight:700;font-size:15px">'+(r.camConAbejas||'—')+'</td><td style="text-align:center;padding:9px 6px;font-weight:700;font-size:15px">'+(r.nucleos||'—')+'</td><td style="text-align:center;padding:9px 6px;color:#888">'+(r.camSinAbejas||'—')+'</td><td style="text-align:center;padding:9px 6px;color:#888">'+(r.alzas||'—')+'</td><td style="text-align:center;padding:9px 6px;color:#888">'+(r.alzasSinAbejas||'—')+'</td><td style="text-align:center;padding:9px 6px">'+visitaBadge(r)+'<div style="font-size:11px;color:#aaa;margin-top:2px">'+fmtF(r.proxima)+'</div></td><td style="text-align:center;padding:9px 6px">'+curaBadge(r)+'</td></tr>';}).join('')+'</tbody><tfoot><tr style="border-top:2px solid var(--aml);background:var(--sua);font-weight:700"><td></td><td style="padding:9px 10px;text-transform:uppercase;font-size:11px">Total ('+filtrado.length+' colmenares)</td><td style="text-align:center;padding:9px 6px;font-size:15px;color:var(--na)">'+(tc+tn)+'</td><td style="text-align:center;padding:9px 6px;font-size:15px">'+tc+'</td><td style="text-align:center;padding:9px 6px;font-size:15px">'+tn+'</td><td style="text-align:center;padding:9px 6px">'+tv+'</td><td style="text-align:center;padding:9px 6px">'+ta+'</td><td style="text-align:center;padding:9px 6px">'+tav+'</td><td></td><td></td></tr></tfoot></table></div>';
+  var selBar=document.getElementById('res-seleccion-resumen');
+  if(resSeleccionados.size>0){
+    var selRows=ultimoResumenSorted.filter(function(r){return resSeleccionados.has(String(r.cod));});
+    var sc=0,sv=0,sn=0,sa=0,sav=0;selRows.forEach(function(r){sc+=r.camConAbejas||0;sv+=r.camSinAbejas||0;sn+=r.nucleos||0;sa+=r.alzas||0;sav+=r.alzasSinAbejas||0;});
+    selBar.style.display='block';
+    selBar.innerHTML='<strong>'+selRows.length+' colmenares seleccionados:</strong> '+(sc+sn)+' colmenas ('+sc+' cám. + '+sn+' núcl.) · '+sv+' vacías · '+sa+' alzas · '+sav+' alzas vacías &nbsp; <a href="#" onclick="resSeleccionados.clear();renderResumenTabla();return false" style="color:var(--txt);text-decoration:underline">Limpiar selección</a>';
+  }else{selBar.style.display='none';}
+}
 function renderResumen(){
   buildTemporadaSelect();var anio=parseInt(document.getElementById('sel-temporada').value);var sr=getSeasonRange(anio),h=hoy(),temp=periodoCura(h),data=calcSeasonData(anio);
   document.getElementById('temporada-badge').textContent=sr.start.split('-')[2]+'/'+sr.start.split('-')[1]+'/'+sr.start.split('-')[0].slice(2)+' — '+sr.end.split('-')[2]+'/'+sr.end.split('-')[1]+'/'+sr.end.split('-')[0].slice(2);
@@ -1981,10 +2034,8 @@ function renderResumen(){
   document.getElementById('stats-top').innerHTML='<div class="kpi" style="background:linear-gradient(135deg,#FFF0A0,#F5C518);border:1.5px solid #E6B800"><div class="kpi-n">'+( totalCam+totalNuc)+'</div><div class="kpi-l">Total activas</div><div class="kpi-sub">🐝 '+totalCam+' · núcl. '+totalNuc+'</div></div><div class="kpi kpi-bee"><div class="kpi-n">'+totalCam+'</div><div class="kpi-l">Cámaras con abejas</div></div><div class="kpi kpi-nuc"><div class="kpi-n">'+totalNuc+'</div><div class="kpi-l">Núcleos activos</div></div><div class="kpi kpi-vac"><div class="kpi-n">'+totalVac+'</div><div class="kpi-l">Cámaras vacías</div></div><div class="kpi kpi-cosecha"><div class="kpi-n">'+totalMiel+' kg</div><div class="kpi-l">Cosecha total</div></div>';
   document.getElementById('alertas-colm-zona').innerHTML='';
   var sorted=activeRows.sort(function(a,b){return(a.dp===null?9999:a.dp)-(b.dp===null?9999:b.dp);});
-  ultimoResumenSorted=sorted;ultimoResumenTotales={totalCam:totalCam,totalVac:totalVac,totalNuc:totalNuc,totalAlzas:totalAlzas,totalAlzasVac:totalAlzasVac};
-  function visitaBadge(r){if(!r.proxima)return'<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;background:#fee2e2;color:#7c1a1a">Sin planif.</span>';if(r.dp<0)return'<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;background:#fee2e2;color:#7c1a1a">'+Math.abs(r.dp)+'d vencida</span>';if(r.dp<=5)return'<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;background:#fff3cd;color:#7d5a00">en '+r.dp+'d</span>';return'<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;background:#d4edda;color:#1a5c2a">en '+r.dp+'d</span>';}
-  function curaBadge(r){var done=[],pend=[];if(r.cP)done.push('Prim.');else if(temp.primavera)pend.push('Prim.');if(r.cV)done.push('Ver.');else if(temp.verano)pend.push('Ver.');if(r.cO)done.push('Oto.');else if(temp.otono)pend.push('Oto.');var parts=[];if(done.length)parts.push('<span style="font-size:11px;color:#1a5c2a;font-weight:600">✓ '+done.join(' ')+'</span>');if(pend.length)parts.push('<span style="font-size:11px;color:#c0392b;font-weight:700">⚠ '+pend.join(' ')+'</span>');return parts.length?parts.join('<br>'):'<span style="font-size:11px;color:#aaa">—</span>';}
-  document.getElementById('colm-cards-grid').innerHTML='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:var(--sua);border-bottom:2px solid var(--aml)"><th style="text-align:left;padding:8px 10px;font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase">Colmenar</th><th style="text-align:center;padding:8px 6px;font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase">Total</th><th style="text-align:center;padding:8px 6px;font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase">🐝 Cám.</th><th style="text-align:center;padding:8px 6px;font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase">Núcl.</th><th style="text-align:center;padding:8px 6px;font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase">□ Vac.</th><th style="text-align:center;padding:8px 6px;font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase">Alzas🍯</th><th style="text-align:center;padding:8px 6px;font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase">Alzas□</th><th style="text-align:center;padding:8px 6px;font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase">Próxima</th><th style="text-align:center;padding:8px 6px;font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase">Trat.</th></tr></thead><tbody>'+sorted.map(function(r,i){return'<tr style="border-bottom:1px solid var(--sua);background:'+(i%2===0?'#fff':'#fafaf5')+'"><td style="padding:9px 10px;font-weight:700">'+r.nombre+'<div style="font-size:11px;font-weight:400;color:#aaa;margin-top:1px">'+fmtF(r.ultima)+'</div></td><td style="text-align:center;padding:9px 6px;font-weight:700;font-size:15px;color:var(--na)">'+(((r.camConAbejas||0)+(r.nucleos||0))||'—')+'</td><td style="text-align:center;padding:9px 6px;font-weight:700;font-size:15px">'+(r.camConAbejas||'—')+'</td><td style="text-align:center;padding:9px 6px;font-weight:700;font-size:15px">'+(r.nucleos||'—')+'</td><td style="text-align:center;padding:9px 6px;color:#888">'+(r.camSinAbejas||'—')+'</td><td style="text-align:center;padding:9px 6px;color:#888">'+(r.alzas||'—')+'</td><td style="text-align:center;padding:9px 6px;color:#888">'+(r.alzasSinAbejas||'—')+'</td><td style="text-align:center;padding:9px 6px">'+visitaBadge(r)+'<div style="font-size:11px;color:#aaa;margin-top:2px">'+fmtF(r.proxima)+'</div></td><td style="text-align:center;padding:9px 6px">'+curaBadge(r)+'</td></tr>';}).join('')+'</tbody><tfoot><tr style="border-top:2px solid var(--aml);background:var(--sua);font-weight:700"><td style="padding:9px 10px;text-transform:uppercase;font-size:11px">Total ('+sorted.length+' colmenares)</td><td style="text-align:center;padding:9px 6px;font-size:15px;color:var(--na)">'+(totalCam+totalNuc)+'</td><td style="text-align:center;padding:9px 6px;font-size:15px">'+totalCam+'</td><td style="text-align:center;padding:9px 6px;font-size:15px">'+totalNuc+'</td><td style="text-align:center;padding:9px 6px">'+totalVac+'</td><td style="text-align:center;padding:9px 6px">'+totalAlzas+'</td><td style="text-align:center;padding:9px 6px">'+totalAlzasVac+'</td><td></td><td></td></tr></tfoot></table></div>';
+  ultimoResumenSorted=sorted;ultimoResumenTotales={totalCam:totalCam,totalVac:totalVac,totalNuc:totalNuc,totalAlzas:totalAlzas,totalAlzasVac:totalAlzasVac};ultimoResumenTemp=temp;
+  renderResumenTabla();
   var totIniCam=0,totFinCam=0,totMLA=0,totMZ=0,totMH=0,totMPi=0,totMNS=0,totMuert=0,totIniNuc=0,totFinNuc=0,totMuertNuc=0,totNucLA=0,totNucZ=0,totNucH=0,totNucPi=0,totNucNS=0,totLitros=0,totCosecha=0;
   var seasRows=allRows.filter(function(r){return r.hasData;});seasRows.forEach(function(r){if(r.iniEsPreTemporada){totIniCam+=r.iniCam||0;totIniNuc+=r.iniNuc||0;}totFinCam+=r.finCam||0;totMLA+=r.mLA||0;totMZ+=r.mZ||0;totMH+=r.mH||0;totMPi+=r.mPi||0;totMNS+=r.mNS||0;totMuert+=r.mTot||0;totFinNuc+=r.finNuc||0;totMuertNuc+=r.mNucleos||0;totNucLA+=r.mNucLA||0;totNucZ+=r.mNucZ||0;totNucH+=r.mNucH||0;totNucPi+=r.mNucPi||0;totNucNS+=r.mNucNS||0;totLitros+=r.litrosTotal||0;totCosecha+=r.cosecha||0;});
   var pctMort=pct(totMuert,totIniCam);
