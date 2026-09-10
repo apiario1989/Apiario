@@ -337,15 +337,9 @@ textarea{resize:vertical;min-height:60px}
       <div id="muertas-vacias-section" style="display:none;margin-top:12px;padding-top:12px;border-top:2px dashed var(--aml)">
         <div style="font-size:12px;font-weight:700;color:var(--na);text-transform:uppercase;margin-bottom:8px">¿Qué hacemos con las cámaras muertas?</div>
         <div style="display:flex;flex-direction:column;gap:8px">
-          <div class="fld"><label class="lbl">¿Cuántas se trasladan a otro colmenar? (el resto queda acá como vacías)</label>
-            <div style="display:flex;align-items:center;gap:8px">
-              <button class="nbtn" onclick="adjDmTrasladar(-1)">−</button>
-              <input class="ninput" type="number" id="dm-trasladar-cant" value="0" min="0" oninput="updateDestinoMuertas()" style="width:70px">
-              <button class="nbtn" onclick="adjDmTrasladar(1)">+</button>
-            </div>
-          </div>
-          <div id="dm-destino-sel" style="display:none;margin-top:4px"><label class="lbl">Colmenar destino</label><select id="dm-colmenar-dest" onchange="updateDestinoMuertas()"><option value="">Seleccionar...</option></select></div>
-          <div id="dm-resumen" style="font-size:12px;color:var(--na)"></div>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="radio" name="destino-muertas" id="dm-mismo" value="mismo" checked onchange="updateDestinoMuertas()" style="width:auto">Quedan como vacías en este colmenar</label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer"><input type="radio" name="destino-muertas" id="dm-otro" value="otro" onchange="updateDestinoMuertas()" style="width:auto">Trasladar al depósito (otro colmenar)</label>
+          <div id="dm-destino-sel" style="display:none;margin-top:4px"><label class="lbl">Colmenar destino</label><select id="dm-colmenar-dest"><option value="">Seleccionar...</option></select></div>
         </div>
       </div>
     </div>
@@ -462,7 +456,6 @@ textarea{resize:vertical;min-height:60px}
         <div class="num-col"><div class="lbl-top">Cantidad</div><button class="nbtn" onclick="adjN('alzAdd',1)">+</button><input class="ninput" type="number" id="alzAdd" value="0" min="0" oninput="updateAlzasPreview()"><button class="nbtn" onclick="adjN('alzAdd',-1)">−</button></div>
         <div id="alzas-preview" style="font-size:13px;color:#555;background:#f5f5f3;border-radius:8px;padding:8px 12px;flex:1"></div>
       </div>
-      <label id="alzAddGalponLbl" style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;margin-top:8px"><input type="checkbox" id="alzAddDeGalpon" style="width:auto" onchange="updateAlzasPreview()">Salen del galpón (hay <span id="alzAddGalponStock">0</span> disponibles)</label>
     </div>
 
     <div class="campo-cond" id="cond-antibioticos">
@@ -498,13 +491,6 @@ textarea{resize:vertical;min-height:60px}
           <button class="nbtn" onclick="adjN('trasVaciasCant',-1)">−</button>
           <input class="ninput" type="number" id="trasVaciasCant" value="0" min="0" oninput="updateTrasladoPreview()" style="width:70px">
           <button class="nbtn" onclick="adjN('trasVaciasCant',1)">+</button>
-        </div>
-      </div>
-      <div class="fld"><label class="lbl">¿Cuántas de esas colmenas tenían alza 🍯 puesta? (viajan con ellas)</label>
-        <div style="display:flex;align-items:center;gap:8px">
-          <button class="nbtn" onclick="adjN('trasAlzasCant',-1)">−</button>
-          <input class="ninput" type="number" id="trasAlzasCant" value="0" min="0" oninput="updateTrasladoPreview()" style="width:70px">
-          <button class="nbtn" onclick="adjN('trasAlzasCant',1)">+</button>
         </div>
       </div>
       <div id="traslado-preview" style="font-size:13px;color:#555;background:#f5f5f3;border-radius:8px;padding:8px 12px;display:none;line-height:1.6"></div>
@@ -555,7 +541,6 @@ textarea{resize:vertical;min-height:60px}
   <div id="rtab-estado" class="rtab on">
     <div class="kpi-grid" id="stats-top"></div>
     <div id="alertas-colm-zona"></div>
-    <div style="display:flex;gap:8px;margin:.75rem 0"><button class="btn-export" onclick="exportarResumenEstado()" style="margin-bottom:0">⬇ Excel — Estado actual</button></div>
     <div id="colm-cards-grid"></div>
   </div>
   <div id="rtab-temporada" class="rtab">
@@ -590,11 +575,6 @@ textarea{resize:vertical;min-height:60px}
     <span style="font-size:15px;font-weight:700;color:var(--am)">🍯 Sala de Extracción</span>
   </div>
   <div class="kpi-grid" id="ext-kpis"></div>
-  <div class="stitle" style="margin-bottom:.5rem">Trazabilidad de alzas 🍯</div>
-  <div class="kpi-grid" id="ext-alzas-trazabilidad" style="margin-bottom:1rem"></div>
-  <div style="display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap">
-    <button class="btn-export" onclick="abrirGuardarGalpon()" style="margin-bottom:0;flex:1;background:#fff;border-color:var(--bor);color:var(--txt)">📦 Guardar en galpón</button>
-  </div>
   <div style="display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap">
     <button class="btn-export" onclick="abrirTurnoExtraccion()" style="margin-bottom:0;flex:1">+ Registrar turno de extracción</button>
     <button class="btn-export" onclick="exportarCosecha()" style="margin-bottom:0;flex:1;background:#fff;border-color:var(--bor);color:var(--txt)">⬇ Excel cosechas</button>
@@ -774,16 +754,12 @@ var TAREAS=[
 var USUARIOS_DEFAULT=[];
 
 var colmenares=DC.slice(),operarios=DO.slice(),registros=[],usuariosApp=[],extracciones=[],tambores=[],compradores=[],ventas=[];
-var alzasGalpon={guardadoEnGalpon:0,retiradoDeGalpon:0};
 var ventaActual=[];
 var html5Scanner=null;
 var curasSel={primavera:false,verano:false,otono:false};
 var antisSel={primera:false,segunda:false};
 var camConAbejasPrev=0,camSinAbejasPrev=0,nucleosPrev=0,alzasPrev=0;
 var tareasSel=new Set(),editandoId=null,colmenarDDIdx=-1,ultimoEditColm=0,editandoColmIdModal=null;
-var lastColmenaresSig='',lastRegistrosSig='';
-var ultimoResumenSorted=[],ultimoResumenTotales={};
-function registrosSig(){return registros.length+'|'+registros.reduce(function(s,r){return s+(r.camConAbejas||0)+(r.camSinAbejas||0)+(r.nucleosConteo||0)+(r.alzas||0)+(r.coAlzas||0);},0);}
 var usuarioActual=null;
 
 function setSyncBadge(e){var el=document.getElementById('sync-indicator');if(!el)return;if(e==='ok'){el.textContent='🟢';el.className='sync-ok';modoLocal=false;}else if(e==='local'){el.textContent='🟡';el.className='sync-wait';modoLocal=true;}else if(e==='off'){el.textContent='🔴';el.className='sync-off';}else{el.textContent='⏳';el.className='sync-wait';}}
@@ -960,7 +936,7 @@ function sortRegs(arr){return arr.sort(function(a,b){var fc=(b.fecha||'').locale
 function syncAll(){
   setSyncBadge('wait');
   var tout=setTimeout(function(){setSyncBadge('local');},8000);
-  return Promise.all([fbList('registros'),fbList('colmenares'),fbList('usuariosApp'),fbList('extraccion'),fbList('tambores'),fbList('compradores'),fbList('ventas'),fbList('operarios'),fbList('estadoGlobal')]).then(function(results){
+  return Promise.all([fbList('registros'),fbList('colmenares'),fbList('usuariosApp'),fbList('extraccion'),fbList('tambores'),fbList('compradores'),fbList('ventas'),fbList('operarios')]).then(function(results){
   var regs=results[0],cols=results[1],uApp=results[2],extrs=results[3],tambs=results[4],comps=results[5],vents=results[6];
   var fbTieneData=regs.length>0||cols.length>0;
   // Cargar usuarios — intentar usuariosApp primero, luego operarios como fallback
@@ -991,20 +967,16 @@ function syncAll(){
   else{compradores=[];}
   if(vents&&vents.length>0){ventas=vents.sort(function(a,b){return(b.fecha||'').localeCompare(a.fecha||'');});lsSave('ventas',ventas);}
   else{ventas=[];}
-  var estG=results[8]||[];var docAlz=estG.find(function(d){return d.id==='alzas';});
-  alzasGalpon=docAlz?{guardadoEnGalpon:docAlz.guardadoEnGalpon||0,retiradoDeGalpon:docAlz.retiradoDeGalpon||0}:{guardadoEnGalpon:0,retiradoDeGalpon:0};
-  lsSave('alzasGalpon',alzasGalpon);
   clearTimeout(tout);setSyncBadge(fbTieneData?'ok':'local');
   buildSelects();
   var secActiva=document.querySelector('.sec.on');
-  if(secActiva){if(secActiva.id==='sec-inicio')renderDashboard();if(secActiva.id==='sec-historial'){if(registrosSig()!==lastRegistrosSig)renderHist();}if(secActiva.id==='sec-resumen')renderResumen();if(secActiva.id==='sec-extraccion')renderExtraccion();if(secActiva.id==='sec-ventas')renderVentas();if(secActiva.id==='sec-colmenares'&&editandoColmIdModal===null)renderColmenares();}
+  if(secActiva){if(secActiva.id==='sec-inicio')renderDashboard();if(secActiva.id==='sec-historial')renderHist();if(secActiva.id==='sec-resumen')renderResumen();if(secActiva.id==='sec-extraccion')renderExtraccion();if(secActiva.id==='sec-ventas')renderVentas();if(secActiva.id==='sec-colmenares'&&editandoColmIdModal===null)renderColmenares();}
 }).catch(function(){
   clearTimeout(tout);setSyncBadge('local');
   var lr=lsLoad('registros');if(lr&&lr.length>0)registros=lr;
   var lc=lsLoad('colmenares');if(lc&&lc.length>0)colmenares=lc;
   var lo=lsLoad('operarios');if(lo&&lo.length>0)operarios=lo;
   var le=lsLoad('extracciones');if(le&&le.length>0)extracciones=le;var lt=lsLoad('tambores');if(lt&&lt.length>0)tambores=lt;var lcomp=lsLoad('compradores');if(lcomp&&lcomp.length>0)compradores=lcomp;var lv=lsLoad('ventas');if(lv&&lv.length>0)ventas=lv;var lcomp=lsLoad('compradores');if(lcomp&&lcomp.length>0)compradores=lcomp;var lv=lsLoad('ventas');if(lv&&lv.length>0)ventas=lv;
-  var lag=lsLoad('alzasGalpon');if(lag)alzasGalpon=lag;
   buildSelects();
 });}
 
@@ -1015,7 +987,6 @@ function initData(){
   var lc=lsLoad('colmenares');if(lc&&lc.length>0)colmenares=lc;
   var lo=lsLoad('operarios');if(lo&&lo.length>0)operarios=lo;
   var le=lsLoad('extracciones');if(le&&le.length>0)extracciones=le;var lt=lsLoad('tambores');if(lt&&lt.length>0)tambores=lt;var lcomp=lsLoad('compradores');if(lcomp&&lcomp.length>0)compradores=lcomp;var lv=lsLoad('ventas');if(lv&&lv.length>0)ventas=lv;
-  var lag=lsLoad('alzasGalpon');if(lag)alzasGalpon=lag;
   var luApp=lsLoad('usuariosApp');if(luApp&&luApp.length>0)usuariosApp=luApp;
   renderUsuariosApp();
 
@@ -1065,9 +1036,6 @@ function addDias(f,d){var dt=new Date(f+'T00:00:00');dt.setDate(dt.getDate()+par
 function diasEntre(a,b){return Math.round((new Date(b+'T00:00:00')-new Date(a+'T00:00:00'))/(864e5));}
 function fmtF(s){if(!s)return'—';var p=s.split('-');return p[2]+'/'+p[1]+'/'+p[0];}
 function nv(id){var el=document.getElementById(id);return el?parseInt(el.value)||0:0;}
-function stockEnGalpon(){return Math.max(0,(alzasGalpon.guardadoEnGalpon||0)-(alzasGalpon.retiradoDeGalpon||0));}
-function guardarAlzasEnGalpon(cant){alzasGalpon.guardadoEnGalpon=(alzasGalpon.guardadoEnGalpon||0)+cant;fbSet('estadoGlobal','alzas',alzasGalpon);lsSave('alzasGalpon',alzasGalpon);}
-function retirarAlzasDeGalpon(cant){alzasGalpon.retiradoDeGalpon=(alzasGalpon.retiradoDeGalpon||0)+cant;fbSet('estadoGlobal','alzas',alzasGalpon);lsSave('alzasGalpon',alzasGalpon);}
 function nfv(id){var el=document.getElementById(id);return el?parseFloat(el.value)||0:0;}
 function setV(id,v){var el=document.getElementById(id);if(el)el.value=v;}
 function periodoCura(fecha){var dt=new Date(fecha+'T00:00:00'),mes=dt.getMonth()+1,dia=dt.getDate();return{primavera:(mes===8&&dia>=15)||mes===9||(mes===10&&dia<=15),verano:mes===12||(mes===1&&dia<=15),otono:(mes===2&&dia>=15)||mes===3||mes===4||(mes===5&&dia<=15)};}
@@ -1088,8 +1056,7 @@ function fillTrasladoSelects(){var colId=parseInt(document.getElementById('colme
 function fillVaciasSelects(){var opts='<option value="">Seleccionar...</option>'+colmenares.map(function(c){return'<option value="'+c.id+'">'+c.id+' — '+c.nombre+'</option>';}).join('');document.getElementById('vacias-origen').innerHTML=opts;document.getElementById('vacias-destino').innerHTML=opts;}
 function fillNuDestinoSel(){var colId=parseInt(document.getElementById('colmenar').value)||0;document.getElementById('nuDestinoSel').innerHTML='<option value="">Seleccionar...</option>'+colmenares.filter(function(c){return parseInt(c.id)!==colId;}).map(function(c){return'<option value="'+c.id+'">'+c.id+' — '+c.nombre+'</option>';}).join('');}
 function fillDmColmenarDest(){var colId=parseInt(document.getElementById('colmenar').value)||0;var sel=document.getElementById('dm-colmenar-dest');if(!sel)return;sel.innerHTML='<option value="">Seleccionar...</option>'+colmenares.filter(function(c){return parseInt(c.id)!==colId;}).map(function(c){return'<option value="'+c.id+'"'+(c.nombre==='Pueblo'?' selected':'')+'>'+c.nombre+'</option>';}).join('');}
-function updateDestinoMuertas(){var diffM=Math.max(0,camConAbejasPrev-nv('camConAbejas'));var inp=document.getElementById('dm-trasladar-cant');if(!inp)return;var v=Math.min(Math.max(0,parseInt(inp.value)||0),diffM);inp.value=v;inp.max=diffM;var dest=document.getElementById('dm-destino-sel');if(dest)dest.style.display=v>0?'block':'none';var resumen=document.getElementById('dm-resumen');if(resumen){var quedan=diffM-v;var destSel=colmenares.find(function(c){return parseInt(c.id)===(parseInt(document.getElementById('dm-colmenar-dest').value)||0);});resumen.textContent=quedan+' quedan acá como vacías'+(v>0?' · '+v+' van a '+(destSel?destSel.nombre:'(elegí colmenar)'):'');}}
-function adjDmTrasladar(d){var inp=document.getElementById('dm-trasladar-cant');if(!inp)return;inp.value=Math.max(0,(parseInt(inp.value)||0)+d);updateDestinoMuertas();}
+function updateDestinoMuertas(){var val=document.querySelector('input[name="destino-muertas"]:checked');var dest=document.getElementById('dm-destino-sel');if(dest)dest.style.display=(val&&val.value==='otro')?'block':'none';}
 function onNuCChange(){
   var dest=document.getElementById('nuDestino');
   if(dest&&dest.value==='mismo'){
@@ -1107,13 +1074,13 @@ function toggleNuDestinoColm(){
   else{setV('nucleosConteo',nucleosPrev||0);onNucleoChange();}
 }
 
-function updateTrasladoPreview(){var colId=parseInt(document.getElementById('colmenar').value)||0;var destino=parseInt(document.getElementById('traslado-destino').value)||0;var cant=nv('trasCant');var cantVac=nv('trasVaciasCant');var prev=document.getElementById('traslado-preview');var ultO=registros.find(function(r){return parseInt(r.colId)===colId;});var ultD=registros.find(function(r){return parseInt(r.colId)===destino;});var alzInp=document.getElementById('trasAlzasCant');if(alzInp){var maxAlz=Math.min(cant,ultO?ultO.alzas||0:0);alzInp.max=maxAlz;if((parseInt(alzInp.value)||0)>maxAlz)alzInp.value=maxAlz;}var cantAlz=nv('trasAlzasCant');if(!colId||!destino||(!cant&&!cantVac)){prev.style.display='none';return;}var co=colmenares.find(function(c){return parseInt(c.id)===colId;});var cd=colmenares.find(function(c){return parseInt(c.id)===destino;});var html='<strong>'+(co?co.nombre:'?')+'</strong>: '+(ultO?ultO.camConAbejas||0:0)+' cám🐝 → <strong>'+((ultO?ultO.camConAbejas||0:0)-cant)+'</strong>';if(cantVac)html+=' · '+(ultO?ultO.camSinAbejas||0:0)+' cám□ → <strong>'+Math.max(0,(ultO?ultO.camSinAbejas||0:0)-cantVac)+'</strong>';if(cantAlz)html+=' · '+(ultO?ultO.alzas||0:0)+' alzas🍯 → <strong>'+Math.max(0,(ultO?ultO.alzas||0:0)-cantAlz)+'</strong>';html+='<br><strong>'+(cd?cd.nombre:'?')+'</strong>: '+(ultD?ultD.camConAbejas||0:0)+' cám🐝 → <strong>'+((ultD?ultD.camConAbejas||0:0)+cant)+'</strong>';if(cantVac)html+=' · '+(ultD?ultD.camSinAbejas||0:0)+' cám□ → <strong>'+((ultD?ultD.camSinAbejas||0:0)+cantVac)+'</strong>';if(cantAlz)html+=' · '+(ultD?ultD.alzas||0:0)+' alzas🍯 → <strong>'+((ultD?ultD.alzas||0:0)+cantAlz)+'</strong>';prev.innerHTML=html;prev.style.display='block';}
+function updateTrasladoPreview(){var colId=parseInt(document.getElementById('colmenar').value)||0;var destino=parseInt(document.getElementById('traslado-destino').value)||0;var cant=nv('trasCant');var cantVac=nv('trasVaciasCant');var prev=document.getElementById('traslado-preview');if(!colId||!destino||(!cant&&!cantVac)){prev.style.display='none';return;}var co=colmenares.find(function(c){return parseInt(c.id)===colId;});var cd=colmenares.find(function(c){return parseInt(c.id)===destino;});var ultO=registros.find(function(r){return parseInt(r.colId)===colId;});var ultD=registros.find(function(r){return parseInt(r.colId)===destino;});var html='<strong>'+(co?co.nombre:'?')+'</strong>: '+(ultO?ultO.camConAbejas||0:0)+' cám🐝 → <strong>'+((ultO?ultO.camConAbejas||0:0)-cant)+'</strong>';if(cantVac)html+=' · '+(ultO?ultO.camSinAbejas||0:0)+' cám□ → <strong>'+Math.max(0,(ultO?ultO.camSinAbejas||0:0)-cantVac)+'</strong>';html+='<br><strong>'+(cd?cd.nombre:'?')+'</strong>: '+(ultD?ultD.camConAbejas||0:0)+' cám🐝 → <strong>'+((ultD?ultD.camConAbejas||0:0)+cant)+'</strong>';if(cantVac)html+=' · '+(ultD?ultD.camSinAbejas||0:0)+' cám□ → <strong>'+((ultD?ultD.camSinAbejas||0:0)+cantVac)+'</strong>';prev.innerHTML=html;prev.style.display='block';}
 function updateVaciasPreview(){var origen=parseInt(document.getElementById('vacias-origen').value)||0,destino=parseInt(document.getElementById('vacias-destino').value)||0,cant=nv('vaciasCant');var prev=document.getElementById('vacias-preview');if(!origen||!destino||!cant){prev.style.display='none';return;}var co=colmenares.find(function(c){return parseInt(c.id)===origen;}),cd=colmenares.find(function(c){return parseInt(c.id)===destino;});var ultO=registros.find(function(r){return parseInt(r.colId)===origen;}),ultD=registros.find(function(r){return parseInt(r.colId)===destino;});var vacO=ultO?ultO.camSinAbejas||0:0,vacD=ultD?ultD.camSinAbejas||0:0;prev.innerHTML='<strong>'+(co?co.nombre:'?')+'</strong>: '+vacO+' → <strong>'+Math.max(0,vacO-cant)+'</strong> vacías<br><strong>'+(cd?cd.nombre:'?')+'</strong>: '+vacD+' → <strong>'+(vacD+cant)+'</strong> vacías';prev.style.display='block';}
 var ALZA_TAMANOS=['1/2 alza','3/4 alza','Alza std'];
 function getUltimoTamanoAlza(){var t=lsLoad('ultimoTamanoAlza');return(t&&ALZA_TAMANOS.indexOf(t)>=0)?t:'Alza std';}
 function initAlzaTamanoSelects(){var v=getUltimoTamanoAlza();['coATamano','alzAddTamano'].forEach(function(id){var el=document.getElementById(id);if(el)el.value=v;});}
 function onAlzaTamanoChange(id){var el=document.getElementById(id);if(!el)return;lsSave('ultimoTamanoAlza',el.value);['coATamano','alzAddTamano'].forEach(function(oid){if(oid!==id){var o=document.getElementById(oid);if(o)o.value=el.value;}});}
-function updateAlzasPreview(){var cant=nv('alzAdd'),tam=document.getElementById('alzAddTamano')?document.getElementById('alzAddTamano').value:'';var prev=document.getElementById('alzas-preview');if(prev)prev.textContent=cant>0?'Alzas: '+alzasPrev+' → '+(alzasPrev+cant)+(tam?' ('+cant+' de '+tam+')':''):alzasPrev>0?'Alzas actuales: '+alzasPrev:'';var stock=stockEnGalpon();var stockEl=document.getElementById('alzAddGalponStock');if(stockEl)stockEl.textContent=stock;var lbl=document.getElementById('alzAddGalponLbl');var chk=document.getElementById('alzAddDeGalpon');if(lbl)lbl.style.color=(chk&&chk.checked&&cant>stock)?'#c0392b':'';}
+function updateAlzasPreview(){var cant=nv('alzAdd'),tam=document.getElementById('alzAddTamano')?document.getElementById('alzAddTamano').value:'';var prev=document.getElementById('alzas-preview');if(prev)prev.textContent=cant>0?'Alzas: '+alzasPrev+' → '+(alzasPrev+cant)+(tam?' ('+cant+' de '+tam+')':''):alzasPrev>0?'Alzas actuales: '+alzasPrev:'';}
 function updateEnjambrePreview(){var cant=nv('enjambresCant'),prev=document.getElementById('enjambre-preview');if(!prev)return;if(cant>0){var vac=nv('camSinAbejas'),cam=nv('camConAbejas');prev.textContent=cant+' cámara'+(cant>1?'s':'')+' vacía'+(cant>1?'s':'')+' → con abejas. Vacías: '+vac+' → '+Math.max(0,vac-cant)+' · Con abejas: '+cam+' → '+(cam+cant);prev.style.display='block';}else prev.style.display='none';}
 
 function onColmenarChange(){updateProxima();var colId=parseInt(document.getElementById('colmenar').value);var prev=document.getElementById('prev-caja');camConAbejasPrev=0;camSinAbejasPrev=0;nucleosPrev=0;alzasPrev=0;if(!colId){if(prev)prev.style.display='none';document.getElementById('conteo-resumen').style.display='none';return;}var ult=registros.find(function(r){return parseInt(r.colId)===colId;});if(!ult){prev.textContent='Sin registros anteriores para este colmenar.';prev.style.display='block';return;}camConAbejasPrev=ult.camConAbejas||0;camSinAbejasPrev=ult.camSinAbejas||0;nucleosPrev=ult.nucleosConteo||0;alzasPrev=ult.alzas||0;var alzasVaciasPrev=ult.alzasSinAbejas||0;prev.innerHTML='Última visita <strong>'+fmtF(ult.fecha)+'</strong>: <strong>'+camConAbejasPrev+' cám.🐝</strong> · '+camSinAbejasPrev+' cám.□ · '+nucleosPrev+' núcleos · '+alzasPrev+' alzas🍯'+(alzasVaciasPrev?' · '+alzasVaciasPrev+' alzas□':'');prev.style.display='block';setV('camConAbejas',camConAbejasPrev);setV('camSinAbejas',camSinAbejasPrev);setV('nucleosConteo',nucleosPrev);setV('alz',alzasPrev);setV('alzV',alzasVaciasPrev);recalcAlim();validarMuertas();updateConteoResumen();if(tareasSel.has('traslado'))fillTrasladoSelects();if(tareasSel.has('agregar-alzas'))updateAlzasPreview();if(tareasSel.has('nucleos'))fillNuDestinoSel();if(tareasSel.has('mover-vacias'))fillVaciasSelects();if(tareasSel.has('cura'))actualizarEstadoCuras(colId);if(tareasSel.has('antibioticos'))actualizarEstadoAntibioticos(colId,true);}
@@ -1181,7 +1148,7 @@ function totalMuertas(){return nv('mLA')+nv('mZ')+nv('mH')+nv('mPi')+nv('mNS');}
 function setMuertasError(err){['mLA','mZ','mH','mPi','mNS'].forEach(function(id){var el=document.getElementById(id);if(el)el.classList.toggle('error',err);});}
 function validarMuertas(){var camActual=nv('camConAbejas'),diff=camConAbejasPrev-camActual,total=totalMuertas();var aviso=document.getElementById('muertas-aviso');var secVacias=document.getElementById('muertas-vacias-section');if(diff<=0&&total===0){aviso.style.display='none';setMuertasError(false);if(secVacias)secVacias.style.display='none';return;}if(diff>0&&total===0){aviso.textContent='Hay '+diff+' cámara'+(diff>1?'s':'')+' menos. Indicá la causa.';aviso.className='muertas-aviso mav-error';aviso.style.display='block';setMuertasError(true);if(secVacias)secVacias.style.display='none';return;}if(diff>0&&total!==diff){aviso.textContent='Registraste '+total+' muertas, la diferencia es '+diff+'.';aviso.className='muertas-aviso mav-error';aviso.style.display='block';setMuertasError(true);if(secVacias)secVacias.style.display='none';return;}if(diff>0&&total===diff){aviso.textContent='✓ Correcto: '+total+' colmena'+(total!==1?'s':'')+' justificada'+(total!==1?'s':'')+'.';aviso.className='muertas-aviso mav-ok';aviso.style.display='block';setMuertasError(false);if(secVacias){secVacias.style.display='block';fillDmColmenarDest();}return;}if(diff<=0&&total>0){aviso.textContent='Registraste '+total+' muertas pero las cámaras no bajaron.';aviso.className='muertas-aviso mav-error';aviso.style.display='block';setMuertasError(true);if(secVacias)secVacias.style.display='none';return;}aviso.style.display='none';setMuertasError(false);if(secVacias)secVacias.style.display='none';}
 function adjM(id,d){var el=document.getElementById(id);el.value=Math.max(0,(parseInt(el.value)||0)+d);validarMuertas();updateAlertasMuertasTop();}
-function adjN(id,d){var el=document.getElementById(id);if(!el)return;el.value=Math.max(0,(parseInt(el.value)||0)+d);if(id==='camConAbejas'||id==='camSinAbejas'||id==='nucleosConteo')onCamChange();if(id==='nucleosConteo')onNucleoChange();if(id==='nuC'||id==='nuCria'||id==='nuMiel')updateNucleoRes();if(id==='trasCant'||id==='trasVaciasCant'||id==='trasAlzasCant')updateTrasladoPreview();if(id==='alzAdd')updateAlzasPreview();if(id==='enjambresCant')updateEnjambrePreview();if(id==='vaciasCant')updateVaciasPreview();}
+function adjN(id,d){var el=document.getElementById(id);if(!el)return;el.value=Math.max(0,(parseInt(el.value)||0)+d);if(id==='camConAbejas'||id==='camSinAbejas'||id==='nucleosConteo')onCamChange();if(id==='nucleosConteo')onNucleoChange();if(id==='nuC'||id==='nuCria'||id==='nuMiel')updateNucleoRes();if(id==='trasCant'||id==='trasVaciasCant')updateTrasladoPreview();if(id==='alzAdd')updateAlzasPreview();if(id==='enjambresCant')updateEnjambrePreview();if(id==='vaciasCant')updateVaciasPreview();}
 var TIPOS_ALIMENTO_DEFAULT=['Jarabe de maíz','Jarabe de azúcar','Torta proteica dulce','Torta proteica amarga'];
 function getTiposAlimento(){var t=lsLoad('tiposAlimento');return(t&&t.length)?t:TIPOS_ALIMENTO_DEFAULT.slice();}
 function unidadAlimento(tipo){return(tipo&&tipo.indexOf('Torta')===0)?'kg':'L';}
@@ -1375,26 +1342,47 @@ try{
   var dias=parseInt(document.getElementById('retorno-dias').value)||15,proxima=addDias(fecha,dias);
   var lc=nfv('aLc'),aLt=tareasSel.has('alimentacion')?Math.round(lc*(camActual+nv('nucleosConteo'))*10)/10:0;
   var alzActual=tareasSel.has('agregar-alzas')?(alzasPrev+nv('alzAdd')):nv('alz');
-  if(tareasSel.has('agregar-alzas')&&nv('alzAdd')>0){var chkGalpon=document.getElementById('alzAddDeGalpon');if(chkGalpon&&chkGalpon.checked){retirarAlzasDeGalpon(Math.min(nv('alzAdd'),stockEnGalpon()));}}
   var coAlzas=tareasSel.has('cosecha')?nv('coA'):0,coKgAlza=tareasSel.has('cosecha')?nfv('coKgAlza'):0,coPeso=Math.round(coAlzas*coKgAlza*10)/10;
 
-  var vOrigen=0,vDestino=0,vCant=0,vMergeVacias=false,vCdNomG=null;
   if(tareasSel.has('mover-vacias')){
-    vOrigen=parseInt(document.getElementById('vacias-origen').value)||0;vDestino=parseInt(document.getElementById('vacias-destino').value)||0;vCant=nv('vaciasCant');
-    if(!vOrigen||!vDestino){miniToast('Seleccioná origen y destino de cámaras vacías');return;}
-    if(!vCant){miniToast('Indicá la cantidad de cámaras vacías a mover');return;}
-    if(vOrigen===vDestino){miniToast('Origen y destino no pueden ser el mismo');return;}
-    vCdNomG=colmenares.find(function(c){return parseInt(c.id)===vDestino;})||{nombre:'?'};
-    vMergeVacias=(vOrigen===colId);
+    var vOrigen=parseInt(document.getElementById('vacias-origen').value)||0,vDestino=parseInt(document.getElementById('vacias-destino').value)||0,vCant=nv('vaciasCant');
+    if(!vOrigen||!vDestino){miniToast('Seleccioná origen y destino');return;}if(!vCant){miniToast('Indicá la cantidad de cámaras vacías');return;}if(vOrigen===vDestino){miniToast('Origen y destino no pueden ser el mismo');return;}
+    var vCoNom=colmenares.find(function(c){return parseInt(c.id)===vOrigen;})||{nombre:'?'};var vCdNom=colmenares.find(function(c){return parseInt(c.id)===vDestino;})||{nombre:'?'};
+    var vUltO=registros.find(function(r){return parseInt(r.colId)===vOrigen;});var vUltD=registros.find(function(r){return parseInt(r.colId)===vDestino;});
+    var vBase={operario:op,fecha:fecha,retornoDias:dias,proximaVisita:proxima,tareas:['mover-vacias'],mLA:0,mZ:0,mH:0,mPi:0,mNS:0,mNucleos:0,aLc:0,aLt:0,curas:{primavera:false,verano:false,otono:false},antiPrimera:false,antiSegunda:false,coAlzas:0,coPeso:0,coKgAlza:0,nucCant:0,nucCria:0,nucMiel:0,nuDestino:'mismo',nucPasaCam:0,enjambresCant:0,vaciasCant:0};
+    var id1=String(Date.now()+10),id2=String(Date.now()+11);
+    var r1mv=Object.assign({},vBase,{id:id1,colId:vOrigen,colNombre:vCoNom.nombre,tarea:'Cám.vacías → '+vCdNom.nombre,camConAbejas:vUltO?vUltO.camConAbejas||0:0,camSinAbejas:Math.max(0,(vUltO?vUltO.camSinAbejas||0:0)-vCant),nucleosConteo:vUltO?vUltO.nucleosConteo||0:0,alzas:vUltO?vUltO.alzas||0:0,obs:'Salen '+vCant+' cám. vacías hacia '+vCdNom.nombre});
+    var r2mv=Object.assign({},vBase,{id:id2,colId:vDestino,colNombre:vCdNom.nombre,tarea:'Cám.vacías desde '+vCoNom.nombre,camConAbejas:vUltD?vUltD.camConAbejas||0:0,camSinAbejas:(vUltD?vUltD.camSinAbejas||0:0)+vCant,nucleosConteo:vUltD?vUltD.nucleosConteo||0:0,alzas:vUltD?vUltD.alzas||0:0,obs:'Llegan '+vCant+' cám. vacías desde '+vCoNom.nombre});
+    fbSet('registros',id1,r1mv);fbSet('registros',id2,r2mv);
+    [r1mv,r2mv].forEach(function(rr){registros.unshift(rr);});
+    registros.sort(function(a,b){var fc=(b.fecha||'').localeCompare(a.fecha||'');return fc!==0?fc:(b.id||'').localeCompare(a.id||'');});
+    editandoId=null;resetForm();setTimeout(function(){syncAll();},1000);mostrarOverlay(vCant+' cám. vacías: '+vCoNom.nombre+' → '+vCdNom.nombre);return;
   }
-  var tCant=0,tCantVacias=0,tCantAlzas=0,tDestino=0,tCdNomG=null;
+
   if(tareasSel.has('traslado')){
-    tDestino=parseInt(document.getElementById('traslado-destino').value)||0;tCant=nv('trasCant');tCantVacias=nv('trasVaciasCant');
-    if(!tDestino){miniToast('Seleccioná el colmenar destino del traslado');return;}
-    if(!tCant&&!tCantVacias){miniToast('Indicá la cantidad de cámaras a trasladar (con o sin abejas)');return;}
-    if(colId===tDestino){miniToast('Origen y destino del traslado no pueden ser el mismo');return;}
-    tCdNomG=colmenares.find(function(c){return parseInt(c.id)===tDestino;})||{nombre:'?'};
-    tCantAlzas=Math.min(nv('trasAlzasCant'),tCant,alzasPrev);
+    var tDestino=parseInt(document.getElementById('traslado-destino').value)||0,tCant=nv('trasCant'),tCantVacias=nv('trasVaciasCant');
+    if(!tDestino){miniToast('Seleccioná el colmenar destino');return;}if(!tCant&&!tCantVacias){miniToast('Indicá la cantidad de cámaras (con o sin abejas)');return;}if(colId===tDestino){miniToast('Origen y destino no pueden ser el mismo');return;}
+    var tCdNom=colmenares.find(function(c){return parseInt(c.id)===tDestino;})||{nombre:'?'};
+    var tUltO=registros.find(function(r){return parseInt(r.colId)===colId;});var tUltD=registros.find(function(r){return parseInt(r.colId)===tDestino;});
+    // Heredar el estado de tratamiento de esta temporada del colmenar de origen,
+    // así las colmenas trasladadas no aparecen como "sin tratar" en el destino.
+    var tsTr=getTemporadaActual();
+    var origRegsTr=registros.filter(function(rr){return parseInt(rr.colId)===colId&&rr.fecha>=tsTr.start&&rr.fecha<=tsTr.end;});
+    var origHizoPrim=origRegsTr.some(function(rr){return rr.curas&&rr.curas.primavera;});
+    var origHizoVer=origRegsTr.some(function(rr){return rr.curas&&rr.curas.verano;});
+    var origHizoOto=origRegsTr.some(function(rr){return rr.curas&&rr.curas.otono;});
+    var origAntiPrimera=origRegsTr.some(function(rr){return rr.antiPrimera;});
+    var origAntiSegunda=origRegsTr.some(function(rr){return rr.antiSegunda;});
+    var tBase={operario:op,fecha:fecha,retornoDias:dias,proximaVisita:proxima,tareas:['traslado'],mLA:0,mZ:0,mH:0,mPi:0,mNS:0,mNucleos:0,aLc:0,aLt:0,curas:{primavera:origHizoPrim,verano:origHizoVer,otono:origHizoOto},antiPrimera:origAntiPrimera,antiSegunda:origAntiSegunda,coAlzas:0,coPeso:0,coKgAlza:0,nucCant:0,nucCria:0,nucMiel:0,nuDestino:'mismo',nucPasaCam:0,enjambresCant:0,vaciasCant:0};
+    var tid1=String(Date.now()+1),tid2=String(Date.now()+2);
+    var obsO='Traslado a '+tCdNom.nombre+(tCant?': '+tCant+' cám🐝':'')+(tCantVacias?' · '+tCantVacias+' cám□':'');
+    var obsD='Traslado desde '+(col?col.nombre:'?')+(tCant?': '+tCant+' cám🐝':'')+(tCantVacias?' · '+tCantVacias+' cám□':'');
+    var rt1=Object.assign({},tBase,{id:tid1,colId:colId,colNombre:col?col.nombre:'',tarea:'Traslado (salida)',camConAbejas:(tUltO?tUltO.camConAbejas||0:0)-tCant,camSinAbejas:Math.max(0,(tUltO?tUltO.camSinAbejas||0:0)-tCantVacias),nucleosConteo:tUltO?tUltO.nucleosConteo||0:0,alzas:tUltO?tUltO.alzas||0:0,obs:obsO});
+    var rt2=Object.assign({},tBase,{id:tid2,colId:tDestino,colNombre:tCdNom.nombre,tarea:'Traslado (entrada)',camConAbejas:(tUltD?tUltD.camConAbejas||0:0)+tCant,camSinAbejas:(tUltD?tUltD.camSinAbejas||0:0)+tCantVacias,nucleosConteo:tUltD?tUltD.nucleosConteo||0:0,alzas:tUltD?tUltD.alzas||0:0,obs:obsD});
+    fbSet('registros',tid1,rt1);fbSet('registros',tid2,rt2);
+    [rt1,rt2].forEach(function(rr){registros.unshift(rr);});
+    registros.sort(function(a,b){var fc=(b.fecha||'').localeCompare(a.fecha||'');return fc!==0?fc:(b.id||'').localeCompare(a.id||'');});
+    editandoId=null;resetForm();setTimeout(function(){syncAll();},1000);mostrarOverlay('Traslado: '+(col?col.nombre:'?')+' → '+tCdNom.nombre);return;
   }
 
   var nuDestinoVal=document.getElementById('nuDestino').value,nuDestinoColmId=nuDestinoVal==='otro'?parseInt(document.getElementById('nuDestinoSel').value)||0:0;
@@ -1406,30 +1394,18 @@ try{
   }
 
   var enjCant=tareasSel.has('enjambre')?nv('enjambresCant'):0;
-  var diffMuertas=(!editandoId&&diff>0&&totalM===diff)?diff:0;
+  var dm=document.querySelector('input[name="destino-muertas"]:checked');
+  var dmVal=dm?dm.value:'mismo';
   var dmDestColm=parseInt(document.getElementById('dm-colmenar-dest').value)||0;
-  var dmTrasladarCant=Math.min(diffMuertas,nv('dm-trasladar-cant'));
-  var dmQuedanCant=diffMuertas-dmTrasladarCant;
-
-  var camConAbejasFinal=camActual+enjCant-tCant;
-  if(camConAbejasFinal<0){miniToast('Estás trasladando más cámaras con abejas ('+tCant+') que las '+(camActual+enjCant)+' que hay en este colmenar');return;}
-  var vaciasARestar=tCantVacias+(vMergeVacias?vCant:0);
-  var camSinAbejasBase=Math.max(0,nv('camSinAbejas')-enjCant)+dmQuedanCant;
-  if(camSinAbejasBase-vaciasARestar<0){miniToast('Estás moviendo más cámaras vacías ('+vaciasARestar+') que las '+camSinAbejasBase+' que hay en este colmenar');return;}
-  var camSinAbejasFinal=camSinAbejasBase-vaciasARestar;
-  var alzasFinal=Math.max(0,alzActual-tCantAlzas);
-  var autoObs=[];
-  if(tCant||tCantVacias)autoObs.push('Traslado a '+tCdNomG.nombre+(tCant?': '+tCant+' cám🐝':'')+(tCantVacias?' · '+tCantVacias+' cám□':'')+(tCantAlzas?' · '+tCantAlzas+' alzas🍯':''));
-  if(vCant&&vMergeVacias)autoObs.push('Envía '+vCant+' cám. vacías a '+vCdNomG.nombre);
-  if(vCant&&!vMergeVacias)autoObs.push(vCant+' cám. vacías: '+(colmenares.find(function(c){return parseInt(c.id)===vOrigen;})||{nombre:'?'}).nombre+' → '+vCdNomG.nombre);
+  var diffMuertas=(!editandoId&&diff>0&&totalM===diff)?diff:0;
 
   var r={
     id:editandoId||String(Date.now()),fecha:fecha,operario:op,colId:colId,colNombre:col?col.nombre:'',
     tarea:Array.from(tareasSel).map(function(id){var t=TAREAS.find(function(t){return t.id===id;});return t?t.label:id;}).join(', ')||'Revisión',
     tareas:Array.from(tareasSel),retornoDias:dias,proximaVisita:proxima,
-    camConAbejas:camConAbejasFinal,
-    camSinAbejas:camSinAbejasFinal,
-    nucleosConteo:nv('nucleosConteo'),alzas:alzasFinal,alzasSinAbejas:nv('alzV'),
+    camConAbejas:camActual+enjCant,
+    camSinAbejas:Math.max(0,nv('camSinAbejas')-enjCant)+(diffMuertas>0&&dmVal==='mismo'?diffMuertas:0),
+    nucleosConteo:nv('nucleosConteo'),alzas:alzActual,alzasSinAbejas:nv('alzV'),
     mLA:nv('mLA'),mZ:nv('mZ'),mH:nv('mH'),mPi:nv('mPi'),mNS:nv('mNS'),mNucleos:totalMuertasNucleos(),
     mNucLA:nv('mNucLA'),mNucZ:nv('mNucZ'),mNucH:nv('mNucH'),mNucPi:nv('mNucPi'),mNucNS:nv('mNucNS'),
     aLc:lc,aLt:aLt,tipoAlimento:tareasSel.has('alimentacion')?(document.getElementById('aTipo').value||TIPOS_ALIMENTO_DEFAULT[0]):'',curas:{primavera:curasSel.primavera,verano:curasSel.verano,otono:curasSel.otono},
@@ -1440,7 +1416,7 @@ try{
     nucPasaCam:tareasSel.has('nucleo-camara')?nv('nucPasaCam'):0,enjambresCant:enjCant,vaciasCant:0,
     alzAddCant:tareasSel.has('agregar-alzas')?nv('alzAdd'):0,alzAddTamano:tareasSel.has('agregar-alzas')?(document.getElementById('alzAddTamano').value||'Alza std'):'',
     fuerzaDebil:fzDebil,fuerzaMedia:fzMedia,fuerzaFuerte:fzFuerte,
-    obs:(autoObs.concat(document.getElementById('obs').value?[document.getElementById('obs').value]:[])).join(' · ')
+    obs:document.getElementById('obs').value
   };
 
   var wasEditing=!!editandoId;
@@ -1457,47 +1433,15 @@ try{
     var idx=registros.findIndex(function(x){return x.id===r.id;});
     if(idx>=0)registros[idx]=r;else registros.unshift(r);
     sortRegs(registros);lsSave('registros',registros);
-    if(dmTrasladarCant>0&&dmDestColm){
+    if(diffMuertas>0&&dmVal==='otro'&&dmDestColm){
       var dmNom=colmenares.find(function(c){return parseInt(c.id)===dmDestColm;})||{nombre:'?'};
       var dmUlt=registros.find(function(rr){return parseInt(rr.colId)===dmDestColm;});
       var dmId=String(Date.now()+20);
-      fbSet('registros',dmId,{id:dmId,fecha:fecha,operario:op,colId:dmDestColm,colNombre:dmNom.nombre,tarea:'Recibe cám. vacías de '+(col?col.nombre:'?'),tareas:[],retornoDias:dias,proximaVisita:proxima,camConAbejas:dmUlt?dmUlt.camConAbejas||0:0,camSinAbejas:(dmUlt?dmUlt.camSinAbejas||0:0)+dmTrasladarCant,nucleosConteo:dmUlt?dmUlt.nucleosConteo||0:0,alzas:dmUlt?dmUlt.alzas||0:0,mLA:0,mZ:0,mH:0,mPi:0,mNS:0,mNucleos:0,aLc:0,aLt:0,curas:{primavera:false,verano:false,otono:false},antiPrimera:false,antiSegunda:false,coAlzas:0,coPeso:0,coKgAlza:0,nucCant:0,nucCria:0,nucMiel:0,nuDestino:'mismo',nucPasaCam:0,enjambresCant:0,vaciasCant:0,obs:'Recibe '+dmTrasladarCant+' cám. vacía'+(dmTrasladarCant>1?'s':'')+' (colmenas muertas de '+(col?col.nombre:'?')+')'});
+      fbSet('registros',dmId,{id:dmId,fecha:fecha,operario:op,colId:dmDestColm,colNombre:dmNom.nombre,tarea:'Recibe cám. vacías de '+(col?col.nombre:'?'),tareas:[],retornoDias:dias,proximaVisita:proxima,camConAbejas:dmUlt?dmUlt.camConAbejas||0:0,camSinAbejas:(dmUlt?dmUlt.camSinAbejas||0:0)+diffMuertas,nucleosConteo:dmUlt?dmUlt.nucleosConteo||0:0,alzas:dmUlt?dmUlt.alzas||0:0,mLA:0,mZ:0,mH:0,mPi:0,mNS:0,mNucleos:0,aLc:0,aLt:0,curas:{primavera:false,verano:false,otono:false},antiPrimera:false,antiSegunda:false,coAlzas:0,coPeso:0,coKgAlza:0,nucCant:0,nucCria:0,nucMiel:0,nuDestino:'mismo',nucPasaCam:0,enjambresCant:0,vaciasCant:0,obs:'Recibe '+diffMuertas+' cám. vacía'+(diffMuertas>1?'s':'')+' (colmenas muertas de '+(col?col.nombre:'?')+')'});
     }
-    if(tCant||tCantVacias){
-      var tsTr=getTemporadaActual();
-      var origRegsTr=registros.filter(function(rr){return parseInt(rr.colId)===colId&&rr.fecha>=tsTr.start&&rr.fecha<=tsTr.end;});
-      var origHizoPrim=origRegsTr.some(function(rr){return rr.curas&&rr.curas.primavera;});
-      var origHizoVer=origRegsTr.some(function(rr){return rr.curas&&rr.curas.verano;});
-      var origHizoOto=origRegsTr.some(function(rr){return rr.curas&&rr.curas.otono;});
-      var origAntiPrimera=origRegsTr.some(function(rr){return rr.antiPrimera;});
-      var origAntiSegunda=origRegsTr.some(function(rr){return rr.antiSegunda;});
-      var tUltD=registros.find(function(rr){return parseInt(rr.colId)===tDestino;});
-      var tid2=String(Date.now()+2);
-      var rt2={id:tid2,fecha:fecha,operario:op,colId:tDestino,colNombre:tCdNomG.nombre,tarea:'Traslado (entrada)',tareas:['traslado'],retornoDias:dias,proximaVisita:proxima,camConAbejas:(tUltD?tUltD.camConAbejas||0:0)+tCant,camSinAbejas:(tUltD?tUltD.camSinAbejas||0:0)+tCantVacias,nucleosConteo:tUltD?tUltD.nucleosConteo||0:0,alzas:(tUltD?tUltD.alzas||0:0)+tCantAlzas,mLA:0,mZ:0,mH:0,mPi:0,mNS:0,mNucleos:0,aLc:0,aLt:0,curas:{primavera:origHizoPrim,verano:origHizoVer,otono:origHizoOto},antiPrimera:origAntiPrimera,antiSegunda:origAntiSegunda,coAlzas:0,coPeso:0,coKgAlza:0,nucCant:0,nucCria:0,nucMiel:0,nuDestino:'mismo',nucPasaCam:0,enjambresCant:0,vaciasCant:0,obs:'Traslado desde '+(col?col.nombre:'?')+(tCant?': '+tCant+' cám🐝':'')+(tCantVacias?' · '+tCantVacias+' cám□':'')+(tCantAlzas?' · '+tCantAlzas+' alzas🍯':'')};
-      fbSet('registros',tid2,rt2);registros.unshift(rt2);sortRegs(registros);
-    }
-    if(vCant&&vMergeVacias){
-      var vUltD=registros.find(function(rr){return parseInt(rr.colId)===vDestino;});
-      var vid2=String(Date.now()+11);
-      var r2mv={id:vid2,fecha:fecha,operario:op,colId:vDestino,colNombre:vCdNomG.nombre,tarea:'Cám.vacías desde '+(col?col.nombre:'?'),tareas:['mover-vacias'],retornoDias:dias,proximaVisita:proxima,camConAbejas:vUltD?vUltD.camConAbejas||0:0,camSinAbejas:(vUltD?vUltD.camSinAbejas||0:0)+vCant,nucleosConteo:vUltD?vUltD.nucleosConteo||0:0,alzas:vUltD?vUltD.alzas||0:0,mLA:0,mZ:0,mH:0,mPi:0,mNS:0,mNucleos:0,aLc:0,aLt:0,curas:{primavera:false,verano:false,otono:false},antiPrimera:false,antiSegunda:false,coAlzas:0,coPeso:0,coKgAlza:0,nucCant:0,nucCria:0,nucMiel:0,nuDestino:'mismo',nucPasaCam:0,enjambresCant:0,vaciasCant:0,obs:'Llegan '+vCant+' cám. vacías desde '+(col?col.nombre:'?')};
-      fbSet('registros',vid2,r2mv);registros.unshift(r2mv);sortRegs(registros);
-    }
-    if(vCant&&!vMergeVacias){
-      var vCoNomG=colmenares.find(function(c){return parseInt(c.id)===vOrigen;})||{nombre:'?'};
-      var vUltO=registros.find(function(rr){return parseInt(rr.colId)===vOrigen;});var vUltD2=registros.find(function(rr){return parseInt(rr.colId)===vDestino;});
-      var vBase={operario:op,fecha:fecha,retornoDias:dias,proximaVisita:proxima,tareas:['mover-vacias'],mLA:0,mZ:0,mH:0,mPi:0,mNS:0,mNucleos:0,aLc:0,aLt:0,curas:{primavera:false,verano:false,otono:false},antiPrimera:false,antiSegunda:false,coAlzas:0,coPeso:0,coKgAlza:0,nucCant:0,nucCria:0,nucMiel:0,nuDestino:'mismo',nucPasaCam:0,enjambresCant:0,vaciasCant:0};
-      var id1=String(Date.now()+10),id2=String(Date.now()+11);
-      var r1mv=Object.assign({},vBase,{id:id1,colId:vOrigen,colNombre:vCoNomG.nombre,tarea:'Cám.vacías → '+vCdNomG.nombre,camConAbejas:vUltO?vUltO.camConAbejas||0:0,camSinAbejas:Math.max(0,(vUltO?vUltO.camSinAbejas||0:0)-vCant),nucleosConteo:vUltO?vUltO.nucleosConteo||0:0,alzas:vUltO?vUltO.alzas||0:0,obs:'Salen '+vCant+' cám. vacías hacia '+vCdNomG.nombre});
-      var r2mv2=Object.assign({},vBase,{id:id2,colId:vDestino,colNombre:vCdNomG.nombre,tarea:'Cám.vacías desde '+vCoNomG.nombre,camConAbejas:vUltD2?vUltD2.camConAbejas||0:0,camSinAbejas:(vUltD2?vUltD2.camSinAbejas||0:0)+vCant,nucleosConteo:vUltD2?vUltD2.nucleosConteo||0:0,alzas:vUltD2?vUltD2.alzas||0:0,obs:'Llegan '+vCant+' cám. vacías desde '+vCoNomG.nombre});
-      fbSet('registros',id1,r1mv);fbSet('registros',id2,r2mv2);
-      [r1mv,r2mv2].forEach(function(rr){registros.unshift(rr);});sortRegs(registros);
-    }
-    lsSave('registros',registros);
     var antiStr=(antisSel.primera&&antisSel.segunda)?' · Antibióticos: 1ra+2da':antisSel.primera?' · Antibióticos: 1ra vuelta':antisSel.segunda?' · Antibióticos: 2da vuelta':'';
-    var muertasStr=diffMuertas>0?' · '+diffMuertas+' muertas'+(dmQuedanCant>0?' · '+dmQuedanCant+' vacías acá':'')+(dmTrasladarCant>0?' · '+dmTrasladarCant+' → '+((colmenares.find(function(c){return parseInt(c.id)===dmDestColm;})||{nombre:'?'}).nombre):''):'';
-    var trasladoStr=(tCant||tCantVacias)?' · Traslado → '+tCdNomG.nombre:'';
-    var vaciasStr=vCant?' · '+vCant+' cám□ → '+vCdNomG.nombre:'';
-    var sub=(col?col.nombre:'')+' · '+fmtF(fecha)+(aLt>0?' · Alim: '+aLt+' L':'')+(coPeso>0?' · Cosecha: '+coPeso+' kg':'')+antiStr+muertasStr+trasladoStr+vaciasStr+' · Próxima: '+fmtF(proxima);
+    var muertasStr=diffMuertas>0?' · '+diffMuertas+' muertas → '+(dmVal==='mismo'?'vacías en colmenar':'→ '+((colmenares.find(function(c){return parseInt(c.id)===dmDestColm;})||{nombre:'?'}).nombre)):'';
+    var sub=(col?col.nombre:'')+' · '+fmtF(fecha)+(aLt>0?' · Alim: '+aLt+' L':'')+(coPeso>0?' · Cosecha: '+coPeso+' kg':'')+antiStr+muertasStr+' · Próxima: '+fmtF(proxima);
     editandoId=null;resetForm();setTimeout(function(){syncAll();},1000);mostrarOverlay((wasEditing?'Actualizado: ':'')+sub);
   }).catch(function(e){miniToast('Error Firebase: '+(e&&e.message?e.message:'sin conexión'));});
 }catch(e){miniToast('Error: '+e.message);console.error('guardar() error:',e);}
@@ -1505,7 +1449,7 @@ try{
 
 function resetForm(){
   editandoId=null;
-  ['camConAbejas','camSinAbejas','nucleosConteo','alz','alzV','mLA','mZ','mH','mPi','mNS','mNucLA','mNucZ','mNucH','mNucPi','mNucNS','coA','coKgAlza','nuC','alzAdd','trasCant','trasVaciasCant','trasAlzasCant','nucPasaCam','enjambresCant','vaciasCant','fzDebil','fzMedia','fzFuerte','dm-trasladar-cant'].forEach(function(id){setV(id,0);});
+  ['camConAbejas','camSinAbejas','nucleosConteo','alz','alzV','mLA','mZ','mH','mPi','mNS','mNucLA','mNucZ','mNucH','mNucPi','mNucNS','coA','coKgAlza','nuC','alzAdd','trasCant','trasVaciasCant','nucPasaCam','enjambresCant','vaciasCant','fzDebil','fzMedia','fzFuerte'].forEach(function(id){setV(id,0);});
   setV('aLc',0);var aTipoR=document.getElementById('aTipo');if(aTipoR)aTipoR.value=TIPOS_ALIMENTO_DEFAULT[0];setV('nuCria',4);setV('nuMiel',1);initAlzaTamanoSelects();
   document.getElementById('op').value='';document.getElementById('colmenar').value='';
   var cinp=document.getElementById('colmenar-input');cinp.value='';cinp.style.fontWeight='';
@@ -1522,13 +1466,12 @@ function resetForm(){
   var pc=document.getElementById('prev-caja');if(pc)pc.style.display='none';
   var ma=document.getElementById('muertas-aviso');if(ma)ma.style.display='none';
   var mv=document.getElementById('muertas-vacias-section');if(mv)mv.style.display='none';
-  var dmr=document.getElementById('dm-resumen');if(dmr)dmr.textContent='';
+  var dmo=document.getElementById('dm-mismo');if(dmo)dmo.checked=true;
   var dmd=document.getElementById('dm-destino-sel');if(dmd)dmd.style.display='none';
   var tp=document.getElementById('traslado-preview');if(tp)tp.style.display='none';
   var cr=document.getElementById('conteo-resumen');if(cr)cr.style.display='none';
   var ep=document.getElementById('enjambre-preview');if(ep)ep.style.display='none';
   var vp=document.getElementById('vacias-preview');if(vp)vp.style.display='none';
-  var chkG=document.getElementById('alzAddDeGalpon');if(chkG)chkG.checked=false;
   var fzAv=document.getElementById('fuerza-aviso');if(fzAv)fzAv.style.display='none';
   setMuertasError(false);setNucleosError(false);
   var amTop=document.getElementById('alertas-muertas-top');if(amTop)amTop.style.display='none';
@@ -1591,13 +1534,11 @@ function puedeEditarRegistro(r){
   if(esAdmin)return horasTranscurridas<168;// 7 días
   return horasTranscurridas<24;// 24 horas
 }
-function sinTildes(s){return(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'');}
 function renderHist(){
-  lastRegistrosSig=registrosSig();
-  var txt=sinTildes((document.getElementById('filtro-txt').value||'').toLowerCase()),col=document.getElementById('filtro-col').value;
+  var txt=(document.getElementById('filtro-txt').value||'').toLowerCase(),col=document.getElementById('filtro-col').value;
   var list=registros;
   if(col)list=list.filter(function(r){return parseInt(r.colId)===parseInt(col);});
-  if(txt)list=list.filter(function(r){return sinTildes((r.colNombre||'').toLowerCase()).includes(txt)||sinTildes((r.operario||'').toLowerCase()).includes(txt)||sinTildes((r.tarea||'').toLowerCase()).includes(txt);});
+  if(txt)list=list.filter(function(r){return(r.colNombre||'').toLowerCase().includes(txt)||(r.operario||'').toLowerCase().includes(txt)||(r.tarea||'').toLowerCase().includes(txt);});
   if(!list.length){document.getElementById('lista-hist').innerHTML='<div class="empty">No hay registros todavía.</div>';return;}
   document.getElementById('lista-hist').innerHTML=list.map(function(r){
     var tags=[];
@@ -1622,15 +1563,6 @@ function renderHist(){
   }).join('');
 }
 
-function exportarResumenEstado(){
-  if(!ultimoResumenSorted.length){miniToast('No hay datos para exportar');return;}
-  var cab=['Colmenar','Última visita','Total','Cám. con abejas','Núcleos','Cám. vacías','Alzas','Alzas vacías','Próxima visita'];
-  var filas=ultimoResumenSorted.map(function(r){return[r.nombre,fmtF(r.ultima),(r.camConAbejas||0)+(r.nucleos||0),r.camConAbejas||0,r.nucleos||0,r.camSinAbejas||0,r.alzas||0,r.alzasSinAbejas||0,fmtF(r.proxima)];});
-  var t=ultimoResumenTotales;
-  filas.push(['TOTAL ('+ultimoResumenSorted.length+' colmenares)','',(t.totalCam||0)+(t.totalNuc||0),t.totalCam||0,t.totalNuc||0,t.totalVac||0,t.totalAlzas||0,t.totalAlzasVac||0,'']);
-  var csv='sep=;\r\n'+[cab].concat(filas).map(function(row){return row.join(';');}).join('\r\n');
-  var blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='Resultados_'+hoy().replace(/-/g,'')+'.csv';a.click();URL.revokeObjectURL(url);miniToast('Archivo descargado');
-}
 function exportarExcel(){
   if(!registros.length){miniToast('No hay registros');return;}
   var cab=['Fecha','Colmenar','Operario','Tareas','Cám.Con Abejas','Cám.Vacías','Núcleos','Alzas','Fuerza Débil %','Fuerza Media %','Fuerza Fuerte %','M.Loque','M.Zanganera','M.Hambre','M.Pillaje','M.NS','Nuc.Muertos','Tipo Alimento','Cant/unidad','Alim Total','Anti.1ra','Anti.2da','Trat.Prim','Trat.Ver','Trat.Oto','Cosecha Alzas','Kg/Alza','Cosecha Kg','Nuc.Realizados','Cuadros Cría','Cuadros Miel','Nuc→Cám','Enjambres','Próxima','Días retorno','Observaciones'];
@@ -1913,14 +1845,7 @@ function buildSelects(){
     if(opEl)opEl.value=usuarioActual.nombre;
     if(opDisplay)opDisplay.textContent=usuarioActual.nombre;
   }
-  var sigCol=colmenares.map(function(c){return c.id;}).join(',');
-  if(sigCol!==lastColmenaresSig){
-    var selFC=document.getElementById('filtro-col');
-    var prevVal=selFC.value;
-    selFC.innerHTML='<option value="">Todos</option>'+colmenares.map(function(c){return'<option value="'+c.id+'">'+c.nombre+'</option>';}).join('');
-    if(prevVal&&colmenares.some(function(c){return String(c.id)===prevVal;}))selFC.value=prevVal;
-    lastColmenaresSig=sigCol;
-  }
+  document.getElementById('filtro-col').innerHTML='<option value="">Todos</option>'+colmenares.map(function(c){return'<option value="'+c.id+'">'+c.nombre+'</option>';}).join('');
 }
 
 function switchTab(t){document.querySelectorAll('.res-tab').forEach(function(b,i){b.classList.toggle('on',['estado','temporada'][i]===t);});document.querySelectorAll('.rtab').forEach(function(s,i){s.classList.toggle('on',['estado','temporada'][i]===t);});}
@@ -1977,14 +1902,13 @@ function renderResumen(){
   function pct(n,d){return d>0?Math.round(n/d*1000)/10:0;}function pctColor(p){return p>=20?'#c0392b':p>=10?'#d68910':'#1a5c2a';}function pctClass(p){return p>=20?'pct-high':p>=10?'pct-med':'pct-ok';}
   var allRows=colmenares.map(function(c){var d=data[c.id];var dp=d.proxima?diasEntre(h,d.proxima):null;return Object.assign({},d,{cod:c.id,dp:dp});});
   var activeRows=allRows.filter(function(r){return(r.hasData||r.ultima)&&((r.camConAbejas||0)>0||(r.nucleos||0)>0);});
-  var totalCam=0,totalVac=0,totalNuc=0,totalMiel=0,totalAlzas=0,totalAlzasVac=0;activeRows.forEach(function(r){totalCam+=r.camConAbejas;totalVac+=r.camSinAbejas;totalNuc+=r.nucleos;totalMiel+=r.cosecha;totalAlzas+=r.alzas||0;totalAlzasVac+=r.alzasSinAbejas||0;});
+  var totalCam=0,totalVac=0,totalNuc=0,totalMiel=0;activeRows.forEach(function(r){totalCam+=r.camConAbejas;totalVac+=r.camSinAbejas;totalNuc+=r.nucleos;totalMiel+=r.cosecha;});
   document.getElementById('stats-top').innerHTML='<div class="kpi" style="background:linear-gradient(135deg,#FFF0A0,#F5C518);border:1.5px solid #E6B800"><div class="kpi-n">'+( totalCam+totalNuc)+'</div><div class="kpi-l">Total activas</div><div class="kpi-sub">🐝 '+totalCam+' · núcl. '+totalNuc+'</div></div><div class="kpi kpi-bee"><div class="kpi-n">'+totalCam+'</div><div class="kpi-l">Cámaras con abejas</div></div><div class="kpi kpi-nuc"><div class="kpi-n">'+totalNuc+'</div><div class="kpi-l">Núcleos activos</div></div><div class="kpi kpi-vac"><div class="kpi-n">'+totalVac+'</div><div class="kpi-l">Cámaras vacías</div></div><div class="kpi kpi-cosecha"><div class="kpi-n">'+totalMiel+' kg</div><div class="kpi-l">Cosecha total</div></div>';
   document.getElementById('alertas-colm-zona').innerHTML='';
   var sorted=activeRows.sort(function(a,b){return(a.dp===null?9999:a.dp)-(b.dp===null?9999:b.dp);});
-  ultimoResumenSorted=sorted;ultimoResumenTotales={totalCam:totalCam,totalVac:totalVac,totalNuc:totalNuc,totalAlzas:totalAlzas,totalAlzasVac:totalAlzasVac};
   function visitaBadge(r){if(!r.proxima)return'<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;background:#fee2e2;color:#7c1a1a">Sin planif.</span>';if(r.dp<0)return'<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;background:#fee2e2;color:#7c1a1a">'+Math.abs(r.dp)+'d vencida</span>';if(r.dp<=5)return'<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;background:#fff3cd;color:#7d5a00">en '+r.dp+'d</span>';return'<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;background:#d4edda;color:#1a5c2a">en '+r.dp+'d</span>';}
   function curaBadge(r){var done=[],pend=[];if(r.cP)done.push('Prim.');else if(temp.primavera)pend.push('Prim.');if(r.cV)done.push('Ver.');else if(temp.verano)pend.push('Ver.');if(r.cO)done.push('Oto.');else if(temp.otono)pend.push('Oto.');var parts=[];if(done.length)parts.push('<span style="font-size:11px;color:#1a5c2a;font-weight:600">✓ '+done.join(' ')+'</span>');if(pend.length)parts.push('<span style="font-size:11px;color:#c0392b;font-weight:700">⚠ '+pend.join(' ')+'</span>');return parts.length?parts.join('<br>'):'<span style="font-size:11px;color:#aaa">—</span>';}
-  document.getElementById('colm-cards-grid').innerHTML='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:var(--sua);border-bottom:2px solid var(--aml)"><th style="text-align:left;padding:8px 10px;font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase">Colmenar</th><th style="text-align:center;padding:8px 6px;font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase">Total</th><th style="text-align:center;padding:8px 6px;font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase">🐝 Cám.</th><th style="text-align:center;padding:8px 6px;font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase">Núcl.</th><th style="text-align:center;padding:8px 6px;font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase">□ Vac.</th><th style="text-align:center;padding:8px 6px;font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase">Alzas🍯</th><th style="text-align:center;padding:8px 6px;font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase">Alzas□</th><th style="text-align:center;padding:8px 6px;font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase">Próxima</th><th style="text-align:center;padding:8px 6px;font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase">Trat.</th></tr></thead><tbody>'+sorted.map(function(r,i){return'<tr style="border-bottom:1px solid var(--sua);background:'+(i%2===0?'#fff':'#fafaf5')+'"><td style="padding:9px 10px;font-weight:700">'+r.nombre+'<div style="font-size:11px;font-weight:400;color:#aaa;margin-top:1px">'+fmtF(r.ultima)+'</div></td><td style="text-align:center;padding:9px 6px;font-weight:700;font-size:15px;color:var(--na)">'+(((r.camConAbejas||0)+(r.nucleos||0))||'—')+'</td><td style="text-align:center;padding:9px 6px;font-weight:700;font-size:15px">'+(r.camConAbejas||'—')+'</td><td style="text-align:center;padding:9px 6px;font-weight:700;font-size:15px">'+(r.nucleos||'—')+'</td><td style="text-align:center;padding:9px 6px;color:#888">'+(r.camSinAbejas||'—')+'</td><td style="text-align:center;padding:9px 6px;color:#888">'+(r.alzas||'—')+'</td><td style="text-align:center;padding:9px 6px;color:#888">'+(r.alzasSinAbejas||'—')+'</td><td style="text-align:center;padding:9px 6px">'+visitaBadge(r)+'<div style="font-size:11px;color:#aaa;margin-top:2px">'+fmtF(r.proxima)+'</div></td><td style="text-align:center;padding:9px 6px">'+curaBadge(r)+'</td></tr>';}).join('')+'</tbody><tfoot><tr style="border-top:2px solid var(--aml);background:var(--sua);font-weight:700"><td style="padding:9px 10px;text-transform:uppercase;font-size:11px">Total ('+sorted.length+' colmenares)</td><td style="text-align:center;padding:9px 6px;font-size:15px;color:var(--na)">'+(totalCam+totalNuc)+'</td><td style="text-align:center;padding:9px 6px;font-size:15px">'+totalCam+'</td><td style="text-align:center;padding:9px 6px;font-size:15px">'+totalNuc+'</td><td style="text-align:center;padding:9px 6px">'+totalVac+'</td><td style="text-align:center;padding:9px 6px">'+totalAlzas+'</td><td style="text-align:center;padding:9px 6px">'+totalAlzasVac+'</td><td></td><td></td></tr></tfoot></table></div>';
+  document.getElementById('colm-cards-grid').innerHTML='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:var(--sua);border-bottom:2px solid var(--aml)"><th style="text-align:left;padding:8px 10px;font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase">Colmenar</th><th style="text-align:center;padding:8px 6px;font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase">Total</th><th style="text-align:center;padding:8px 6px;font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase">🐝 Cám.</th><th style="text-align:center;padding:8px 6px;font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase">Núcl.</th><th style="text-align:center;padding:8px 6px;font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase">□ Vac.</th><th style="text-align:center;padding:8px 6px;font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase">Alzas🍯</th><th style="text-align:center;padding:8px 6px;font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase">Alzas□</th><th style="text-align:center;padding:8px 6px;font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase">Próxima</th><th style="text-align:center;padding:8px 6px;font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase">Trat.</th></tr></thead><tbody>'+sorted.map(function(r,i){return'<tr style="border-bottom:1px solid var(--sua);background:'+(i%2===0?'#fff':'#fafaf5')+'"><td style="padding:9px 10px;font-weight:700">'+r.nombre+'<div style="font-size:11px;font-weight:400;color:#aaa;margin-top:1px">'+fmtF(r.ultima)+'</div></td><td style="text-align:center;padding:9px 6px;font-weight:700;font-size:15px;color:var(--na)">'+(((r.camConAbejas||0)+(r.nucleos||0))||'—')+'</td><td style="text-align:center;padding:9px 6px;font-weight:700;font-size:15px">'+(r.camConAbejas||'—')+'</td><td style="text-align:center;padding:9px 6px;font-weight:700;font-size:15px">'+(r.nucleos||'—')+'</td><td style="text-align:center;padding:9px 6px;color:#888">'+(r.camSinAbejas||'—')+'</td><td style="text-align:center;padding:9px 6px;color:#888">'+(r.alzas||'—')+'</td><td style="text-align:center;padding:9px 6px;color:#888">'+(r.alzasSinAbejas||'—')+'</td><td style="text-align:center;padding:9px 6px">'+visitaBadge(r)+'<div style="font-size:11px;color:#aaa;margin-top:2px">'+fmtF(r.proxima)+'</div></td><td style="text-align:center;padding:9px 6px">'+curaBadge(r)+'</td></tr>';}).join('')+'</tbody></table></div>';
   var totIniCam=0,totFinCam=0,totMLA=0,totMZ=0,totMH=0,totMPi=0,totMNS=0,totMuert=0,totIniNuc=0,totFinNuc=0,totMuertNuc=0,totNucLA=0,totNucZ=0,totNucH=0,totNucPi=0,totNucNS=0,totLitros=0,totCosecha=0;
   var seasRows=allRows.filter(function(r){return r.hasData;});seasRows.forEach(function(r){if(r.iniEsPreTemporada){totIniCam+=r.iniCam||0;totIniNuc+=r.iniNuc||0;}totFinCam+=r.finCam||0;totMLA+=r.mLA||0;totMZ+=r.mZ||0;totMH+=r.mH||0;totMPi+=r.mPi||0;totMNS+=r.mNS||0;totMuert+=r.mTot||0;totFinNuc+=r.finNuc||0;totMuertNuc+=r.mNucleos||0;totNucLA+=r.mNucLA||0;totNucZ+=r.mNucZ||0;totNucH+=r.mNucH||0;totNucPi+=r.mNucPi||0;totNucNS+=r.mNucNS||0;totLitros+=r.litrosTotal||0;totCosecha+=r.cosecha||0;});
   var pctMort=pct(totMuert,totIniCam);
@@ -2069,7 +1993,6 @@ function go(s){
   if(s==='inicio')renderDashboard();
   if(s==='resumen')renderResumen();if(s==='historial')renderHist();if(s==='extraccion')renderExtraccion();if(s==='ventas')renderVentas();if(s==='colmenares')renderColmenares();
 }
-function totalAlzasColocadas(){var vistos={};var total=0;registros.forEach(function(r){if(!vistos[r.colId]){vistos[r.colId]=true;total+=r.alzas||0;}});return total;}
 function renderExtraccion(){
   var totalCosechadas=registros.reduce(function(s,r){return s+(r.coAlzas||0);},0);
   var totalExtraidas=extracciones.reduce(function(s,e){return s+(e.alzasExtraidas||0);},0);
@@ -2077,11 +2000,6 @@ function renderExtraccion(){
   var totalKg=extracciones.reduce(function(s,e){return s+(e.kgObtenidos||0);},0);
   var kpisEl=document.getElementById('ext-kpis');
   if(kpisEl)kpisEl.innerHTML='<div class="kpi" style="background:linear-gradient(135deg,#FFF0A0,#F5C518);border:1.5px solid #E6B800"><div class="kpi-n">'+enSala+'</div><div class="kpi-l">Alzas pendientes en sala</div><div class="kpi-sub">'+totalCosechadas+' cosechadas · '+totalExtraidas+' extraídas</div></div><div class="kpi kpi-cosecha"><div class="kpi-n">'+Math.round(totalKg*10)/10+' kg</div><div class="kpi-l">Kg miel extraídos</div><div class="kpi-sub">'+extracciones.length+' turnos</div></div>';
-  var colocadas=totalAlzasColocadas();
-  var extraidasPendGuardar=Math.max(0,totalExtraidas-(alzasGalpon.guardadoEnGalpon||0));
-  var enGalponAhora=stockEnGalpon();
-  var trazEl=document.getElementById('ext-alzas-trazabilidad');
-  if(trazEl)trazEl.innerHTML='<div class="kpi"><div class="kpi-n">'+colocadas+'</div><div class="kpi-l">Colocadas en colmenas</div></div><div class="kpi"><div class="kpi-n">'+enSala+'</div><div class="kpi-l">En sala, por extraer</div></div><div class="kpi"><div class="kpi-n">'+extraidasPendGuardar+'</div><div class="kpi-l">Extraídas, sin guardar</div></div><div class="kpi"><div class="kpi-n">'+enGalponAhora+'</div><div class="kpi-l">En galpón (disponibles)</div></div>';
   var tEl=document.getElementById('ext-turnos');
   if(!tEl)return;
   if(extracciones.length===0){tEl.innerHTML='<div class="card"><div class="empty">Sin turnos registrados todavía</div></div>';}
@@ -2089,22 +2007,6 @@ function renderExtraccion(){
   renderTambores();
 }
 
-function abrirGuardarGalpon(){
-  var totalExtraidas=extracciones.reduce(function(s,e){return s+(e.alzasExtraidas||0);},0);
-  var disponible=Math.max(0,totalExtraidas-(alzasGalpon.guardadoEnGalpon||0));
-  if(disponible<=0){miniToast('No hay alzas extraídas pendientes de guardar');return;}
-  var m=document.getElementById('modal-guardar-galpon');
-  if(!m){m=document.createElement('div');m.id='modal-guardar-galpon';m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center';document.body.appendChild(m);}
-  m.innerHTML='<div style="background:#fff;border-radius:16px;padding:1.5rem;width:90%;max-width:400px;border:3px solid var(--am)"><div style="font-size:15px;font-weight:700;margin-bottom:1rem">📦 Guardar alzas en galpón</div><div style="font-size:13px;color:#888;margin-bottom:12px">Hay '+disponible+' alzas extraídas todavía sin guardar</div><div style="margin-bottom:16px"><label style="font-size:11px;font-weight:700;color:var(--txt);text-transform:uppercase;display:block;margin-bottom:5px">Cantidad a guardar</label><input type="number" id="galpon-guardar-cant" min="1" max="'+disponible+'" value="'+disponible+'" style="width:100%;font-size:16px;padding:10px;border:1.5px solid var(--bor);border-radius:8px;font-family:inherit;box-sizing:border-box"></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button onclick="document.getElementById(\'modal-guardar-galpon\').remove()" style="padding:12px;border:1.5px solid #ccc;border-radius:8px;background:#f5f5f5;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Cancelar</button><button onclick="confirmarGuardarGalpon('+disponible+')" style="padding:12px;border:none;border-radius:8px;background:var(--am);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">✓ Guardar</button></div></div>';
-}
-function confirmarGuardarGalpon(disponible){
-  var cant=Math.min(disponible,parseInt(document.getElementById('galpon-guardar-cant').value)||0);
-  if(cant<=0){miniToast('Ingresá una cantidad válida');return;}
-  guardarAlzasEnGalpon(cant);
-  var m=document.getElementById('modal-guardar-galpon');if(m)m.remove();
-  miniToast(cant+' alzas guardadas en el galpón');
-  renderExtraccion();
-}
 function abrirTurnoExtraccion(){
   var m=document.getElementById('modal-turno-ext');
   if(!m){m=document.createElement('div');m.id='modal-turno-ext';m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center';m.innerHTML='<div style="background:#fff;border-radius:16px;padding:1.5rem;width:90%;max-width:400px;border:3px solid var(--am)"><div style="font-size:15px;font-weight:700;margin-bottom:1rem">Registrar turno de extracción</div><div style="margin-bottom:12px"><label style="font-size:11px;font-weight:700;color:var(--txt);text-transform:uppercase;display:block;margin-bottom:5px">Fecha</label><input type="date" id="turno-ext-fecha" style="width:100%;font-size:15px;padding:10px;border:1.5px solid var(--bor);border-radius:8px;font-family:inherit;box-sizing:border-box"></div><div style="margin-bottom:12px"><label style="font-size:11px;font-weight:700;color:var(--txt);text-transform:uppercase;display:block;margin-bottom:5px">Operario</label><select id="turno-ext-op" style="width:100%;font-size:15px;padding:10px;border:1.5px solid var(--bor);border-radius:8px;font-family:inherit;cursor:pointer"><option value="">Seleccionar...</option></select></div><div style="margin-bottom:12px"><label style="font-size:11px;font-weight:700;color:var(--txt);text-transform:uppercase;display:block;margin-bottom:5px">Alzas extraídas</label><input type="number" id="turno-ext-alzas" min="1" placeholder="0" style="width:100%;font-size:16px;padding:10px;border:1.5px solid var(--bor);border-radius:8px;font-family:inherit;box-sizing:border-box"></div><div style="margin-bottom:16px"><label style="font-size:11px;font-weight:700;color:var(--txt);text-transform:uppercase;display:block;margin-bottom:5px">Kg obtenidos (opcional)</label><input type="number" id="turno-ext-kg" min="0" step="0.5" placeholder="0" style="width:100%;font-size:16px;padding:10px;border:1.5px solid var(--bor);border-radius:8px;font-family:inherit;box-sizing:border-box"></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button onclick="cerrarTurnoExt()" style="padding:12px;border:1.5px solid #ccc;border-radius:8px;background:#f5f5f5;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Cancelar</button><button onclick="guardarTurnoExt()" style="padding:12px;border:none;border-radius:8px;background:var(--am);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">✓ Guardar</button></div></div>';document.body.appendChild(m);}
