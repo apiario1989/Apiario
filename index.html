@@ -556,20 +556,12 @@ textarea{resize:vertical;min-height:60px}
   <div id="rtab-estado" class="rtab on">
     <div class="kpi-grid" id="stats-top"></div>
     <div id="alertas-colm-zona"></div>
-    <div style="display:flex;gap:8px;margin:.75rem 0;flex-wrap:wrap;align-items:center">
-      <select id="res-filtro-cura" onchange="renderResumenTabla()" style="padding:9px 10px;border:1.5px solid var(--bor);border-radius:8px;font-size:13px;font-family:inherit">
-        <option value="">Cura: todos</option>
-        <option value="falta-primavera">Falta cura primavera</option>
-        <option value="falta-verano">Falta cura verano</option>
-        <option value="falta-otono">Falta cura otoño</option>
-        <option value="al-dia">Curas al día</option>
-      </select>
-      <span id="res-filtro-colmenar-badge" style="font-size:12px;color:#888"></span>
-    </div>
+    <div id="res-filtros-activos" style="display:none;background:var(--sua);border:1.5px solid var(--aml);border-radius:10px;padding:10px 14px;margin:.75rem 0;font-size:13px;display:flex;align-items:center;gap:10px;flex-wrap:wrap"></div>
     <div style="display:flex;gap:8px;margin-bottom:.75rem;flex-wrap:wrap">
       <button class="btn-export" onclick="exportarResumenEstado()" style="margin-bottom:0;flex:1">⬇ Excel</button>
       <button class="btn-export" onclick="exportarResumenPDF()" style="margin-bottom:0;flex:1;background:#fff;border-color:var(--bor);color:var(--txt)">🖨️ PDF / Imprimir</button>
     </div>
+    <div style="font-size:12px;color:#999;margin-bottom:6px">👆 Tocá el título de cualquier columna para filtrar por esos valores</div>
     <div id="colm-cards-grid"></div>
   </div>
   <div id="rtab-temporada" class="rtab">
@@ -797,7 +789,7 @@ var camConAbejasPrev=0,camSinAbejasPrev=0,nucleosPrev=0,alzasPrev=0;
 var tareasSel=new Set(),editandoId=null,colmenarDDIdx=-1,ultimoEditColm=0,editandoColmIdModal=null;
 var lastColmenaresSig='',lastRegistrosSig='';
 var ultimoResumenSorted=[],ultimoResumenTotales={},ultimoResumenTemp={},ultimoResumenFiltrado=[];
-var colFiltroColmenar=new Set();var ultimoUniversoColmenaresRes='';
+var ultimoUniversoColmenaresRes='';
 function registrosSig(){return registros.length+'|'+registros.reduce(function(s,r){return s+(r.camConAbejas||0)+(r.camSinAbejas||0)+(r.nucleosConteo||0)+(r.alzas||0)+(r.coAlzas||0);},0);}
 var usuarioActual=null;
 
@@ -1640,12 +1632,12 @@ function renderHist(){
 function exportarResumenEstado(){
   var base=ultimoResumenFiltrado;
   if(!base.length){miniToast('No hay datos para exportar');return;}
-  var cab=['Colmenar','Última visita','Total','Cám. con abejas','Núcleos','Cám. vacías','Alzas','Alzas vacías','Próxima visita'];
-  var filas=base.map(function(r){return[r.nombre,fmtF(r.ultima),(r.camConAbejas||0)+(r.nucleos||0),r.camConAbejas||0,r.nucleos||0,r.camSinAbejas||0,r.alzas||0,r.alzasSinAbejas||0,fmtF(r.proxima)];});
-  var tc=0,tv=0,tn=0,ta=0,tav=0;base.forEach(function(r){tc+=r.camConAbejas||0;tv+=r.camSinAbejas||0;tn+=r.nucleos||0;ta+=r.alzas||0;tav+=r.alzasSinAbejas||0;});
-  filas.push(['TOTAL ('+base.length+' colmenares)','',tc+tn,tc,tn,tv,ta,tav,'']);
+  var cab=['Colmenar','Última visita','Total','Cám. de cría','Colmenas (con alza)','Cám. cría sin alza','Núcleos','Cám. vacías','Alzas','Alzas extra','Alzas vacías','Próxima visita'];
+  var filas=base.map(function(r){return[r.nombre,fmtF(r.ultima),(r.camConAbejas||0)+(r.nucleos||0),r.camConAbejas||0,r.colmenas||0,r.criaSinAlza||0,r.nucleos||0,r.camSinAbejas||0,r.alzas||0,r.alzasExtra||0,r.alzasSinAbejas||0,fmtF(r.proxima)];});
+  var tc=0,tv=0,tn=0,ta=0,tav=0,tcol=0,tcria=0,talzex=0;base.forEach(function(r){tc+=r.camConAbejas||0;tv+=r.camSinAbejas||0;tn+=r.nucleos||0;ta+=r.alzas||0;tav+=r.alzasSinAbejas||0;tcol+=r.colmenas||0;tcria+=r.criaSinAlza||0;talzex+=r.alzasExtra||0;});
+  filas.push(['TOTAL ('+base.length+' colmenares)','',tc+tn,tc,tcol,tcria,tn,tv,ta,talzex,tav,'']);
   var ws=XLSX.utils.aoa_to_sheet([cab].concat(filas));
-  ws['!cols']=[{wch:18},{wch:12},{wch:8},{wch:14},{wch:10},{wch:12},{wch:8},{wch:12},{wch:12}];
+  ws['!cols']=[{wch:18},{wch:12},{wch:8},{wch:12},{wch:14},{wch:14},{wch:10},{wch:12},{wch:8},{wch:10},{wch:12},{wch:12}];
   var wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,ws,'Resultados');
   XLSX.writeFile(wb,'Resultados_'+hoy().replace(/-/g,'')+'.xlsx');
@@ -1654,12 +1646,12 @@ function exportarResumenEstado(){
 function exportarResumenPDF(){
   var base=ultimoResumenFiltrado;
   if(!base.length){miniToast('No hay datos para exportar');return;}
-  var tc=0,tv=0,tn=0,ta=0,tav=0;base.forEach(function(r){tc+=r.camConAbejas||0;tv+=r.camSinAbejas||0;tn+=r.nucleos||0;ta+=r.alzas||0;tav+=r.alzasSinAbejas||0;});
-  var filtroCura=document.getElementById('res-filtro-cura');
-  var subt='Estado actual'+(colFiltroColmenar.size<ultimoResumenSorted.length?' · '+colFiltroColmenar.size+' de '+ultimoResumenSorted.length+' colmenares':'')+(filtroCura.value?' · '+filtroCura.options[filtroCura.selectedIndex].text:'');
-  var filas=base.map(function(r){return'<tr><td>'+r.nombre+'</td><td>'+fmtF(r.ultima)+'</td><td>'+((r.camConAbejas||0)+(r.nucleos||0))+'</td><td>'+(r.camConAbejas||0)+'</td><td>'+(r.nucleos||0)+'</td><td>'+(r.camSinAbejas||0)+'</td><td>'+(r.alzas||0)+'</td><td>'+(r.alzasSinAbejas||0)+'</td><td>'+fmtF(r.proxima)+'</td></tr>';}).join('');
+  var tc=0,tv=0,tn=0,ta=0,tav=0,tcol=0,tcria=0,talzex=0;base.forEach(function(r){tc+=r.camConAbejas||0;tv+=r.camSinAbejas||0;tn+=r.nucleos||0;ta+=r.alzas||0;tav+=r.alzasSinAbejas||0;tcol+=r.colmenas||0;tcria+=r.criaSinAlza||0;talzex+=r.alzasExtra||0;});
+  var activosPDF=COL_DEFS_RES.filter(function(cd){return!!colFiltrosRes[cd.id];});
+  var subt='Estado actual'+(activosPDF.length?' · Filtros: '+activosPDF.map(function(cd){return cd.label+' ('+colFiltrosRes[cd.id].size+')';}).join(', '):'')+' · '+base.length+' colmenares mostrados';
+  var filas=base.map(function(r){return'<tr><td>'+r.nombre+'</td><td>'+fmtF(r.ultima)+'</td><td>'+((r.camConAbejas||0)+(r.nucleos||0))+'</td><td>'+(r.camConAbejas||0)+'</td><td>'+(r.colmenas||0)+'</td><td>'+(r.nucleos||0)+'</td><td>'+(r.camSinAbejas||0)+'</td><td>'+(r.alzas||0)+'</td><td>'+(r.alzasSinAbejas||0)+'</td><td>'+fmtF(r.proxima)+'</td></tr>';}).join('');
   var w=window.open('','_blank');
-  w.document.write('<html><head><meta charset="utf-8"><title>Resultados '+hoy()+'</title><style>body{font-family:Arial,sans-serif;padding:20px;color:#222}h1{font-size:18px;margin-bottom:2px}p{font-size:12px;color:#666;margin-top:0}table{width:100%;border-collapse:collapse;font-size:12px;margin-top:14px}th,td{border:1px solid #ccc;padding:6px 8px;text-align:center}th{background:#F5C518;text-transform:uppercase;font-size:10px}td:first-child,th:first-child{text-align:left}tfoot td{font-weight:700;background:#FFF6D5}@media print{body{padding:0}}</style></head><body><h1>🐝 Apiario La Reina — Resultados</h1><p>'+subt+' · Generado el '+fmtF(hoy())+'</p><table><thead><tr><th>Colmenar</th><th>Últ. visita</th><th>Total</th><th>Cám.</th><th>Núcl.</th><th>Vac.</th><th>Alzas</th><th>Alzas□</th><th>Próxima</th></tr></thead><tbody>'+filas+'</tbody><tfoot><tr><td>TOTAL ('+base.length+' colmenares)</td><td></td><td>'+(tc+tn)+'</td><td>'+tc+'</td><td>'+tn+'</td><td>'+tv+'</td><td>'+ta+'</td><td>'+tav+'</td><td></td></tr></tfoot></table></body></html>');
+  w.document.write('<html><head><meta charset="utf-8"><title>Resultados '+hoy()+'</title><style>body{font-family:Arial,sans-serif;padding:20px;color:#222}h1{font-size:18px;margin-bottom:2px}p{font-size:12px;color:#666;margin-top:0}table{width:100%;border-collapse:collapse;font-size:12px;margin-top:14px}th,td{border:1px solid #ccc;padding:6px 8px;text-align:center}th{background:#F5C518;text-transform:uppercase;font-size:10px}td:first-child,th:first-child{text-align:left}tfoot td{font-weight:700;background:#FFF6D5}@media print{body{padding:0}}</style></head><body><h1>🐝 Apiario La Reina — Resultados</h1><p>'+subt+' · Generado el '+fmtF(hoy())+'</p><table><thead><tr><th>Colmenar</th><th>Últ. visita</th><th>Total</th><th>Cám. cría</th><th>Colmenas</th><th>Núcl.</th><th>Vac.</th><th>Alzas</th><th>Alzas□</th><th>Próxima</th></tr></thead><tbody>'+filas+'</tbody><tfoot><tr><td>TOTAL ('+base.length+' colmenares)</td><td></td><td>'+(tc+tn)+'</td><td>'+tc+'</td><td>'+tcol+'</td><td>'+tn+'</td><td>'+tv+'</td><td>'+ta+'</td><td>'+tav+'</td><td></td></tr></tfoot></table></body></html>');
   w.document.close();
   setTimeout(function(){w.print();},400);
 }
@@ -1705,8 +1697,8 @@ function renderDashboard(){
 
   // Mortandad temporada
   var seasRows=colmenares.map(function(c){return data[c.id];}).filter(function(d){return d.hasData;});
-  var totIni=0,totMuert=0,totIniNuc=0,totMuertNuc=0,totCosecha=0,totLitros=0,totCam=0,totNuc=0;
-  seasRows.forEach(function(d){if(d.iniEsPreTemporada){totIni+=d.iniCam||0;totIniNuc+=d.iniNuc||0;}totMuert+=d.mTot||0;totMuertNuc+=d.mNucleos||0;totCosecha+=d.cosecha||0;totLitros+=d.litrosTotal||0;totCam+=d.camConAbejas||0;totNuc+=d.nucleos||0;});
+  var totIni=0,totMuert=0,totIniNuc=0,totMuertNuc=0,totCosecha=0,totLitros=0,totCam=0,totNuc=0,totColmenasHoy=0,totCriaSinAlzaHoy=0,totAlzasExtraHoy=0;
+  seasRows.forEach(function(d){if(d.iniEsPreTemporada){totIni+=d.iniCam||0;totIniNuc+=d.iniNuc||0;}totMuert+=d.mTot||0;totMuertNuc+=d.mNucleos||0;totCosecha+=d.cosecha||0;totLitros+=d.litrosTotal||0;totCam+=d.camConAbejas||0;totNuc+=d.nucleos||0;var col=Math.min(d.camConAbejas||0,d.alzas||0);totColmenasHoy+=col;totCriaSinAlzaHoy+=Math.max(0,(d.camConAbejas||0)-(d.alzas||0));totAlzasExtraHoy+=Math.max(0,(d.alzas||0)-(d.camConAbejas||0));});
   var pctMort=totIni>0?Math.round(totMuert/totIni*1000)/10:0;
   var pctMortNuc=totIniNuc>0?Math.round(totMuertNuc/totIniNuc*1000)/10:0;
 
@@ -1755,8 +1747,10 @@ function renderDashboard(){
 
   // KPIs rápidos
   html+='<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:1rem">'
-    +'<div class="kpi" style="background:linear-gradient(135deg,#FFF0A0,#F5C518);border:1.5px solid #E6B800"><div class="kpi-n">'+(totCam+totNuc)+'</div><div class="kpi-l">Total activas</div><div class="kpi-sub">🐝 '+totCam+' · núcl. '+totNuc+'</div></div>'
+    +'<div class="kpi" style="background:linear-gradient(135deg,#FFF0A0,#F5C518);border:1.5px solid #E6B800"><div class="kpi-n">'+(totCam+totNuc)+'</div><div class="kpi-l">Total activas</div><div class="kpi-sub">🐝 '+totCam+' cám. cría · núcl. '+totNuc+'</div></div>'
     +'<div class="kpi kpi-cosecha"><div class="kpi-n">'+totCosecha+' kg</div><div class="kpi-l">Cosecha temporada</div></div>'
+    +'<div class="kpi kpi-bee"><div class="kpi-n">'+totColmenasHoy+'</div><div class="kpi-l">Colmenas (con alza)</div><div class="kpi-sub">'+totAlzasExtraHoy+' alzas extra arriba</div></div>'
+    +'<div class="kpi" style="background:#F0EAD6;border:1.5px solid var(--bor)"><div class="kpi-n">'+totCriaSinAlzaHoy+'</div><div class="kpi-l">Cám. de cría (sin alza)</div></div>'
     +'<div class="kpi" style="background:'+mortBg(pctMort)+';border:1.5px solid '+mortBorder(pctMort)+'"><div class="kpi-n" style="color:'+mortColor(pctMort)+'">'+pctMort+'%</div><div class="kpi-l">Mort. cámaras 🐝</div><div class="kpi-sub">'+totMuert+' muertas</div></div>'
     +'<div class="kpi" style="background:'+mortBg(pctMortNuc)+';border:1.5px solid '+mortBorder(pctMortNuc)+'"><div class="kpi-n" style="color:'+mortColor(pctMortNuc)+'">'+pctMortNuc+'%</div><div class="kpi-l">Mort. núcleos 🔵</div><div class="kpi-sub">'+totMuertNuc+' muertos</div></div>'
     +'</div>';
@@ -2005,42 +1999,70 @@ function calcSeasonData(anio){
 
 function visitaBadge(r){if(!r.proxima)return'<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;background:#fee2e2;color:#7c1a1a">Sin planif.</span>';if(r.dp<0)return'<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;background:#fee2e2;color:#7c1a1a">'+Math.abs(r.dp)+'d vencida</span>';if(r.dp<=5)return'<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;background:#fff3cd;color:#7d5a00">en '+r.dp+'d</span>';return'<span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;background:#d4edda;color:#1a5c2a">en '+r.dp+'d</span>';}
 function curaBadge(r){var temp=ultimoResumenTemp;var done=[],pend=[];if(r.cP)done.push('Prim.');else if(temp.primavera)pend.push('Prim.');if(r.cV)done.push('Ver.');else if(temp.verano)pend.push('Ver.');if(r.cO)done.push('Oto.');else if(temp.otono)pend.push('Oto.');var parts=[];if(done.length)parts.push('<span style="font-size:11px;color:#1a5c2a;font-weight:600">✓ '+done.join(' ')+'</span>');if(pend.length)parts.push('<span style="font-size:11px;color:#c0392b;font-weight:700">⚠ '+pend.join(' ')+'</span>');return parts.length?parts.join('<br>'):'<span style="font-size:11px;color:#aaa">—</span>';}
-function filaCumpleCura(r,filtro){var temp=ultimoResumenTemp;if(!filtro)return true;if(filtro==='falta-primavera')return temp.primavera&&!r.cP;if(filtro==='falta-verano')return temp.verano&&!r.cV;if(filtro==='falta-otono')return temp.otono&&!r.cO;if(filtro==='al-dia')return!(temp.primavera&&!r.cP)&&!(temp.verano&&!r.cV)&&!(temp.otono&&!r.cO);return true;}
-function abrirFiltroColmenar(){
-  var m=document.getElementById('modal-filtro-colmenar');
-  if(!m){m=document.createElement('div');m.id='modal-filtro-colmenar';m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center';document.body.appendChild(m);}
-  var lista=ultimoResumenSorted.slice().sort(function(a,b){return a.nombre.localeCompare(b.nombre);});
-  var itemsHtml=lista.map(function(r){var checked=colFiltroColmenar.has(String(r.cod));return'<label style="display:flex;align-items:center;gap:10px;padding:8px 4px;border-bottom:1px solid var(--sua);cursor:pointer;font-size:14px"><input type="checkbox" class="fc-item" data-cod="'+r.cod+'" '+(checked?'checked':'')+' style="width:18px;height:18px;flex-shrink:0">'+r.nombre+'</label>';}).join('');
+var COL_DEFS_RES=[
+  {id:'colmenar',label:'Colmenar',get:function(r){return r.nombre;}},
+  {id:'total',label:'Total',get:function(r){return String((r.camConAbejas||0)+(r.nucleos||0));}},
+  {id:'cam',label:'Cám. cría',get:function(r){return String(r.camConAbejas||0);}},
+  {id:'colmenas',label:'Colmenas',get:function(r){return String(r.colmenas||0);}},
+  {id:'nucl',label:'Núcl.',get:function(r){return String(r.nucleos||0);}},
+  {id:'vac',label:'Vac.',get:function(r){return String(r.camSinAbejas||0);}},
+  {id:'alzas',label:'Alzas',get:function(r){return String(r.alzas||0);}},
+  {id:'alzasV',label:'Alzas□',get:function(r){return String(r.alzasSinAbejas||0);}},
+  {id:'proxima',label:'Próxima',get:function(r){return r.proxima?fmtF(r.proxima):'Sin planificar';}},
+  {id:'trat',label:'Trat.',get:function(r){var temp=ultimoResumenTemp;var pend=[];if(temp.primavera&&!r.cP)pend.push('Falta primavera');if(temp.verano&&!r.cV)pend.push('Falta verano');if(temp.otono&&!r.cO)pend.push('Falta otoño');return pend.length?pend.join(' + '):'Al día';}}
+];
+var colFiltrosRes={};
+function rowPasaFiltrosRes(r,exceptoId){
+  return COL_DEFS_RES.every(function(cd){
+    if(cd.id===exceptoId)return true;
+    var set=colFiltrosRes[cd.id];
+    if(!set)return true;
+    return set.has(cd.get(r));
+  });
+}
+function abrirFiltroColumna(colId){
+  var cd=COL_DEFS_RES.find(function(c){return c.id===colId;});if(!cd)return;
+  var disponibles=ultimoResumenSorted.filter(function(r){return rowPasaFiltrosRes(r,colId);});
+  var valores=[];var vistos={};
+  disponibles.forEach(function(r){var v=cd.get(r);if(!vistos[v]){vistos[v]=true;valores.push(v);}});
+  valores.sort(function(a,b){var na=parseFloat(a),nb=parseFloat(b);if(!isNaN(na)&&!isNaN(nb))return na-nb;return a.localeCompare(b);});
+  var setActual=colFiltrosRes[colId];
+  var m=document.getElementById('modal-filtro-col');
+  if(!m){m=document.createElement('div');m.id='modal-filtro-col';m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9999;display:flex;align-items:center;justify-content:center';document.body.appendChild(m);}
+  var itemsHtml=valores.map(function(v){var checked=!setActual||setActual.has(v);return'<label style="display:flex;align-items:center;gap:10px;padding:8px 4px;border-bottom:1px solid var(--sua);cursor:pointer;font-size:14px"><input type="checkbox" class="fc-item" data-val="'+v.replace(/"/g,'&quot;')+'" '+(checked?'checked':'')+' style="width:18px;height:18px;flex-shrink:0">'+v+'</label>';}).join('');
   m.innerHTML='<div style="background:#fff;border-radius:16px;padding:1.25rem;width:92%;max-width:420px;max-height:80vh;display:flex;flex-direction:column;border:3px solid var(--am)">'
-    +'<div style="font-size:15px;font-weight:700;margin-bottom:10px">Filtrar por colmenar</div>'
-    +'<input type="text" id="fc-buscar" placeholder="🔍 Buscar..." oninput="filtrarListaFC()" style="padding:9px 12px;border:1.5px solid var(--bor);border-radius:8px;font-size:13px;font-family:inherit;margin-bottom:8px">'
+    +'<div style="font-size:15px;font-weight:700;margin-bottom:10px">Filtrar por: '+cd.label+'</div>'
+    +(valores.length>8?'<input type="text" id="fc-buscar" placeholder="🔍 Buscar..." oninput="filtrarListaFC()" style="padding:9px 12px;border:1.5px solid var(--bor);border-radius:8px;font-size:13px;font-family:inherit;margin-bottom:8px">':'')
     +'<div style="display:flex;gap:8px;margin-bottom:8px"><button onclick="marcarTodosFC(true)" style="flex:1;padding:8px;border:1.5px solid var(--bor);border-radius:8px;background:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">Marcar todos</button><button onclick="marcarTodosFC(false)" style="flex:1;padding:8px;border:1.5px solid var(--bor);border-radius:8px;background:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">Desmarcar todos</button></div>'
-    +'<div id="fc-lista" style="overflow-y:auto;flex:1;border-top:1px solid var(--sua)">'+itemsHtml+'</div>'
-    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px"><button onclick="document.getElementById(\'modal-filtro-colmenar\').remove()" style="padding:12px;border:1.5px solid #ccc;border-radius:8px;background:#f5f5f5;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Cancelar</button><button onclick="aplicarFiltroColmenar()" style="padding:12px;border:none;border-radius:8px;background:var(--am);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">✓ Aplicar</button></div>'
+    +'<div id="fc-lista" style="overflow-y:auto;flex:1;border-top:1px solid var(--sua)">'+(itemsHtml||'<div style="padding:12px;color:#999;font-size:13px">No hay valores para mostrar con los filtros actuales</div>')+'</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px"><button onclick="document.getElementById(\'modal-filtro-col\').remove()" style="padding:12px;border:1.5px solid #ccc;border-radius:8px;background:#f5f5f5;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Cancelar</button><button onclick="aplicarFiltroColumna(\''+colId+'\','+valores.length+')" style="padding:12px;border:none;border-radius:8px;background:var(--am);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">✓ Aplicar</button></div>'
     +'</div>';
 }
-function filtrarListaFC(){var txt=sinTildes((document.getElementById('fc-buscar').value||'').toLowerCase());document.querySelectorAll('#fc-lista label').forEach(function(lbl){var nombre=sinTildes(lbl.textContent.toLowerCase());lbl.style.display=(!txt||nombre.includes(txt))?'flex':'none';});}
+function filtrarListaFC(){var txt=sinTildes((document.getElementById('fc-buscar').value||'').toLowerCase());document.querySelectorAll('#fc-lista label').forEach(function(lbl){var val=sinTildes(lbl.textContent.toLowerCase());lbl.style.display=(!txt||val.includes(txt))?'flex':'none';});}
 function marcarTodosFC(val){document.querySelectorAll('#fc-lista .fc-item').forEach(function(cb){if(cb.closest('label').style.display!=='none')cb.checked=val;});}
-function aplicarFiltroColmenar(){
-  colFiltroColmenar=new Set();
-  document.querySelectorAll('#fc-lista .fc-item').forEach(function(cb){if(cb.checked)colFiltroColmenar.add(cb.getAttribute('data-cod'));});
-  var m=document.getElementById('modal-filtro-colmenar');if(m)m.remove();
+function aplicarFiltroColumna(colId,totalValores){
+  var checked=[];document.querySelectorAll('#fc-lista .fc-item').forEach(function(cb){if(cb.checked)checked.push(cb.getAttribute('data-val'));});
+  if(checked.length>=totalValores){delete colFiltrosRes[colId];}
+  else{colFiltrosRes[colId]=new Set(checked);}
+  var m=document.getElementById('modal-filtro-col');if(m)m.remove();
   renderResumenTabla();
 }
-function filaCumpleCura(r,filtro){var temp=ultimoResumenTemp;if(!filtro)return true;if(filtro==='falta-primavera')return temp.primavera&&!r.cP;if(filtro==='falta-verano')return temp.verano&&!r.cV;if(filtro==='falta-otono')return temp.otono&&!r.cO;if(filtro==='al-dia')return!(temp.primavera&&!r.cP)&&!(temp.verano&&!r.cV)&&!(temp.otono&&!r.cO);return true;}
+function quitarFiltrosRes(){colFiltrosRes={};renderResumenTabla();}
 function renderResumenTabla(){
-  var filtroCura=document.getElementById('res-filtro-cura').value;
-  var filtrado=ultimoResumenSorted.filter(function(r){
-    if(!colFiltroColmenar.has(String(r.cod)))return false;
-    if(!filaCumpleCura(r,filtroCura))return false;
-    return true;
-  });
+  var filtrado=ultimoResumenSorted.filter(function(r){return rowPasaFiltrosRes(r,null);});
   ultimoResumenFiltrado=filtrado;
-  var badge=document.getElementById('res-filtro-colmenar-badge');
-  if(badge)badge.textContent=colFiltroColmenar.size<ultimoResumenSorted.length?colFiltroColmenar.size+' de '+ultimoResumenSorted.length+' colmenares · ':'';
-  var tc=0,tv=0,tn=0,ta=0,tav=0;filtrado.forEach(function(r){tc+=r.camConAbejas||0;tv+=r.camSinAbejas||0;tn+=r.nucleos||0;ta+=r.alzas||0;tav+=r.alzasSinAbejas||0;});
-  var colmenarHeader='<span style="cursor:pointer;display:inline-flex;align-items:center;gap:4px" onclick="abrirFiltroColmenar()">Colmenar <span style="font-size:9px">▾</span></span>';
-  document.getElementById('colm-cards-grid').innerHTML='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:var(--sua);border-bottom:2px solid var(--aml)"><th style="text-align:left;padding:8px 10px;font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase">'+colmenarHeader+'</th><th style="text-align:center;padding:8px 6px;font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase">Total</th><th style="text-align:center;padding:8px 6px;font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase">🐝 Cám.</th><th style="text-align:center;padding:8px 6px;font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase">Núcl.</th><th style="text-align:center;padding:8px 6px;font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase">□ Vac.</th><th style="text-align:center;padding:8px 6px;font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase">Alzas🍯</th><th style="text-align:center;padding:8px 6px;font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase">Alzas□</th><th style="text-align:center;padding:8px 6px;font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase">Próxima</th><th style="text-align:center;padding:8px 6px;font-size:10px;font-weight:700;color:var(--txt);text-transform:uppercase">Trat.</th></tr></thead><tbody>'+filtrado.map(function(r,i){return'<tr style="border-bottom:1px solid var(--sua);background:'+(i%2===0?'#fff':'#fafaf5')+'"><td style="padding:9px 10px;font-weight:700">'+r.nombre+'<div style="font-size:11px;font-weight:400;color:#aaa;margin-top:1px">'+fmtF(r.ultima)+'</div></td><td style="text-align:center;padding:9px 6px;font-weight:700;font-size:15px;color:var(--na)">'+(((r.camConAbejas||0)+(r.nucleos||0))||'—')+'</td><td style="text-align:center;padding:9px 6px;font-weight:700;font-size:15px">'+(r.camConAbejas||'—')+'</td><td style="text-align:center;padding:9px 6px;font-weight:700;font-size:15px">'+(r.nucleos||'—')+'</td><td style="text-align:center;padding:9px 6px;color:#888">'+(r.camSinAbejas||'—')+'</td><td style="text-align:center;padding:9px 6px;color:#888">'+(r.alzas||'—')+'</td><td style="text-align:center;padding:9px 6px;color:#888">'+(r.alzasSinAbejas||'—')+'</td><td style="text-align:center;padding:9px 6px">'+visitaBadge(r)+'<div style="font-size:11px;color:#aaa;margin-top:2px">'+fmtF(r.proxima)+'</div></td><td style="text-align:center;padding:9px 6px">'+curaBadge(r)+'</td></tr>';}).join('')+'</tbody><tfoot><tr style="border-top:2px solid var(--aml);background:var(--sua);font-weight:700"><td style="padding:9px 10px;text-transform:uppercase;font-size:11px">Total ('+filtrado.length+' colmenares)</td><td style="text-align:center;padding:9px 6px;font-size:15px;color:var(--na)">'+(tc+tn)+'</td><td style="text-align:center;padding:9px 6px;font-size:15px">'+tc+'</td><td style="text-align:center;padding:9px 6px;font-size:15px">'+tn+'</td><td style="text-align:center;padding:9px 6px">'+tv+'</td><td style="text-align:center;padding:9px 6px">'+ta+'</td><td style="text-align:center;padding:9px 6px">'+tav+'</td><td></td><td></td></tr></tfoot></table></div>';
+  var activos=COL_DEFS_RES.filter(function(cd){return!!colFiltrosRes[cd.id];});
+  var barra=document.getElementById('res-filtros-activos');
+  if(activos.length>0){
+    barra.style.display='flex';
+    barra.innerHTML='<strong>Filtros activos:</strong> '+activos.map(function(cd){return cd.label+' ('+colFiltrosRes[cd.id].size+')';}).join(' · ')+' &nbsp; <a href="#" onclick="quitarFiltrosRes();return false" style="color:var(--txt);text-decoration:underline;font-weight:600">✕ Quitar todos</a>';
+  }else{barra.style.display='none';}
+  var tc=0,tv=0,tn=0,ta=0,tav=0,tcol=0;filtrado.forEach(function(r){tc+=r.camConAbejas||0;tv+=r.camSinAbejas||0;tn+=r.nucleos||0;ta+=r.alzas||0;tav+=r.alzasSinAbejas||0;tcol+=r.colmenas||0;});
+  function th(cd,extra,labelOverride){var activo=!!colFiltrosRes[cd.id];return'<th onclick="abrirFiltroColumna(\''+cd.id+'\')" style="cursor:pointer;text-align:'+(extra||'center')+';padding:9px 7px;font-size:10px;font-weight:800;color:'+(activo?'#8a4b00':'var(--txt)')+';text-transform:uppercase;background:'+(activo?'#FFE699':'transparent')+';border-radius:6px;white-space:nowrap;user-select:none"><span style="border-bottom:1.5px dotted currentColor;padding-bottom:1px">'+(labelOverride||cd.label)+'</span> <span style="font-size:8px">▾</span></th>';}
+  var theadHtml='<tr style="background:var(--sua);border-bottom:2px solid var(--aml)">'
+    +th(COL_DEFS_RES[0],'left')+th(COL_DEFS_RES[1])+th(COL_DEFS_RES[2],'center','🐝 Cám. cría')+th(COL_DEFS_RES[3],'center','🏠 Colmenas')+th(COL_DEFS_RES[4])+th(COL_DEFS_RES[5])+th(COL_DEFS_RES[6],'center','Alzas🍯')+th(COL_DEFS_RES[7])+th(COL_DEFS_RES[8])+th(COL_DEFS_RES[9])
+    +'</tr>';
+  document.getElementById('colm-cards-grid').innerHTML='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px"><thead>'+theadHtml+'</thead><tbody>'+filtrado.map(function(r,i){return'<tr style="border-bottom:1px solid var(--sua);background:'+(i%2===0?'#fff':'#fafaf5')+'"><td style="padding:9px 10px;font-weight:700">'+r.nombre+'<div style="font-size:11px;font-weight:400;color:#aaa;margin-top:1px">'+fmtF(r.ultima)+'</div></td><td style="text-align:center;padding:9px 6px;font-weight:700;font-size:15px;color:var(--na)">'+(((r.camConAbejas||0)+(r.nucleos||0))||'—')+'</td><td style="text-align:center;padding:9px 6px;font-weight:700;font-size:15px">'+(r.camConAbejas||'—')+(r.criaSinAlza>0?'<div style="font-size:10px;font-weight:400;color:#c0392b">'+r.criaSinAlza+' sin alza</div>':'')+'</td><td style="text-align:center;padding:9px 6px;font-weight:700;font-size:15px;color:#1a5c2a">'+(r.colmenas||'—')+(r.alzasExtra>0?'<div style="font-size:10px;font-weight:400;color:#888">+'+r.alzasExtra+' alza extra</div>':'')+'</td><td style="text-align:center;padding:9px 6px;font-weight:700;font-size:15px">'+(r.nucleos||'—')+'</td><td style="text-align:center;padding:9px 6px;color:#888">'+(r.camSinAbejas||'—')+'</td><td style="text-align:center;padding:9px 6px;color:#888">'+(r.alzas||'—')+'</td><td style="text-align:center;padding:9px 6px;color:#888">'+(r.alzasSinAbejas||'—')+'</td><td style="text-align:center;padding:9px 6px">'+visitaBadge(r)+'<div style="font-size:11px;color:#aaa;margin-top:2px">'+fmtF(r.proxima)+'</div></td><td style="text-align:center;padding:9px 6px">'+curaBadge(r)+'</td></tr>';}).join('')+'</tbody><tfoot><tr style="border-top:2px solid var(--aml);background:var(--sua);font-weight:700"><td style="padding:9px 10px;text-transform:uppercase;font-size:11px">Total ('+filtrado.length+' colmenares)</td><td style="text-align:center;padding:9px 6px;font-size:15px;color:var(--na)">'+(tc+tn)+'</td><td style="text-align:center;padding:9px 6px;font-size:15px">'+tc+'</td><td style="text-align:center;padding:9px 6px;font-size:15px;color:#1a5c2a">'+tcol+'</td><td style="text-align:center;padding:9px 6px;font-size:15px">'+tn+'</td><td style="text-align:center;padding:9px 6px">'+tv+'</td><td style="text-align:center;padding:9px 6px">'+ta+'</td><td style="text-align:center;padding:9px 6px">'+tav+'</td><td></td><td></td></tr></tfoot></table></div>';
 }
 function renderResumen(){
   buildTemporadaSelect();var anio=parseInt(document.getElementById('sel-temporada').value);var sr=getSeasonRange(anio),h=hoy(),temp=periodoCura(h),data=calcSeasonData(anio);
@@ -2048,14 +2070,21 @@ function renderResumen(){
   function pct(n,d){return d>0?Math.round(n/d*1000)/10:0;}function pctColor(p){return p>=20?'#c0392b':p>=10?'#d68910':'#1a5c2a';}function pctClass(p){return p>=20?'pct-high':p>=10?'pct-med':'pct-ok';}
   var allRows=colmenares.map(function(c){var d=data[c.id];var dp=d.proxima?diasEntre(h,d.proxima):null;return Object.assign({},d,{cod:c.id,dp:dp});});
   var activeRows=allRows.filter(function(r){return(r.hasData||r.ultima)&&((r.camConAbejas||0)>0||(r.nucleos||0)>0);});
-  var totalCam=0,totalVac=0,totalNuc=0,totalMiel=0,totalAlzas=0,totalAlzasVac=0;activeRows.forEach(function(r){totalCam+=r.camConAbejas;totalVac+=r.camSinAbejas;totalNuc+=r.nucleos;totalMiel+=r.cosecha;totalAlzas+=r.alzas||0;totalAlzasVac+=r.alzasSinAbejas||0;});
-  document.getElementById('stats-top').innerHTML='<div class="kpi" style="background:linear-gradient(135deg,#FFF0A0,#F5C518);border:1.5px solid #E6B800"><div class="kpi-n">'+( totalCam+totalNuc)+'</div><div class="kpi-l">Total activas</div><div class="kpi-sub">🐝 '+totalCam+' · núcl. '+totalNuc+'</div></div><div class="kpi kpi-bee"><div class="kpi-n">'+totalCam+'</div><div class="kpi-l">Cámaras con abejas</div></div><div class="kpi kpi-nuc"><div class="kpi-n">'+totalNuc+'</div><div class="kpi-l">Núcleos activos</div></div><div class="kpi kpi-vac"><div class="kpi-n">'+totalVac+'</div><div class="kpi-l">Cámaras vacías</div></div><div class="kpi kpi-cosecha"><div class="kpi-n">'+totalMiel+' kg</div><div class="kpi-l">Cosecha total</div></div>';
+  var totalCam=0,totalVac=0,totalNuc=0,totalMiel=0,totalAlzas=0,totalAlzasVac=0,totalColmenas=0,totalCriaSinAlza=0,totalAlzasExtra=0;
+  activeRows.forEach(function(r){
+    totalCam+=r.camConAbejas;totalVac+=r.camSinAbejas;totalNuc+=r.nucleos;totalMiel+=r.cosecha;totalAlzas+=r.alzas||0;totalAlzasVac+=r.alzasSinAbejas||0;
+    r.colmenas=Math.min(r.camConAbejas||0,r.alzas||0);
+    r.criaSinAlza=Math.max(0,(r.camConAbejas||0)-(r.alzas||0));
+    r.alzasExtra=Math.max(0,(r.alzas||0)-(r.camConAbejas||0));
+    totalColmenas+=r.colmenas;totalCriaSinAlza+=r.criaSinAlza;totalAlzasExtra+=r.alzasExtra;
+  });
+  document.getElementById('stats-top').innerHTML='<div class="kpi" style="background:linear-gradient(135deg,#FFF0A0,#F5C518);border:1.5px solid #E6B800"><div class="kpi-n">'+( totalCam+totalNuc)+'</div><div class="kpi-l">Total activas</div><div class="kpi-sub">🐝 '+totalCam+' cám. cría · núcl. '+totalNuc+'</div></div><div class="kpi kpi-bee"><div class="kpi-n">'+totalColmenas+'</div><div class="kpi-l">Colmenas (con alza)</div><div class="kpi-sub">'+totalAlzasExtra+' alzas extra arriba</div></div><div class="kpi" style="background:#F0EAD6;border:1.5px solid var(--bor)"><div class="kpi-n">'+totalCriaSinAlza+'</div><div class="kpi-l">Cám. de cría (sin alza)</div></div><div class="kpi kpi-nuc"><div class="kpi-n">'+totalNuc+'</div><div class="kpi-l">Núcleos activos</div></div><div class="kpi kpi-vac"><div class="kpi-n">'+totalVac+'</div><div class="kpi-l">Cámaras vacías</div></div><div class="kpi kpi-cosecha"><div class="kpi-n">'+totalMiel+' kg</div><div class="kpi-l">Cosecha total</div></div>';
   document.getElementById('alertas-colm-zona').innerHTML='';
   var sorted=activeRows.sort(function(a,b){return(a.dp===null?9999:a.dp)-(b.dp===null?9999:b.dp);});
   ultimoResumenSorted=sorted;ultimoResumenTotales={totalCam:totalCam,totalVac:totalVac,totalNuc:totalNuc,totalAlzas:totalAlzas,totalAlzasVac:totalAlzasVac};ultimoResumenTemp=temp;
   var codsActuales=sorted.map(function(r){return String(r.cod);});
   var universoNuevo=codsActuales.slice().sort().join(',');
-  if(universoNuevo!==ultimoUniversoColmenaresRes){colFiltroColmenar=new Set(codsActuales);ultimoUniversoColmenaresRes=universoNuevo;}
+  if(universoNuevo!==ultimoUniversoColmenaresRes){colFiltrosRes={};ultimoUniversoColmenaresRes=universoNuevo;}
   renderResumenTabla();
   var totIniCam=0,totFinCam=0,totMLA=0,totMZ=0,totMH=0,totMPi=0,totMNS=0,totMuert=0,totIniNuc=0,totFinNuc=0,totMuertNuc=0,totNucLA=0,totNucZ=0,totNucH=0,totNucPi=0,totNucNS=0,totLitros=0,totCosecha=0;
   var seasRows=allRows.filter(function(r){return r.hasData;});seasRows.forEach(function(r){if(r.iniEsPreTemporada){totIniCam+=r.iniCam||0;totIniNuc+=r.iniNuc||0;}totFinCam+=r.finCam||0;totMLA+=r.mLA||0;totMZ+=r.mZ||0;totMH+=r.mH||0;totMPi+=r.mPi||0;totMNS+=r.mNS||0;totMuert+=r.mTot||0;totFinNuc+=r.finNuc||0;totMuertNuc+=r.mNucleos||0;totNucLA+=r.mNucLA||0;totNucZ+=r.mNucZ||0;totNucH+=r.mNucH||0;totNucPi+=r.mNucPi||0;totNucNS+=r.mNucNS||0;totLitros+=r.litrosTotal||0;totCosecha+=r.cosecha||0;});
@@ -2068,8 +2097,8 @@ function renderResumen(){
   var alimTiposKeys=Object.keys(alimPorTipoTotal);
   var alimCardBody=alimTiposKeys.length?('<div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:4px">'+alimTiposKeys.map(function(t){return'<span class="tag" style="background:#fff;border-color:#E6B800;font-weight:700">'+t+': '+Math.round(alimPorTipoTotal[t]*10)/10+' '+unidadAlimento(t)+'</span>';}).join('')+'</div>'):'<div style="font-size:12px;color:#888;margin-top:4px">Sin alimento registrado</div>';
   document.getElementById('temporada-stats').innerHTML=
-    '<div class="kpi kpi-ini"><div class="kpi-n">'+totIniActivas+'</div><div class="kpi-l">Colmenas activas inicio</div><div class="kpi-sub">🐝 '+totIniCam+' cám. · núcl. '+totIniNuc+'</div></div>'+
-    '<div class="kpi kpi-fin"><div class="kpi-n">'+totFinActivas+'</div><div class="kpi-l">Colmenas activas fin</div><div class="kpi-sub">'+(totFinActivas>=totIniActivas?'↑':'↓')+' '+Math.abs(totFinActivas-totIniActivas)+' · 🐝 '+totFinCam+' cám. · núcl. '+totFinNuc+'</div></div>'+
+    '<div class="kpi kpi-ini"><div class="kpi-n">'+totIniActivas+'</div><div class="kpi-l">Cámaras de cría activas inicio</div><div class="kpi-sub">🐝 '+totIniCam+' cám. cría · núcl. '+totIniNuc+'</div></div>'+
+    '<div class="kpi kpi-fin"><div class="kpi-n">'+totFinActivas+'</div><div class="kpi-l">Cámaras de cría activas fin</div><div class="kpi-sub">'+(totFinActivas>=totIniActivas?'↑':'↓')+' '+Math.abs(totFinActivas-totIniActivas)+' · 🐝 '+totFinCam+' cám. cría · núcl. '+totFinNuc+'</div></div>'+
     '<div class="kpi" style="background:'+(pctMort>=20?'linear-gradient(135deg,#fee2e2,#fca5a5)':pctMort>=10?'linear-gradient(135deg,#fff3cd,#fde68a)':'linear-gradient(135deg,#d4edda,#a7f3d0)')+';border:1.5px solid '+(pctMort>=20?'#f87171':pctMort>=10?'#fbbf24':'#34d399')+'"><div class="kpi-n" style="color:'+pctColor(pctMort)+'">'+pctMort+'%</div><div class="kpi-l">Mort. cámaras 🐝</div><div class="kpi-sub">'+totMuert+' muertas</div></div>'+
     '<div class="kpi" style="background:'+(pctMortNuc>=20?'linear-gradient(135deg,#fee2e2,#fca5a5)':pctMortNuc>=10?'linear-gradient(135deg,#fff3cd,#fde68a)':'linear-gradient(135deg,#d4edda,#a7f3d0)')+';border:1.5px solid '+(pctMortNuc>=20?'#f87171':pctMortNuc>=10?'#fbbf24':'#34d399')+'"><div class="kpi-n" style="color:'+pctColor(pctMortNuc)+'">'+pctMortNuc+'%</div><div class="kpi-l">Mort. núcleos 🔵</div><div class="kpi-sub">'+totMuertNuc+' muertos</div></div>'+
     '<div class="kpi kpi-alim" style="grid-column:span 2"><div class="kpi-l">Total alimento</div>'+alimCardBody+'</div>'+
@@ -2122,7 +2151,7 @@ function renderResumen(){
       +(totFzMuestras>0?'<div style="margin-top:10px;padding-top:10px;border-top:2px solid var(--aml)"><div style="font-size:11px;font-weight:700;color:var(--na);text-transform:uppercase;margin-bottom:6px">Promedio general</div><div class="tags"><span class="tag" style="font-weight:700">Débil: '+Math.round(totFzDebil/totFzMuestras)+'%</span><span class="tag" style="font-weight:700">Media: '+Math.round(totFzMedia/totFzMuestras)+'%</span><span class="tag" style="font-weight:700">Fuerte: '+Math.round(totFzFuerte/totFzMuestras)+'%</span></div></div>':'');
   }else secFuerza.style.display='none';
   var anioAnt=anio-1,dataAnt=calcSeasonData(anioAnt),srAnt=getSeasonRange(anioAnt),regAnt=registros.filter(function(r){return r.fecha>=srAnt.start&&r.fecha<=srAnt.end;}),compWrapper=document.getElementById('comparacion-wrapper');
-  if(regAnt.length>0){compWrapper.style.display='block';document.getElementById('comp-title').textContent='Comparación con '+(anioAnt)+'-'+(anio);var ti2=0,tf2=0,ti2n=0,tf2n=0,tm2=0,th2=0,tc2=0;var filasAnt=Object.keys(dataAnt).map(function(k){return dataAnt[k];});filasAnt.forEach(function(d){if(d.iniEsPreTemporada){ti2+=d.iniCam||0;ti2n+=d.iniNuc||0;}tf2+=d.finCam||0;tf2n+=d.finNuc||0;tm2+=d.mTot||0;th2+=d.mH||0;tc2+=d.cosecha||0;});var ti2Act=ti2+ti2n,tf2Act=tf2+tf2n;var alimAntPorTipo=sumAlimentoPorTipo(filasAnt);var alimTiposTodos=Array.from(new Set(Object.keys(alimPorTipoTotal).concat(Object.keys(alimAntPorTipo)))).filter(function(t){return(alimPorTipoTotal[t]||0)>0;});var pm2=pct(tm2,ti2);function dTag(curr,prev,inv){if(curr===prev)return'<span class="comp-item-delta delta-neutral">= igual</span>';var diff=Math.round((curr-prev)*10)/10,mejor=inv?(curr<prev):(curr>prev);return'<span class="comp-item-delta '+(mejor?'delta-good':'delta-bad')+'">'+(mejor&&diff>0?'+':'')+diff+'</span>';}var filasAlim=alimTiposTodos.map(function(t){var prevV=Math.round((alimAntPorTipo[t]||0)*10)/10,currV=Math.round((alimPorTipoTotal[t]||0)*10)/10,u=unidadAlimento(t);return'<div class="comp-item"><span class="comp-item-label">'+t+' ('+u+')</span><span class="comp-item-prev">'+prevV+'</span><span class="comp-item-curr">'+currV+'</span>'+dTag(currV,prevV,true)+'</div>';}).join('');document.getElementById('comparacion-content').innerHTML='<div><div class="comp-header-row"><span>Indicador</span><span style="text-align:center">'+(anioAnt)+'-'+(anio)+'</span><span style="text-align:center">'+(anio)+'-'+(anio+1)+'</span><span style="text-align:center">Δ</span></div><div class="comp-item"><span class="comp-item-label">Colmenas activas inicio</span><span class="comp-item-prev">'+ti2Act+'</span><span class="comp-item-curr">'+totIniActivas+'</span>'+dTag(totIniActivas,ti2Act,false)+'</div><div class="comp-item"><span class="comp-item-label">Colmenas activas fin</span><span class="comp-item-prev">'+tf2Act+'</span><span class="comp-item-curr">'+totFinActivas+'</span>'+dTag(totFinActivas,tf2Act,false)+'</div><div class="comp-item"><span class="comp-item-label">% mortandad</span><span class="comp-item-prev">'+pm2+'%</span><span class="comp-item-curr '+pctClass(pctMort)+'">'+pctMort+'%</span>'+dTag(pctMort,pm2,true)+'</div><div class="comp-item"><span class="comp-item-label">Muertas</span><span class="comp-item-prev">'+tm2+'</span><span class="comp-item-curr">'+totMuert+'</span>'+dTag(totMuert,tm2,true)+'</div><div class="comp-item"><span class="comp-item-label">Muertas por hambre</span><span class="comp-item-prev">'+th2+'</span><span class="comp-item-curr">'+totMH+'</span>'+dTag(totMH,th2,true)+'</div>'+filasAlim+'<div class="comp-item"><span class="comp-item-label">Cosecha</span><span class="comp-item-prev">'+tc2+' kg</span><span class="comp-item-curr">'+totCosecha+' kg</span>'+dTag(totCosecha,tc2,false)+'</div></div>';}else compWrapper.style.display='none';
+  if(regAnt.length>0){compWrapper.style.display='block';document.getElementById('comp-title').textContent='Comparación con '+(anioAnt)+'-'+(anio);var ti2=0,tf2=0,ti2n=0,tf2n=0,tm2=0,th2=0,tc2=0;var filasAnt=Object.keys(dataAnt).map(function(k){return dataAnt[k];});filasAnt.forEach(function(d){if(d.iniEsPreTemporada){ti2+=d.iniCam||0;ti2n+=d.iniNuc||0;}tf2+=d.finCam||0;tf2n+=d.finNuc||0;tm2+=d.mTot||0;th2+=d.mH||0;tc2+=d.cosecha||0;});var ti2Act=ti2+ti2n,tf2Act=tf2+tf2n;var alimAntPorTipo=sumAlimentoPorTipo(filasAnt);var alimTiposTodos=Array.from(new Set(Object.keys(alimPorTipoTotal).concat(Object.keys(alimAntPorTipo)))).filter(function(t){return(alimPorTipoTotal[t]||0)>0;});var pm2=pct(tm2,ti2);function dTag(curr,prev,inv){if(curr===prev)return'<span class="comp-item-delta delta-neutral">= igual</span>';var diff=Math.round((curr-prev)*10)/10,mejor=inv?(curr<prev):(curr>prev);return'<span class="comp-item-delta '+(mejor?'delta-good':'delta-bad')+'">'+(mejor&&diff>0?'+':'')+diff+'</span>';}var filasAlim=alimTiposTodos.map(function(t){var prevV=Math.round((alimAntPorTipo[t]||0)*10)/10,currV=Math.round((alimPorTipoTotal[t]||0)*10)/10,u=unidadAlimento(t);return'<div class="comp-item"><span class="comp-item-label">'+t+' ('+u+')</span><span class="comp-item-prev">'+prevV+'</span><span class="comp-item-curr">'+currV+'</span>'+dTag(currV,prevV,true)+'</div>';}).join('');document.getElementById('comparacion-content').innerHTML='<div><div class="comp-header-row"><span>Indicador</span><span style="text-align:center">'+(anioAnt)+'-'+(anio)+'</span><span style="text-align:center">'+(anio)+'-'+(anio+1)+'</span><span style="text-align:center">Δ</span></div><div class="comp-item"><span class="comp-item-label">Cámaras de cría activas inicio</span><span class="comp-item-prev">'+ti2Act+'</span><span class="comp-item-curr">'+totIniActivas+'</span>'+dTag(totIniActivas,ti2Act,false)+'</div><div class="comp-item"><span class="comp-item-label">Cámaras de cría activas fin</span><span class="comp-item-prev">'+tf2Act+'</span><span class="comp-item-curr">'+totFinActivas+'</span>'+dTag(totFinActivas,tf2Act,false)+'</div><div class="comp-item"><span class="comp-item-label">% mortandad</span><span class="comp-item-prev">'+pm2+'%</span><span class="comp-item-curr '+pctClass(pctMort)+'">'+pctMort+'%</span>'+dTag(pctMort,pm2,true)+'</div><div class="comp-item"><span class="comp-item-label">Muertas</span><span class="comp-item-prev">'+tm2+'</span><span class="comp-item-curr">'+totMuert+'</span>'+dTag(totMuert,tm2,true)+'</div><div class="comp-item"><span class="comp-item-label">Muertas por hambre</span><span class="comp-item-prev">'+th2+'</span><span class="comp-item-curr">'+totMH+'</span>'+dTag(totMH,th2,true)+'</div>'+filasAlim+'<div class="comp-item"><span class="comp-item-label">Cosecha</span><span class="comp-item-prev">'+tc2+' kg</span><span class="comp-item-curr">'+totCosecha+' kg</span>'+dTag(totCosecha,tc2,false)+'</div></div>';}else compWrapper.style.display='none';
 }
 
 function updateNavVisibility(){
